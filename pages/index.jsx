@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState, useContext, createContext } from "react";
 
 /* ----------------------------- AUTH (Canvas-friendly stub) ----------------------------- */
-// Canvas ortamında @clerk/nextjs paketini kullanamayız. Bu yüzden
-// SignedIn / SignedOut için hafif bir mock yazıyoruz.
 const AuthCtx = createContext(false);
 function SignedIn({ children }) {
   const isAuthed = useContext(AuthCtx);
@@ -25,14 +23,10 @@ const STR = {
     customerPortal: "Müşteri Portalı",
     needAuth: "Önce kayıt olmalısınız.",
     categories: "Kategorilerimiz",
-    orderNow: "Sipariş Ver",
-    postAd: "İlan Ver",
     listings: "Son 20 İlan",
-    showcase: "Vitrin",
     view: "İncele",
     loginToView: "İlanı görmek için giriş yapın veya kaydolun.",
     noAds: "Henüz ilan yok.",
-    // Legal footer
     legalBarTitle: "Kurumsal",
     legal: {
       corporate: "Kurumsal",
@@ -45,14 +39,14 @@ const STR = {
       distance: "Mesafeli Satış",
       shippingReturn: "Teslimat & İade",
       cookies: "Çerez Politikası",
-      help: "Yardım",
+      help: "Topluluk Kuralları",
       banned: "Yasaklı Ürünler",
       all: "Tüm Legal",
       home: "Ana Sayfa",
       copyright: "© 2025 Üreten Eller",
       open: "Aç",
-      close: "Kapat",
-    },
+      close: "Kapat"
+    }
   },
   en: {
     brand: "Ureten Eller",
@@ -61,14 +55,10 @@ const STR = {
     customerPortal: "Customer Portal",
     needAuth: "Please sign up first.",
     categories: "Our Categories",
-    orderNow: "Order Now",
-    postAd: "Post Listing",
     listings: "Latest 20 Listings",
-    showcase: "Showcase",
     view: "View",
     loginToView: "Please sign in or sign up to view the listing.",
     noAds: "No listings yet.",
-    // Legal footer
     legalBarTitle: "Corporate",
     legal: {
       corporate: "Corporate",
@@ -81,14 +71,14 @@ const STR = {
       distance: "Distance Sales",
       shippingReturn: "Shipping & Returns",
       cookies: "Cookie Policy",
-      help: "Help",
+      help: "Community Rules",
       banned: "Prohibited Products",
       all: "All Legal",
       home: "Home",
       copyright: "© 2025 Ureten Eller",
       open: "Open",
-      close: "Close",
-    },
+      close: "Close"
+    }
   },
   ar: {
     brand: "أُنتِج بالأيادي",
@@ -97,14 +87,10 @@ const STR = {
     customerPortal: "بوابة العملاء",
     needAuth: "يرجى التسجيل أولًا.",
     categories: "تصنيفاتنا",
-    orderNow: "اطلب الآن",
-    postAd: "أنشئ إعلانًا",
     listings: "آخر 20 إعلان",
-    showcase: "العرض",
     view: "عرض",
     loginToView: "سجّل الدخول أو أنشئ حسابًا لعرض الإعلان.",
     noAds: "لا توجد إعلانات بعد.",
-    // Legal footer
     legalBarTitle: "المعلومات المؤسسية",
     legal: {
       corporate: "المؤسسة",
@@ -117,14 +103,14 @@ const STR = {
       distance: "البيع عن بُعد",
       shippingReturn: "الشحن والإرجاع",
       cookies: "سياسة ملفات تعريف الارتباط",
-      help: "مساعدة",
+      help: "قواعد المجتمع",
       banned: "المنتجات المحظورة",
       all: "كل السياسات",
       home: "الصفحة الرئيسية",
       copyright: "© 2025 Üreten Eller",
       open: "فتح",
-      close: "إغلاق",
-    },
+      close: "إغلاق"
+    }
   },
   de: {
     brand: "Ureten Eller",
@@ -133,14 +119,10 @@ const STR = {
     customerPortal: "Kundenportal",
     needAuth: "Bitte zuerst registrieren.",
     categories: "Unsere Kategorien",
-    orderNow: "Jetzt bestellen",
-    postAd: "Anzeige erstellen",
     listings: "Neueste 20 Inserate",
-    showcase: "Vitrine",
     view: "Ansehen",
     loginToView: "Bitte anmelden oder registrieren, um das Inserat zu sehen.",
     noAds: "Noch keine Inserate.",
-    // Legal footer
     legalBarTitle: "Unternehmen",
     legal: {
       corporate: "Unternehmen",
@@ -153,15 +135,15 @@ const STR = {
       distance: "Fernabsatz",
       shippingReturn: "Lieferung & Rückgabe",
       cookies: "Cookie-Richtlinie",
-      help: "Hilfe",
+      help: "Community-Regeln",
       banned: "Verbotene Produkte",
       all: "Alle Rechtliches",
       home: "Startseite",
       copyright: "© 2025 Ureten Eller",
       open: "Öffnen",
-      close: "Schließen",
-    },
-  },
+      close: "Schließen"
+    }
+  }
 };
 
 /* ----------------------------- 20+ MOTTO (RENKLİ) ----------------------------- */
@@ -190,7 +172,7 @@ const PHRASES = {
     { text: "Şehrinden taze üretim, güvenle alışveriş.", color: "#6366f1" },
     { text: "Kalite, özen ve şeffaflık.", color: "#8b5cf6" },
     { text: "İhtiyacın olan el emeği burada.", color: "#d946ef" },
-    { text: "Uygun fiyat, güvenli süreç, mutlu son.", color: "#ec4899" },
+    { text: "Uygun fiyat, güvenli süreç, mutlu son.", color: "#ec4899" }
   ],
   en: [
     { text: "Our aim: support household budgets of women.", color: "#e11d48" },
@@ -216,7 +198,7 @@ const PHRASES = {
     { text: "Fresh from your city, shop with confidence.", color: "#6366f1" },
     { text: "Quality, care and transparency.", color: "#8b5cf6" },
     { text: "The handmade you need is here.", color: "#d946ef" },
-    { text: "Good price, safe process, happy ending.", color: "#ec4899" },
+    { text: "Good price, safe process, happy ending.", color: "#ec4899" }
   ],
   ar: [
     { text: "هدفنا: دعم ميزانية ربّات البيوت.", color: "#e11d48" },
@@ -242,7 +224,7 @@ const PHRASES = {
     { text: "طازج من مدينتك وتسوق بثقة.", color: "#6366f1" },
     { text: "جودة وعناية وشفافية.", color: "#8b5cf6" },
     { text: "كل ما تحتاجه من أعمال يدوية هنا.", color: "#d946ef" },
-    { text: "سعر جيد، عملية آمنة، نهاية سعيدة.", color: "#ec4899" },
+    { text: "سعر جيد، عملية آمنة، نهاية سعيدة.", color: "#ec4899" }
   ],
   de: [
     { text: "Ziel: Haushaltsbudgets von Frauen stärken.", color: "#e11d48" },
@@ -268,8 +250,8 @@ const PHRASES = {
     { text: "Frisch aus deiner Stadt – sicher einkaufen.", color: "#6366f1" },
     { text: "Qualität, Sorgfalt und Transparenz.", color: "#8b5cf6" },
     { text: "Das Handgemachte, das du brauchst – hier.", color: "#d946ef" },
-    { text: "Guter Preis, sicherer Ablauf, gutes Ende.", color: "#ec4899" },
-  ],
+    { text: "Guter Preis, sicherer Ablauf, gutes Ende.", color: "#ec4899" }
+  ]
 };
 
 /* ----------------------------- KATEGORİLER ----------------------------- */
@@ -288,7 +270,7 @@ const CATS = {
     { icon: "🏠", title: "Ev Dekor & Aksesuar", subs: ["Keçe işleri", "Kırlent", "Kapı süsü", "Tepsi süsleme", "Çerçeve", "Rüya kapanı", "Tablo"] },
     { icon: "🕯️", title: "Mum & Kokulu Ürünler", subs: ["Soya/balmumu mum", "Kokulu taş", "Oda spreyi", "Tütsü", "Jel mum", "Hediye seti"] },
     { icon: "🧼", title: "Doğal Sabun & Kozmetik", subs: ["Zeytinyağlı sabun", "Bitkisel sabunlar", "Katı şampuan", "Dudak balmı", "Krem/merhem", "Banyo tuzu", "Lavanta kesesi"] },
-    { icon: "🧸", title: "Amigurumi & Oyuncak (dekoratif)", subs: ["Anahtarlık", "Magnet", "Koleksiyon figürü", "Dekor bebek/karakter", "İsimli amigurumi"] },
+    { icon: "🧸", title: "Amigurumi & Oyuncak (dekoratif)", subs: ["Anahtarlık", "Magnet", "Koleksiyon figürü", "Dekor bebek/karakter", "İsimli amigurumi"] }
   ],
   en: [
     { icon: "🍲", title: "Meals", subs: ["Home meals", "Savory bakes", "Soup", "Olive oil dishes", "Rice-pasta", "Meat-chicken", "Breakfast", "Meze", "Frozen", "Kids meals", "Diet/vegan/gf"] },
@@ -304,7 +286,7 @@ const CATS = {
     { icon: "🏠", title: "Home Decor & Accessories", subs: ["Felt crafts", "Pillow", "Door wreath", "Tray decor", "Frame", "Dreamcatcher", "Painting"] },
     { icon: "🕯️", title: "Candles & Scents", subs: ["Soy/beeswax candles", "Aroma stone", "Room spray", "Incense", "Gel candle", "Gift sets"] },
     { icon: "🧼", title: "Natural Soap & Cosmetics", subs: ["Olive oil soap", "Herbal soaps", "Solid shampoo", "Lip balm", "Cream/salve", "Bath salt", "Lavender sachet"] },
-    { icon: "🧸", title: "Amigurumi & Toys (decor)", subs: ["Keychain", "Magnet", "Collectible figure", "Decor doll/character", "Named amigurumi"] },
+    { icon: "🧸", title: "Amigurumi & Toys (decor)", subs: ["Keychain", "Magnet", "Collectible figure", "Decor doll/character", "Named amigurumi"] }
   ],
   ar: [
     { icon: "🍲", title: "وجبات", subs: ["بيتي", "معجنات مالحة", "شوربة", "أكلات بزيت الزيتون", "أرز/معكرونة", "لحم/دجاج", "فطور", "مقبلات", "مجمدة", "وجبات أطفال", "نباتي/خالٍ من الغلوتين"] },
@@ -320,7 +302,7 @@ const CATS = {
     { icon: "🏠", title: "ديكور المنزل", subs: ["فيلت", "وسادة", "زينة باب", "صينية مزخرفة", "إطار", "صائد أحلام", "لوحة"] },
     { icon: "🕯️", title: "شموع وروائح", subs: ["شموع صويا/نحل", "حجر عطري", "معطر غرف", "بخور", "شمعة جل", "أطقم هدايا"] },
     { icon: "🧼", title: "صابون طبيعي وتجميلي", subs: ["صابون زيت زيتون", "أعشاب", "شامبو صلب", "بلسم شفاه", "كريم/مرهم", "ملح حمام", "أكياس لافندر"] },
-    { icon: "🧸", title: "أميجورومي وألعاب (ديكور)", subs: ["ميدالية", "مغناطيس", "فيجور", "دمية ديكور", "أميجورومي بالاسم"] },
+    { icon: "🧸", title: "أميجورومي وألعاب (ديكور)", subs: ["ميدالية", "مغناطيس", "فيجور", "دمية ديكور", "أميجورومي بالاسم"] }
   ],
   de: [
     { icon: "🍲", title: "Speisen", subs: ["Hausmannskost", "Herzhafte Backwaren", "Suppe", "Olivenölgerichte", "Reis/Pasta", "Fleisch/Hähnchen", "Frühstück", "Meze", "Tiefgekühlt", "Kindermahlzeiten", "Diät/Vegan/GF"] },
@@ -336,8 +318,8 @@ const CATS = {
     { icon: "🏠", title: "Wohndeko & Accessoires", subs: ["Filzarbeiten", "Kissen", "Türkranz", "Tablettdeko", "Rahmen", "Traumfänger", "Bild"] },
     { icon: "🕯️", title: "Kerzen & Düfte", subs: ["Soja/Bienenwachs", "Duftstein", "Raumspray", "Weihrauch", "Gelkerze", "Geschenksets"] },
     { icon: "🧼", title: "Naturseife & Kosmetik", subs: ["Olivenölseife", "Kräuterseifen", "Festes Shampoo", "Lippenbalsam", "Creme/Salbe", "Badesalz", "Lavendelsäckchen"] },
-    { icon: "🧸", title: "Amigurumi & Spielzeug (Deko)", subs: ["Schlüsselanh.", "Magnet", "Sammelfigur", "Deko-Puppe", "Amigurumi mit Name"] },
-  ],
+    { icon: "🧸", title: "Amigurumi & Spielzeug (Deko)", subs: ["Schlüsselanh.", "Magnet", "Sammelfigur", "Deko-Puppe", "Amigurumi mit Name"] }
+  ]
 };
 
 /* ----------------------------- DİL KANCASI ----------------------------- */
@@ -356,7 +338,7 @@ function useLang() {
   return { lang, setLang, t };
 }
 
-/* ----------------------------- LEGAL İÇERİK ----------------------------- */
+/* ----------------------------- LEGAL İÇERİK (başlıklar, gövdesiz) ----------------------------- */
 function useLegal(lang) {
   const legalText = useMemo(() => {
     const S = STR[lang]?.legal || STR.tr.legal;
@@ -373,40 +355,18 @@ function useLegal(lang) {
       cookies: { title: S.cookies, body: "" },
       help: { title: S.help, body: "" },
       banned: { title: S.banned, body: "" },
-      all: { title: S.all, body: "" },
+      all: { title: S.all, body: "" }
     };
   }, [lang]);
   return legalText;
 }
 
-/* ----------------------------- Basit Testler (console) ----------------------------- */
-function runSelfTests() {
-  console.groupCollapsed("[Tests] i18n & data checks");
-  // 1) Tüm diller STR içinde var mı?
-  SUPPORTED.forEach((lng) => {
-    console.assert(!!STR[lng], `STR missing for ${lng}`);
-    console.assert(!!PHRASES[lng], `PHRASES missing for ${lng}`);
-    console.assert(!!CATS[lng], `CATS missing for ${lng}`);
-  });
-  // 2) phrase sayıları uyarısı
-  const counts = SUPPORTED.map((l) => PHRASES[l]?.length || 0);
-  const min = Math.min(...counts);
-  const max = Math.max(...counts);
-  if (min !== max) {
-    console.warn("PHRASES count differs per locale:", Object.fromEntries(SUPPORTED.map((l) => [l, PHRASES[l].length])));
-  }
-  console.groupEnd();
-}
-
 /* ----------------------------- SAYFA ----------------------------- */
-export default function Home() {
+export default function Landing() {
   const { lang, setLang, t } = useLang();
-  const [isAuthed, setIsAuthed] = useState(false); // Canvas için sahte auth
-  useEffect(() => {
-    runSelfTests();
-    setIsAuthed(localStorage.getItem("authed") === "1");
-  }, []);
+  const [isAuthed] = useState(false); // Canvas için sahte auth
 
+  // Motto ve vurgu rengi
   const phrases = useMemo(() => PHRASES[lang] || PHRASES.tr, [lang]);
   const [i, setI] = useState(0);
   const current = phrases.length ? phrases[i % phrases.length] : { text: "", color: "#111827" };
@@ -416,39 +376,15 @@ export default function Home() {
     return () => clearInterval(id);
   }, [phrases.length]);
 
-  const go = (href) => { window.location.href = href; };
-  const needAuth = (role) => { window.location.href = `/login?role=${role}`; };
-
-  // İlanlar placeholder
-  const [ads, setAds] = useState([]);
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/ads/public?limit=20", { cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json();
-          if (alive) setAds(Array.isArray(data) ? data.slice(0, 20) : []);
-          return;
-        }
-      } catch (e) {}
-      try {
-        const local = JSON.parse(localStorage.getItem("ads") || "[]");
-        if (alive) setAds(Array.isArray(local) ? local.slice(0, 20) : []);
-      } catch (e) {}
-    })();
-    return () => { alive = false; };
-  }, []);
-
   const cats = CATS[lang] || CATS.tr;
 
-  // === KATEGORİ RENK DÖNGÜSÜ: tüm kartlar aynı rengi kullanır, 5 sn'de bir değişir ===
+  // === KATEGORİ RENK DÖNGÜSÜ — tüm kartlar aynı arka plan, 5 sn'de bir değişir ===
   const CAT_GRADS = [
     "linear-gradient(135deg, #ff80ab, #ffd166)",
     "linear-gradient(135deg, #a78bfa, #60a5fa)",
     "linear-gradient(135deg, #34d399, #a7f3d0)",
     "linear-gradient(135deg, #f59e0b, #f97316)",
-    "linear-gradient(135deg, #06b6d4, #3b82f6)",
+    "linear-gradient(135deg, #06b6d4, #3b82f6)"
   ];
   const [ci, setCi] = useState(0);
   useEffect(() => {
@@ -457,24 +393,19 @@ export default function Home() {
   }, []);
   const catBg = CAT_GRADS[ci];
 
-  // LEGAL
   const LEGAL_LABELS = STR[lang]?.legal || STR.tr.legal;
-  const LEGAL_TEXT = useLegal(lang);
+  useLegal(lang); // şimdilik başlıklar için
 
   return (
     <AuthCtx.Provider value={isAuthed}>
       <main className="wrap">
-        {/* Dil seçimi */}
+        {/* Dil seçimi — Sign Out YOK */}
         <div className="langbox">
           <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
             {SUPPORTED.map((k) => (
-              <option key={k} value={k}>
-                {LOCALE_LABEL[k]}
-              </option>
+              <option key={k} value={k}>{LOCALE_LABEL[k]}</option>
             ))}
           </select>
-          {/* Canvas testleri için hızlı auth toggle */}
-          
         </div>
 
         {/* HERO */}
@@ -483,106 +414,32 @@ export default function Home() {
           <h1 className="title">{t.brand}</h1>
           <h2 className="subtitle">{t.heroTitle}</h2>
           <p key={i} className="lead phrase">{current.text}</p>
-          <div className="ctaRow">
-            <SignedOut>
-              <button className="btnPrimary" onClick={() => needAuth("seller")}>
-                {t.sellerPortal}
-              </button>
-              <button className="btnGhost" onClick={() => needAuth("customer")}>
-                {t.customerPortal}
-              </button>
-            </SignedOut>
-            <SignedIn>
-              <button className="btnPrimary" onClick={() => go("/portal/seller")}>
-                {t.sellerPortal}
-              </button>
-              <button className="btnGhost" onClick={() => go("/portal/customer")}>
-                {t.customerPortal}
-              </button>
-            </SignedIn>
-          </div>
         </section>
 
-        {/* İlanlar */}
-        <section className="adsSection">
-          <h3>{t.listings}</h3>
-          <div className="adsGrid">
-            {ads.length === 0 ? (
-              <div className="adCard">
-                <div className="adBody empty">{t.noAds}</div>
-              </div>
-            ) : (
-              ads.map((a, idx) => {
-                const imgStyle = a?.img
-                  ? { backgroundImage: `url(${a.img})`, backgroundSize: "cover", backgroundPosition: "center" }
-                  : undefined;
-                const title = a?.title || "İlan";
-                const cat = a?.cat || a?.category || "";
-                const price = a?.price || "";
-                const url = a?.url || `/ads/${a?.slug || a?.id || ""}`;
-                return (
-                  <div className="adCard" key={idx}>
-                    <div className="adThumb" style={imgStyle} />
-                    <div className="adBody">
-                      <h4 className="adTitle">{title}</h4>
-                      <div className="adMeta">
-                        <span>{cat}</span>
-                        <b>{price}</b>
-                      </div>
-                    </div>
-                    <div className="adActions">
-                      <SignedOut>
-                        <button
-                          className="viewBtn"
-                          onClick={() => {
-                            alert(t.loginToView);
-                            needAuth("customer");
-                          }}
-                        >
-                          {t.view}
-                        </button>
-                      </SignedOut>
-                      <SignedIn>
-                        <button className="viewBtn" onClick={() => go(url)}>
-                          {t.view}
-                        </button>
-                      </SignedIn>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </section>
-
-        {/* Kategoriler — KARE ve SENKRON RENK DEĞİŞİMİ */}
+        {/* Kategoriler — kare, ortalı, tıklanmaz; alt kategoriler başlığa yakın, taşarsa kendi içinde scroll */}
         <section className="cats">
           <h3>{t.categories}</h3>
           <div className="grid">
-            {cats.map((c, idx) => {
-              const link = `/search?cat=${encodeURIComponent(c.title)}&lang=${lang}`;
-              return (
-                <article key={idx} className="card" style={{ backgroundImage: catBg }} onClick={() => go(link)}>
-                  <div className="cardHead">
-                    <span className="icon" aria-hidden>
-                      {c.icon}
-                    </span>
-                    <h4>{c.title}</h4>
-                  </div>
+            {cats.map((c, idx) => (
+              <article key={idx} className="card" style={{ backgroundImage: catBg }}>
+                <div className="cardHead centered">
+                  <span className="icon" aria-hidden>{c.icon}</span>
+                  <h4>{c.title}</h4>
+                  <span className="count">{c.subs.length}</span>
+                </div>
+                <div className="subsWrap">
                   <div className="subsGrid">
-                    {c.subs.slice(0, 9).map((s, k) => (
-                      <span key={k} className="chip">
-                        {s}
-                      </span>
+                    {c.subs.map((s, k) => (
+                      <span key={k} className="chip">{s}</span>
                     ))}
                   </div>
-                </article>
-              );
-            })}
+                </div>
+              </article>
+            ))}
           </div>
         </section>
 
-        {/* LEGAL FOOTER (siyah) */}
+        {/* FOOTER — siyah panel, sayfanın EN ALTINDA (bar değil, fixed değil) */}
         <footer className="legalFooter" role="contentinfo">
           <div className="legalWrap">
             <div className="legalTitle">{(STR[lang] || STR.tr).legalBarTitle}</div>
@@ -598,72 +455,67 @@ export default function Home() {
               <a href="/legal/cerez-politikasi">{LEGAL_LABELS.cookies}</a>
               <a href="/legal/topluluk-kurallari">{LEGAL_LABELS.help}</a>
               <a href="/legal/yasakli-urunler">{LEGAL_LABELS.banned}</a>
-              
+              <a href="/legal" className="homeLink">{LEGAL_LABELS.all}</a>
             </nav>
             <div className="copy">{LEGAL_LABELS.copyright}</div>
           </div>
         </footer>
 
         <style>{`
-          :root { --ink:#0f172a; --muted:#475569; --paperA:rgba(255,255,255,.86); --lineA:rgba(255,255,255,.45); --c1:#ff80ab; --c2:#a78bfa; --c3:#60a5fa; --c4:#34d399; }
+          :root { --ink:#0f172a; --muted:#475569; --paperA:rgba(255,255,255,.9); --lineA:rgba(0,0,0,.08); }
           html, body { height:100%; }
-          body { margin:0; color:var(--ink); font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; background: radial-gradient(1200px 800px at -10% -10%, rgba(255,255,255,.35), transparent 60%), linear-gradient(120deg, var(--c1), var(--c2), var(--c3), var(--c4)); background-size:320% 320%;  }
-           50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+          body { margin:0; color:var(--ink); font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+            /* DALGALANMA YOK: sabit degrade, animasyon kaldırıldı */
+            background: linear-gradient(120deg, #ff80ab, #a78bfa, #60a5fa, #34d399);
+            background-attachment: fixed;
+          }
 
-          .wrap { max-width:1120px; margin:0 auto; padding:32px 20px 40px; }
-          .langbox { position:fixed; top:12px; right:12px; z-index:50; background:rgba(255,255,255,.9); border:1px solid #e5e7eb; border-radius:12px; padding:6px 10px; backdrop-filter: blur(8px); display:flex; gap:8px; align-items:center; }
+          .wrap { max-width:1120px; margin:0 auto; padding:24px 20px 40px; display:flex; flex-direction:column; min-height:100vh; }
+
+          /* Dil seçimi */
+          .langbox { position:fixed; top:12px; right:12px; z-index:50; background:rgba(255,255,255,.95); border:1px solid #e5e7eb; border-radius:12px; padding:6px 10px; backdrop-filter: blur(8px); display:flex; gap:8px; align-items:center; }
           .langbox select { border:none; background:transparent; font-weight:600; cursor:pointer; }
-          
 
           /* HERO */
-          .hero { display:grid; place-items:center; text-align:center; gap:10px; padding:72px 0 24px; }
+          .hero { display:grid; place-items:center; text-align:center; gap:8px; padding:72px 0 12px; }
           .logo { filter: drop-shadow(0 10px 24px rgba(0,0,0,.18)); border-radius:20px; }
-          .title,.subtitle { transition: color .6s ease; }
           .title { margin:8px 0 0; font-size:48px; color: var(--accent); }
-          .subtitle { margin:2px 0 6px; font-size:24px; color: var(--accent); }
-          .lead { max-width:820px; margin:8px auto 4px; font-size:18px; color: var(--accent); transition: color .6s ease; }
-          .phrase { animation: fadeSlide .7s ease; }
-          @keyframes fadeSlide { from { opacity:0; transform: translateY(6px);} to { opacity:1; transform:none;} }
-          .ctaRow { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:8px; }
-          .btnPrimary { padding:12px 18px; border-radius:999px; border:none; cursor:pointer; background:#111827; color:#fff; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.15); }
-          .btnGhost { padding:12px 18px; border-radius:999px; cursor:pointer; font-weight:600; background: var(--paperA); border:1px solid var(--lineA); color:#111827; backdrop-filter: blur(8px); }
+          .subtitle { margin:0; font-size:22px; color: var(--accent); }
+          .lead { max-width:820px; margin:8px auto 0; font-size:18px; color: var(--accent); }
+          @media (max-width:520px){ .title{font-size:36px} .subtitle{font-size:20px} }
 
-          /* İLANLAR */
-          .adsSection h3 { font-size:22px; margin:24px 0 12px; text-align:center; }
-          .adsGrid { display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-          .adCard { background:#fff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 6px 18px rgba(0,0,0,.06); }
-          .adThumb { width:100%; aspect-ratio: 4/3; background:#f1f5f9; }
-          .adBody { padding:10px; }
-          .adBody.empty { text-align:center; color:#475569; font-weight:600; padding:18px; }
-          .adTitle { margin:0 0 6px; font-weight:700; font-size:15px; line-height:1.35; color:#0f172a; }
-          .adMeta { display:flex; justify-content:space-between; align-items:center; color:#475569; font-size:13px; }
-          .adActions { padding:0 10px 12px; }
-          .viewBtn { width:100%; padding:10px 12px; border-radius:10px; border:1px solid #111827; background:#111827; color:#fff; font-weight:700; cursor:pointer; }
-
-          /* KATEGORİLER — KARE KARTLAR */
-          .cats h3 { font-size:22px; margin:28px 0 14px; text-align:center; }
+          /* KATEGORİLER */
+          .cats h3 { font-size:22px; margin:20px 0 12px; text-align:center; }
           .grid { display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-          .card { border-radius:18px; padding:16px; background: var(--paperA); background-size: cover; background-position:center; border:1px solid var(--lineA); backdrop-filter: blur(6px); box-shadow:0 12px 28px rgba(0,0,0,.08); transition: transform .2s ease, box-shadow .2s ease; cursor:pointer; aspect-ratio: 1 / 1; display:flex; flex-direction:column; justify-content:space-between; }
-          .card:hover { transform: translateY(-4px); box-shadow:0 16px 36px rgba(0,0,0,.18); }
-          .cardHead { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-          .icon { font-size:22px; }
-          h4 { margin:0; font-size:18px; }
-          .subsGrid { display:grid; gap:8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-          .chip { display:block; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:8px 10px; border-radius:12px; font-size:12px; background: rgba(255,255,255,0.92); border:1px solid #e5e7eb; }
-          @media (max-width:520px) { .subsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .title{ font-size:36px } .subtitle{ font-size:20px } }
+          .card { border-radius:18px; padding:14px; background: var(--paperA); background-size: cover; background-position:center; border:1px solid var(--lineA);
+                  box-shadow:0 10px 24px rgba(0,0,0,.08); /* KARE */ aspect-ratio:1/1; display:flex; flex-direction:column; }
+          /* Tıklanmaz — imleç normal, hover efekti yok */
+          .card { cursor: default; }
 
-          /* LEGAL FOOTER */
-          .legalFooter { background:#0b0b0b; color:#f8fafc; border-top:1px solid rgba(255,255,255,.12); }
+          .cardHead { display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; gap:8px; margin-bottom:6px; }
+          .cardHead.centered { justify-items:center; }
+          .icon { font-size:24px; grid-column:1/2; }
+          .cardHead h4 { margin:0; font-size:18px; grid-column:2/3; text-align:center; }
+          .count { grid-column:3/4; justify-self:end; background:#ffffffc0; border:1px solid #e5e7eb; font-size:12px; border-radius:999px; padding:2px 8px; }
+
+          /* Alt kategoriler — başlığa yakın, taşarsa kart içinde scroll */
+          .subsWrap { flex:1; min-height:0; }
+          .subsGrid { height:100%; overflow:auto; display:grid; gap:8px; grid-template-columns: repeat(3, minmax(0, 1fr)); padding-top:6px; }
+          .chip { display:block; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:8px 10px; border-radius:12px; font-size:12px; background: rgba(255,255,255,0.92); border:1px solid #e5e7eb; }
+          @media (max-width:520px){ .subsGrid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+          /* FOOTER (siyah, en altta) */
+          .legalFooter { background:#0b0b0b; color:#f8fafc; border-top:1px solid rgba(255,255,255,.12); margin-top:auto; }
           .legalWrap { max-width:none; padding:10px 12px 12px; }
           .legalTitle { font-weight:700; font-size:14px; margin-bottom:6px; }
           .legalLinks { display:flex; flex-wrap:wrap; gap:10px; }
-          .legalLinks > * { appearance:none; border:none; background:transparent; color:#e2e8f0; font-size:13px; padding:6px 8px; border-radius:8px; cursor:pointer; text-decoration:none; }
+          .legalLinks > * { color:#e2e8f0; font-size:13px; padding:6px 8px; border-radius:8px; text-decoration:none; }
           .legalLinks > *:hover { background: rgba(255,255,255,.08); color:#fff; }
-          
+          .homeLink { margin-left:auto; font-weight:700; }
           .copy { margin-top:6px; font-size:12px; color:#cbd5e1; }
 
-          /* RTL */
-          
+          /* RTL desteği */
+          html[dir="rtl"] .homeLink { margin-left:0; margin-right:auto; }
         `}</style>
       </main>
     </AuthCtx.Provider>
