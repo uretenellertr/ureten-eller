@@ -368,24 +368,24 @@ export default function Home() {
   }, []);
 
   // Motto metni 5 sn'de bir değişsin
-const phrases = useMemo(() => PHRASES[lang] || PHRASES.tr, [lang]);
-const [i, setI] = useState(0);
-useEffect(() => {
-  const id = setInterval(() => setI(x => (x + 1) % Math.max(1, phrases.length)), 5000);
-  return () => clearInterval(id);
-}, [phrases.length]);
-const current = phrases.length ? phrases[i % phrases.length] : { text: "" };
+  const phrases = useMemo(() => PHRASES[lang] || PHRASES.tr, [lang]);
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setI((x) => (x + 1) % Math.max(1, phrases.length)), 5000);
+    return () => clearInterval(id);
+  }, [phrases.length]);
+  const current = phrases.length ? phrases[i % phrases.length] : { text: "" };
 
-// KOYU renk paleti (5 sn'de bir)
-const DARKS = ["#111827", "#4b2e2b", "#7f1d1d", "#065f46"];
-const [di, setDi] = useState(0);
-useEffect(() => {
-  const id = setInterval(() => setDi(x => (x + 1) % DARKS.length), 5000);
-  return () => clearInterval(id);
-}, []);
-const accent = DARKS[di]; // <-- SADECE BU KALSIN
+  // KOYU renk paleti (5 sn'de bir)
+  const DARKS = ["#111827", "#4b2e2b", "#7f1d1d", "#065f46"];
+  const [di, setDi] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setDi((x) => (x + 1) % DARKS.length), 5000);
+    return () => clearInterval(id);
+  }, []);
+  const accent = DARKS[di];
 
-  // İlanlar (dokunmadım)
+  // İlanlar
   const [ads, setAds] = useState([]);
   useEffect(() => {
     let alive = true;
@@ -409,7 +409,7 @@ const accent = DARKS[di]; // <-- SADECE BU KALSIN
   // Kategoriler
   const cats = CATS[lang] || CATS.tr;
 
-  // Tüm kartlar için ortak arka plan (değiştirmedim)
+  // Tüm kartlar için ortak arka plan
   const CAT_GRADS = [
     "linear-gradient(135deg, #ff80ab, #ffd166)",
     "linear-gradient(135deg, #a78bfa, #60a5fa)",
@@ -521,37 +521,19 @@ const accent = DARKS[di]; // <-- SADECE BU KALSIN
           </div>
         </section>
 
-        {/* FOOTER */}
-        <footer className="legalFooter" role="contentinfo">
-          <div className="legalWrap">
-            <div className="legalTitle">{(STR[lang] || STR.tr).legalBarTitle}</div>
-            <nav className="legalLinks" aria-label={(STR[lang] || STR.tr).legalBarTitle}>
-              <a href="/legal/kurumsal">{LEGAL_LABELS.corporate}</a>
-              <a href="/legal/hakkimizda">{LEGAL_LABELS.about}</a>
-              <a href="/legal/iletisim">{LEGAL_LABELS.contact}</a>
-              <a href="/legal/gizlilik">{LEGAL_LABELS.privacy}</a>
-              <a href="/legal/kvkk-aydinlatma">{LEGAL_LABELS.kvkk}</a>
-              <a href="/legal/kullanim-sartlari">{LEGAL_LABELS.terms}</a>
-              <a href="/legal/mesafeli-satis-sozlesmesi">{LEGAL_LABELS.distance}</a>
-              <a href="/legal/teslimat-iade">{LEGAL_LABELS.shippingReturn}</a>
-              <a href="/legal/cerez-politikasi">{LEGAL_LABELS.cookies}</a>
-              <a href="/legal/topluluk-kurallari">{LEGAL_LABELS.help}</a>
-              <a href="/legal/yasakli-urunler">{LEGAL_LABELS.banned}</a>
-              <a href="/legal" className="homeLink">{LEGAL_LABELS.all}</a>
-            </nav>
-            <div className="copy">{LEGAL_LABELS.copyright}</div>
-          </div>
-        </footer>
-
+        {/* STYLES (footer dışarıda ama CSS buradan uygulanır) */}
         <style>{`
           :root { --ink:#0f172a; --muted:#475569; --paperA:rgba(255,255,255,.92); --lineA:rgba(0,0,0,.08); }
           html, body { height:100%; }
-          body { margin:0; color:var(--ink); font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+          body { 
+            margin:0; color:var(--ink); font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
             background: linear-gradient(120deg, #ff80ab, #a78bfa, #60a5fa, #34d399);
             background-attachment: fixed;
+            display:flex; flex-direction:column; min-height:100vh; 
+            overflow-x:hidden; /* full-bleed footer taşma yapmasın */
           }
 
-          .wrap { max-width:1120px; margin:0 auto; padding:24px 20px 0; display:flex; flex-direction:column; min-height:100vh; }
+          .wrap { max-width:1120px; margin:0 auto; padding:24px 20px 0; display:flex; flex-direction:column; flex:1; }
 
           /* Dil seçimi */
           .langbox { position:fixed; top:12px; right:12px; z-index:50; background:rgba(255,255,255,.95); border:1px solid #e5e7eb; border-radius:12px; padding:6px 10px; backdrop-filter: blur(8px); display:flex; gap:8px; align-items:center; }
@@ -593,7 +575,7 @@ const accent = DARKS[di]; // <-- SADECE BU KALSIN
           .cardHead h4 { margin:0; font-size:19px; grid-column:2/3; text-align:center; }
           .count { grid-column:3/4; justify-self:end; background:#ffffffc0; border:1px solid #e5e7eb; font-size:12px; border-radius:999px; padding:2px 8px; }
 
-          /* ALT KATEGORİLER: başlığın HEMEN altında, kesmeden çok satırlı, uygun sütun genişliği */
+          /* ALT KATEGORİLER: başlığın HEMEN altında, kesmeden çok satırlı */
           .subsWrap { flex:1; min-height:0; }
           .subsGrid {
             height:100%;
@@ -611,7 +593,6 @@ const accent = DARKS[di]; // <-- SADECE BU KALSIN
             font-size:12px;
             background: rgba(255,255,255,0.98);
             border:1px solid #e5e7eb;
-            /* KESMEYİ KALDIR: */
             white-space: normal;
             overflow: visible;
             text-overflow: clip;
@@ -622,9 +603,37 @@ const accent = DARKS[di]; // <-- SADECE BU KALSIN
           @media (max-width:520px){
             .subsGrid { grid-template-columns: repeat(2, minmax(0,1fr)); }
           }
+        `}</style>
+      </main>
 
-          /* FOOTER en altta, taşma/boşluk yok */
-          .legalFooter { background:#0b0b0b; color:#f8fafc; border-top:1px solid rgba(255,255,255,.12); margin-top:auto; }
+      {/* FOOTER — full-bleed, sayfanın en altı */}
+      <footer className="legalFooter" role="contentinfo">
+        <div className="legalWrap">
+          <div className="legalTitle">{(STR[lang] || STR.tr).legalBarTitle}</div>
+          <nav className="legalLinks" aria-label={(STR[lang] || STR.tr).legalBarTitle}>
+            <a href="/legal/kurumsal">{LEGAL_LABELS.corporate}</a>
+            <a href="/legal/hakkimizda">{LEGAL_LABELS.about}</a>
+            <a href="/legal/iletisim">{LEGAL_LABELS.contact}</a>
+            <a href="/legal/gizlilik">{LEGAL_LABELS.privacy}</a>
+            <a href="/legal/kvkk-aydinlatma">{LEGAL_LABELS.kvkk}</a>
+            <a href="/legal/kullanim-sartlari">{LEGAL_LABELS.terms}</a>
+            <a href="/legal/mesafeli-satis-sozlesmesi">{LEGAL_LABELS.distance}</a>
+            <a href="/legal/teslimat-iade">{LEGAL_LABELS.shippingReturn}</a>
+            <a href="/legal/cerez-politikasi">{LEGAL_LABELS.cookies}</a>
+            <a href="/legal/topluluk-kurallari">{LEGAL_LABELS.help}</a>
+            <a href="/legal/yasakli-urunler">{LEGAL_LABELS.banned}</a>
+            <a href="/legal" className="homeLink">{LEGAL_LABELS.all}</a>
+          </nav>
+          <div className="copy">{LEGAL_LABELS.copyright}</div>
+        </div>
+
+        <style>{`
+          .legalFooter { 
+            background:#0b0b0b; color:#f8fafc; border-top:1px solid rgba(255,255,255,.12);
+            width:100vw; 
+            margin-left:calc(50% - 50vw); 
+            margin-right:calc(50% - 50vw);
+          }
           .legalWrap { max-width:none; padding:10px 12px 12px; }
           .legalTitle { font-weight:700; font-size:14px; margin-bottom:6px; }
           .legalLinks { display:flex; flex-wrap:wrap; gap:10px; }
@@ -634,7 +643,7 @@ const accent = DARKS[di]; // <-- SADECE BU KALSIN
           .copy { margin-top:6px; font-size:12px; color:#cbd5e1; }
           html[dir="rtl"] .homeLink { margin-left:0; margin-right:auto; }
         `}</style>
-      </main>
+      </footer>
     </AuthCtx.Provider>
   );
 }
