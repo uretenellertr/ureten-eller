@@ -366,15 +366,23 @@ export default function Landing() {
   const { lang, setLang, t } = useLang();
   const [isAuthed] = useState(false); // Canvas için sahte auth
 
-  // Motto ve vurgu rengi
+  // Motto ve vurgu rengi (mevcut yapı korunuyor)
   const phrases = useMemo(() => PHRASES[lang] || PHRASES.tr, [lang]);
   const [i, setI] = useState(0);
   const current = phrases.length ? phrases[i % phrases.length] : { text: "", color: "#111827" };
-  const accent = current?.color || "#111827";
   useEffect(() => {
     const id = setInterval(() => setI((x) => (x + 1) % Math.max(1, phrases.length)), 22000);
     return () => clearInterval(id);
   }, [phrases.length]);
+
+  // 🔴 Yalnızca istenen değişiklik: hero yazılarının rengi her 5 sn'de bir değişsin
+  const HERO_COLORS = ["#111827", "#0ea5e9", "#16a34a", "#f59e0b", "#ef4444", "#7c3aed"];
+  const [hc, setHc] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setHc((x) => (x + 1) % HERO_COLORS.length), 5000);
+    return () => clearInterval(id);
+  }, []);
+  const heroColor = HERO_COLORS[hc];
 
   const cats = CATS[lang] || CATS.tr;
 
@@ -408,8 +416,8 @@ export default function Landing() {
           </select>
         </div>
 
-        {/* HERO */}
-        <section className="hero" style={{ "--accent": accent }}>
+        {/* HERO (renk değişimi için --accent yerine heroColor kullanılıyor) */}
+        <section className="hero" style={{ "--accent": heroColor }}>
           <img src="/logo.png" alt={t.brand} width="96" height="96" className="logo" />
           <h1 className="title">{t.brand}</h1>
           <h2 className="subtitle">{t.heroTitle}</h2>
@@ -479,9 +487,9 @@ export default function Landing() {
           /* HERO */
           .hero { display:grid; place-items:center; text-align:center; gap:8px; padding:72px 0 12px; }
           .logo { filter: drop-shadow(0 10px 24px rgba(0,0,0,.18)); border-radius:20px; }
-          .title { margin:8px 0 0; font-size:48px; color: var(--accent); }
-          .subtitle { margin:0; font-size:22px; color: var(--accent); }
-          .lead { max-width:820px; margin:8px auto 0; font-size:18px; color: var(--accent); }
+          .title { margin:8px 0 0; font-size:48px; color: var(--accent); transition: color .4s ease; }
+          .subtitle { margin:0; font-size:22px; color: var(--accent); transition: color .4s ease; }
+          .lead { max-width:820px; margin:8px auto 0; font-size:18px; color: var(--accent); transition: color .4s ease; }
           @media (max-width:520px){ .title{font-size:36px} .subtitle{font-size:20px} }
 
           /* KATEGORİLER */
