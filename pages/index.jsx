@@ -627,23 +627,84 @@ export default function Home() {
           <div className="copy">{LEGAL_LABELS.copyright}</div>
         </div>
 
-        <style>{`
-          .legalFooter { 
-            background:#0b0b0b; color:#f8fafc; border-top:1px solid rgba(255,255,255,.12);
-            width:100vw; 
-            margin-left:calc(50% - 50vw); 
-            margin-right:calc(50% - 50vw);
-          }
-          .legalWrap { max-width:none; padding:10px 12px 12px; }
-          .legalTitle { font-weight:700; font-size:14px; margin-bottom:6px; }
-          .legalLinks { display:flex; flex-wrap:wrap; gap:10px; }
-          .legalLinks > * { color:#e2e8f0; font-size:13px; padding:6px 8px; border-radius:8px; text-decoration:none; }
-          .legalLinks > *:hover { background: rgba(255,255,255,.08); color:#fff; }
-          .homeLink { margin-left:auto; font-weight:700; }
-          .copy { margin-top:6px; font-size:12px; color:#cbd5e1; }
-          html[dir="rtl"] .homeLink { margin-left:0; margin-right:auto; }
-        `}</style>
-      </footer>
+                <style
+  suppressHydrationWarning
+  dangerouslySetInnerHTML={{
+    __html: `
+      :root { --ink:#0f172a; --muted:#475569; --paperA:rgba(255,255,255,.92); --lineA:rgba(0,0,0,.08); }
+      html, body { height:100%; }
+      body { 
+        margin:0; color:var(--ink); font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+        background: linear-gradient(120deg, #ff80ab, #a78bfa, #60a5fa, #34d399);
+        background-attachment: fixed;
+        display:flex; flex-direction:column; min-height:100vh; 
+        overflow-x:hidden;
+      }
+
+      .wrap { max-width:1120px; margin:0 auto; padding:24px 20px 0; display:flex; flex-direction:column; flex:1; }
+
+      /* Dil seçimi */
+      .langbox { position:fixed; top:12px; right:12px; z-index:50; background:rgba(255,255,255,.95); border:1px solid #e5e7eb; border-radius:12px; padding:6px 10px; backdrop-filter: blur(8px); display:flex; gap:8px; align-items:center; }
+      .langbox select { border:none; background:transparent; font-weight:600; cursor:pointer; }
+
+      /* HERO */
+      .hero { display:grid; place-items:center; text-align:center; gap:8px; padding:72px 0 12px; }
+      .logo { filter: drop-shadow(0 10px 24px rgba(0,0,0,.18)); border-radius:20px; }
+      .title { margin:8px 0 0; font-size:48px; color: var(--accent); transition: color .3s ease; }
+      .subtitle { margin:0; font-size:22px; color: var(--accent); transition: color .3s ease; }
+      .lead { max-width:820px; margin:4px auto 0; font-size:18px; color: var(--accent); transition: color .3s ease; }
+      .ctaRow { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
+      .btnPrimary { padding:12px 18px; border-radius:999px; border:none; cursor:pointer; background:#111827; color:#fff; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.15); }
+      .btnGhost { padding:12px 18px; border-radius:999px; cursor:pointer; font-weight:600; background: var(--paperA); border:1px solid var(--lineA); color:#111827; backdrop-filter: blur(8px); }
+      @media (max-width:520px){ .title{font-size:36px} .subtitle{font-size:20px} }
+
+      /* İLANLAR */
+      .adsSection h3 { font-size:22px; margin:20px 0 12px; text-align:center; }
+      .adsGrid { display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+      .adCard { background:#fff; border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 6px 18px rgba(0,0,0,.06); }
+      .adThumb { width:100%; aspect-ratio: 4/3; background:#f1f5f9; }
+      .adBody { padding:10px; }
+      .adBody.empty { text-align:center; color:#475569; font-weight:600; padding:18px; }
+      .adTitle { margin:0 0 6px; font-weight:700; font-size:15px; line-height:1.35; color:#0f172a; }
+      .adMeta { display:flex; justify-content:space-between; align-items:center; color:#475569; font-size:13px; }
+      .adActions { padding:0 10px 12px; }
+      .viewBtn { width:100%; padding:10px 12px; border-radius:10px; border:1px solid #111827; background:#111827; color:#fff; font-weight:700; cursor:pointer; }
+
+      /* KATEGORİLER */
+      .cats h3 { font-size:22px; margin:22px 0 12px; text-align:center; }
+      .grid { display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+      .card { border-radius:18px; padding:14px; background: var(--paperA); background-size: cover; background-position:center; border:1px solid var(--lineA);
+              box-shadow:0 10px 24px rgba(0,0,0,.08); aspect-ratio:1/1; display:flex; flex-direction:column; cursor:default; }
+      .cardHead { display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; gap:6px; margin-bottom:4px; }
+      .cardHead.centered { justify-items:center; }
+      .icon { font-size:26px; grid-column:1/2; }
+      .cardHead h4 { margin:0; font-size:19px; grid-column:2/3; text-align:center; }
+      .count { grid-column:3/4; justify-self:end; background:#ffffffc0; border:1px solid #e5e7eb; font-size:12px; border-radius:999px; padding:2px 8px; }
+
+      .subsWrap { flex:1; min-height:0; }
+      .subsGrid { height:100%; overflow:auto; display:grid; gap:8px; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); padding-top:4px; }
+      .chip { display:block; text-align:center; padding:8px 10px; border-radius:12px; font-size:12px; background: rgba(255,255,255,0.98); border:1px solid #e5e7eb; white-space: normal; overflow: visible; text-overflow: clip; word-break: break-word; hyphens: auto; line-height: 1.25; }
+      @media (max-width:520px){ .subsGrid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+      /* FOOTER – tam genişlik */
+      .legalFooter { 
+        background:#0b0b0b; color:#f8fafc; border-top:1px solid rgba(255,255,255,.12);
+        width:100vw; 
+        margin-left:calc(50% - 50vw); 
+        margin-right:calc(50% - 50vw);
+      }
+      .legalWrap { max-width:none; padding:10px 12px 12px; }
+      .legalTitle { font-weight:700; font-size:14px; margin-bottom:6px; }
+      .legalLinks { display:flex; flex-wrap:wrap; gap:10px; }
+      .legalLinks > * { color:#e2e8f0; font-size:13px; padding:6px 8px; border-radius:8px; text-decoration:none; }
+      .legalLinks > *:hover { background: rgba(255,255,255,.08); color:#fff; }
+      .homeLink { margin-left:auto; font-weight:700; }
+      .copy { margin-top:6px; font-size:12px; color:#cbd5e1; }
+      html[dir="rtl"] .homeLink { margin-left:0; margin-right:auto; }
+    `,
+  }}
+/>
+  </footer>
     </AuthCtx.Provider>
   );
 }
