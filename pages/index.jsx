@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState, useContext, createContext } from "react";
+import Head from "next/head";
 
 /* ----------------------------- AUTH (Canvas-friendly stub) ----------------------------- */
 const AuthCtx = createContext(false);
@@ -391,7 +392,7 @@ export default function Home() {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch("/api/ads/public?limit=20", { cache: "no-store" });
+        const res = await fetch("/ads.json", { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           if (alive) setAds(Array.isArray(data) ? data.slice(0, 20) : []);
