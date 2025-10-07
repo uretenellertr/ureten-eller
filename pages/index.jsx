@@ -367,15 +367,23 @@ export default function Home() {
     setIsAuthed(localStorage.getItem("authed") === "1");
   }, []);
 
-  // Motto ve vurgu rengi — YALNIZCA İSTENEN: 5 sn
-  const phrases = useMemo(() => PHRASES[lang] || PHRASES.tr, [lang]);
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setI((x) => (x + 1) % Math.max(1, phrases.length)), 5000);
-    return () => clearInterval(id);
-  }, [phrases.length]);
-  const current = phrases.length ? phrases[i % phrases.length] : { text: "", color: "#111827" };
-  const accent = current.color || "#111827";
+  // Motto metni 5 sn'de bir değişsin
+const phrases = useMemo(() => PHRASES[lang] || PHRASES.tr, [lang]);
+const [i, setI] = useState(0);
+useEffect(() => {
+  const id = setInterval(() => setI(x => (x + 1) % Math.max(1, phrases.length)), 5000);
+  return () => clearInterval(id);
+}, [phrases.length]);
+const current = phrases.length ? phrases[i % phrases.length] : { text: "" };
+
+// KOYU renk paleti (5 sn'de bir)
+const DARKS = ["#111827", "#4b2e2b", "#7f1d1d", "#065f46"];
+const [di, setDi] = useState(0);
+useEffect(() => {
+  const id = setInterval(() => setDi(x => (x + 1) % DARKS.length), 5000);
+  return () => clearInterval(id);
+}, []);
+const accent = DARKS[di]; // <-- SADECE BU KALSIN
 
   // İlanlar (dokunmadım)
   const [ads, setAds] = useState([]);
