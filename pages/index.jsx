@@ -433,6 +433,14 @@ export default function Home() {
 
   return (
     <AuthCtx.Provider value={isAuthed}>
+      <Head>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=3" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=3" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" />
+  {/* Yedek: bazı tarayıcılar sadece bunu okur */}
+  <link rel="icon" href="/favicon.png?v=3" />
+  <meta name="theme-color" content="#111827" />
+</Head>
       <main className="wrap">
         {/* Dil seçimi */}
         <div className="langbox">
