@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useMemo, useState, useContext, createContext } from "react";
 
 /* ----------------------------- AUTH (Canvas-friendly stub) ----------------------------- */
