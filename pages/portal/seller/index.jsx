@@ -1,40 +1,37 @@
-// pages/portal/customer/index.jsx
+// pages/portal/seller/index.jsx
 "use client";
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import Head from "next/head";
-import { useRouter } from "next/router";
-import { createClient } from "@supabase/supabase-js";
 
-/* ----------------------------- SUPABASE (opsiyonel) ----------------------------- */
-let sb = null;
-function getSupabase() {
-  if (sb) return sb;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || (typeof window !== "undefined" ? window.__SUPABASE_URL__ : "");
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || (typeof window !== "undefined" ? window.__SUPABASE_ANON__ : "");
-  if (!url || !key) return null;
-  sb = createClient(url, key);
-  return sb;
-}
+/* ----------------------------- Dil / Çeviriler ----------------------------- */
+const SUPPORTED = ["tr", "en", "ar", "de"];
+const LOCALE_LABEL = { tr: "TR", en: "EN", ar: "AR", de: "DE" };
 
-/* ----------------------------- DİLLER / METİNLER ----------------------------- */
-const SUPPORTED = ["tr", "en", "ar", "de"]; // RTL: ar
-const TXT = {
+const LBL = {
   tr: {
     brand: "Üreten Eller",
-    roleName: "Müşteri Portalı",
-    dashboard: "Ana Sayfa",
-    messages: "Mesajlar",
-    notifications: "Bildirimler",
-    profile: "Profil",
-    logout: "Çıkış",
-    findListing: "İlan Ara",
+    welcome: "Üreten Ellere Hoş Geldiniz",
+    rotating: "Dönen mesajlar",
     showcase: "Vitrin",
     standard: "Standart İlanlar",
     categories: "Kategorilerimiz",
-    empty: "Henüz ilan yok.",
     view: "İncele",
+    empty: "Henüz ilan yok.",
+    addListing: "İlan Ver",
+    findListing: "İlan Ara",
+    profile: "Profil",
+    logout: "Çıkış",
+    home: "Ana Sayfa",
+    messages: "Mesajlar",
+    notifications: "Bildirimler",
     proBadge: "PRO",
-    heroLead: "Bölendeki el emeği ürünleri keşfet, güvenle sipariş ver, süreci kolayca takip et.",
+    chat: {
+      open: "Canlı Destek",
+      placeholder: "Mesaj yazın…",
+      hello: "Merhaba! Size nasıl yardımcı olabilirim?",
+      send: "Gönder",
+      attach: "Resim ekle",
+    },
     legalBar: "Kurumsal",
     legal: {
       corporate: "Kurumsal",
@@ -50,30 +47,31 @@ const TXT = {
       banned: "Yasaklı Ürünler",
       all: "Tüm Legal",
     },
-    support: {
-      title: "Canlı Destek",
-      start: "Yardım gerekiyor mu?",
-      placeholder: "Mesajınızı yazın…",
-      send: "Gönder",
-      attach: "Resim ekle",
-    },
   },
   en: {
     brand: "Ureten Eller",
-    roleName: "Customer Portal",
-    dashboard: "Home",
-    messages: "Messages",
-    notifications: "Notifications",
-    profile: "Profile",
-    logout: "Logout",
-    findListing: "Find Listing",
+    welcome: "Welcome to Ureten Eller",
+    rotating: "Rotating messages",
     showcase: "Showcase",
     standard: "Standard Listings",
-    categories: "Categories",
-    empty: "No listings yet.",
+    categories: "Our Categories",
     view: "View",
+    empty: "No listings yet.",
+    addListing: "Post Listing",
+    findListing: "Find Listing",
+    profile: "Profile",
+    logout: "Logout",
+    home: "Home",
+    messages: "Messages",
+    notifications: "Notifications",
     proBadge: "PRO",
-    heroLead: "Discover handmade products nearby, order safely, track easily.",
+    chat: {
+      open: "Live Support",
+      placeholder: "Type a message…",
+      hello: "Hello! How can I help you?",
+      send: "Send",
+      attach: "Attach image",
+    },
     legalBar: "Corporate",
     legal: {
       corporate: "Corporate",
@@ -89,30 +87,31 @@ const TXT = {
       banned: "Prohibited Products",
       all: "All Legal",
     },
-    support: {
-      title: "Live Support",
-      start: "Need help?",
-      placeholder: "Type your message…",
-      send: "Send",
-      attach: "Attach image",
-    },
   },
   ar: {
     brand: "أُنتِج بالأيادي",
-    roleName: "بوابة العملاء",
-    dashboard: "الصفحة الرئيسية",
-    messages: "الرسائل",
-    notifications: "الإشعارات",
-    profile: "الملف الشخصي",
-    logout: "تسجيل الخروج",
-    findListing: "ابحث عن إعلان",
+    welcome: "مرحبًا بكم في منصتنا",
+    rotating: "رسائل متغيرة",
     showcase: "الواجهة (Vitrin)",
     standard: "إعلانات عادية",
-    categories: "التصنيفات",
-    empty: "لا توجد إعلانات بعد.",
+    categories: "تصنيفاتنا",
     view: "عرض",
+    empty: "لا توجد إعلانات بعد.",
+    addListing: "أنشئ إعلانًا",
+    findListing: "ابحث عن إعلان",
+    profile: "الملف الشخصي",
+    logout: "تسجيل الخروج",
+    home: "الرئيسية",
+    messages: "الرسائل",
+    notifications: "الإشعارات",
     proBadge: "محترف",
-    heroLead: "اكتشف المنتجات اليدوية القريبة واطلب بثقة وتابع بسهولة.",
+    chat: {
+      open: "الدعم المباشر",
+      placeholder: "اكتب رسالة…",
+      hello: "مرحبًا! كيف يمكنني مساعدتك؟",
+      send: "إرسال",
+      attach: "إرفاق صورة",
+    },
     legalBar: "المعلومات المؤسسية",
     legal: {
       corporate: "المؤسسة",
@@ -128,30 +127,31 @@ const TXT = {
       banned: "منتجات محظورة",
       all: "كل السياسات",
     },
-    support: {
-      title: "دعم مباشر",
-      start: "تحتاج مساعدة؟",
-      placeholder: "اكتب رسالتك…",
-      send: "إرسال",
-      attach: "إرفاق صورة",
-    },
   },
   de: {
     brand: "Ureten Eller",
-    roleName: "Kundenportal",
-    dashboard: "Startseite",
-    messages: "Nachrichten",
-    notifications: "Mitteilungen",
-    profile: "Profil",
-    logout: "Abmelden",
-    findListing: "Inserat suchen",
+    welcome: "Willkommen bei Ureten Eller",
+    rotating: "Rotierende Botschaften",
     showcase: "Vitrin",
     standard: "Standard-Inserate",
-    categories: "Kategorien",
-    empty: "Noch keine Inserate.",
+    categories: "Unsere Kategorien",
     view: "Ansehen",
+    empty: "Noch keine Inserate.",
+    addListing: "Inserat einstellen",
+    findListing: "Inserat finden",
+    profile: "Profil",
+    logout: "Abmelden",
+    home: "Start",
+    messages: "Nachrichten",
+    notifications: "Mitteilungen",
     proBadge: "PRO",
-    heroLead: "Handgemachtes in deiner Nähe entdecken, sicher bestellen und verfolgen.",
+    chat: {
+      open: "Live-Support",
+      placeholder: "Nachricht schreiben…",
+      hello: "Hallo! Wobei kann ich helfen?",
+      send: "Senden",
+      attach: "Bild anhängen",
+    },
     legalBar: "Unternehmen",
     legal: {
       corporate: "Unternehmen",
@@ -167,13 +167,6 @@ const TXT = {
       banned: "Verbotene Produkte",
       all: "Alle Rechtliches",
     },
-    support: {
-      title: "Live-Support",
-      start: "Brauchst du Hilfe?",
-      placeholder: "Nachricht eingeben…",
-      send: "Senden",
-      attach: "Bild anhängen",
-    },
   },
 };
 
@@ -188,11 +181,119 @@ function useLang() {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
   }, [lang]);
-  const t = useMemo(() => TXT[lang] || TXT.tr, [lang]);
-  return { lang, t };
+  const t = useMemo(() => LBL[lang] || LBL.tr, [lang]);
+  return { lang, setLang, t };
 }
 
-/* ----------------------------- KATEGORİLER (tam) ----------------------------- */
+/* ----------------------------- Dönen motto (4 dil) ----------------------------- */
+const PHRASES = {
+  tr: [
+    { text: "Amacımız: ev hanımlarına bütçe katkısı sağlamak.", color: "#e11d48" },
+    { text: "Kadın emeği değer bulsun.", color: "#c026d3" },
+    { text: "El emeği ürünler adil fiyata.", color: "#7c3aed" },
+    { text: "Mahalle lezzetleri kapınıza gelsin.", color: "#2563eb" },
+    { text: "Usta ellerden taze üretim.", color: "#0ea5e9" },
+    { text: "Her siparişte platform güvencesi.", color: "#14b8a6" },
+    { text: "Küçük üreticiye büyük destek.", color: "#059669" },
+    { text: "Şeffaf fiyat, net teslimat.", color: "#16a34a" },
+    { text: "Güvenli ödeme, kolay iade.", color: "#65a30d" },
+    { text: "Yerelden al, ekonomiye can ver.", color: "#ca8a04" },
+    { text: "Emeğin karşılığı, müşteriye kazanç.", color: "#d97706" },
+    { text: "Ev yapımı tatlar, el işi güzellikler.", color: "#ea580c" },
+    { text: "Her kategoride özenli üretim.", color: "#f97316" },
+    { text: "Siparişten teslimata kesintisiz takip.", color: "#f59e0b" },
+    { text: "Güvenilir satıcı rozetleri.", color: "#eab308" },
+    { text: "Topluluğumuzla daha güçlüyüz.", color: "#84cc16" },
+    { text: "Sürdürülebilir üretime destek.", color: "#22c55e" },
+    { text: "Adil ticaret, mutlu müşteri.", color: "#10b981" },
+    { text: "El emeğine saygı, bütçeye dost fiyat.", color: "#06b6d4" },
+    { text: "Kadınların emeğiyle büyüyoruz.", color: "#3b82f6" },
+    { text: "Şehrinden taze üretim, güvenle alışveriş.", color: "#6366f1" },
+    { text: "Kalite, özen ve şeffaflık.", color: "#8b5cf6" },
+    { text: "İhtiyacın olan el emeği burada.", color: "#d946ef" },
+    { text: "Uygun fiyat, güvenli süreç, mutlu son.", color: "#ec4899" },
+  ],
+  en: [
+    { text: "Our aim: support household budgets of women.", color: "#e11d48" },
+    { text: "Women’s labor should be valued.", color: "#c026d3" },
+    { text: "Handmade products at fair prices.", color: "#7c3aed" },
+    { text: "Neighborhood flavors to your door.", color: "#2563eb" },
+    { text: "Fresh production from skilled hands.", color: "#0ea5e9" },
+    { text: "Platform protection on every order.", color: "#14b8a6" },
+    { text: "Big support for small producers.", color: "#059669" },
+    { text: "Transparent pricing, clear delivery.", color: "#16a34a" },
+    { text: "Secure payments, easy returns.", color: "#65a30d" },
+    { text: "Buy local, boost the economy.", color: "#ca8a04" },
+    { text: "Fair reward for labor, savings for customers.", color: "#d97706" },
+    { text: "Homemade tastes, handcrafted beauty.", color: "#ea580c" },
+    { text: "Careful production across categories.", color: "#f97316" },
+    { text: "Seamless tracking from order to delivery.", color: "#f59e0b" },
+    { text: "Trusted seller badges.", color: "#eab308" },
+    { text: "Stronger together as a community.", color: "#84cc16" },
+    { text: "Support sustainable production.", color: "#22c55e" },
+    { text: "Fair trade, happy customers.", color: "#10b981" },
+    { text: "Respect for craft, budget-friendly prices.", color: "#06b6d4" },
+    { text: "We grow with women’s work.", color: "#3b82f6" },
+    { text: "Fresh from your city, shop with confidence.", color: "#6366f1" },
+    { text: "Quality, care and transparency.", color: "#8b5cf6" },
+    { text: "The handmade you need is here.", color: "#d946ef" },
+    { text: "Good price, safe process, happy ending.", color: "#ec4899" },
+  ],
+  ar: [
+    { text: "هدفنا: دعم ميزانية ربّات البيوت.", color: "#e11d48" },
+    { text: "قيمة عمل المرأة يجب أن تُكرَّم.", color: "#c026d3" },
+    { text: "منتجات يدوية بأسعار عادلة.", color: "#7c3aed" },
+    { text: "نَكهات الحي إلى بابك.", color: "#2563eb" },
+    { text: "إنتاج طازج بأيادٍ ماهرة.", color: "#0ea5e9" },
+    { text: "حماية المنصّة مع كل طلب.", color: "#14b8a6" },
+    { text: "دعم كبير للمنتِجات الصُغرى.", color: "#059669" },
+    { text: "أسعار شفافة وتسليم واضح.", color: "#16a34a" },
+    { text: "دفع آمن وإرجاع سهل.", color: "#65a30d" },
+    { text: "اشترِ محليًا وادعم الاقتصاد.", color: "#ca8a04" },
+    { text: "أجر عادل للعمل وتوفير للعميل.", color: "#d97706" },
+    { text: "مذاقات منزلية وجمال مصنوع يدويًا.", color: "#ea580c" },
+    { text: "عناية في كل فئة إنتاج.", color: "#f97316" },
+    { text: "تتبع سلس من الطلب حتى التسليم.", color: "#f59e0b" },
+    { text: "شارات بائعات موثوقات.", color: "#eab308" },
+    { text: "نقوى معًا كمجتمع.", color: "#84cc16" },
+    { text: "ندعم الإنتاج المستدام.", color: "#22c55e" },
+    { text: "تجارة عادلة وزبائن سعداء.", color: "#10b981" },
+    { text: "احترام للحِرفة وأسعار مناسبة.", color: "#06b6d4" },
+    { text: "ننمو بعمل النساء.", color: "#3b82f6" },
+    { text: "طازج من مدينتك وتسوق بثقة.", color: "#6366f1" },
+    { text: "جودة وعناية وشفافية.", color: "#8b5cf6" },
+    { text: "كل ما تحتاجه من أعمال يدوية هنا.", color: "#d946ef" },
+    { text: "سعر جيد، عملية آمنة، نهاية سعيدة.", color: "#ec4899" },
+  ],
+  de: [
+    { text: "Ziel: Haushaltsbudgets von Frauen stärken.", color: "#e11d48" },
+    { text: "Frauenarbeit soll wertgeschätzt werden.", color: "#c026d3" },
+    { text: "Handgemachtes zum fairen Preis.", color: "#7c3aed" },
+    { text: "Nachbarschafts-Geschmack bis vor die Tür.", color: "#2563eb" },
+    { text: "Frische Produktion aus geübten Händen.", color: "#0ea5e9" },
+    { text: "Plattformschutz bei jeder Bestellung.", color: "#14b8a6" },
+    { text: "Große Unterstützung für kleine Anbieterinnen.", color: "#059669" },
+    { text: "Transparente Preise, klare Lieferung.", color: "#16a34a" },
+    { text: "Sichere Zahlung, einfache Rückgabe.", color: "#65a30d" },
+    { text: "Kauf lokal – stärke die Wirtschaft.", color: "#ca8a04" },
+    { text: "Faire Entlohnung, glückliche Kund:innen.", color: "#d97706" },
+    { text: "Hausgemachter Geschmack, liebevolle Handarbeit.", color: "#ea580c" },
+    { text: "Sorgfalt in jeder Kategorie.", color: "#f97316" },
+    { text: "Nahtloses Tracking von Bestellung bis Lieferung.", color: "#f59e0b" },
+    { text: "Vertrauens-Abzeichen für Anbieterinnen.", color: "#eab308" },
+    { text: "Gemeinsam als Community stärker.", color: "#84cc16" },
+    { text: "Unterstütze nachhaltige Produktion.", color: "#22c55e" },
+    { text: "Fairer Handel, glückliche Kund:innen.", color: "#10b981" },
+    { text: "Respekt für Handwerk, faire Preise.", color: "#06b6d4" },
+    { text: "Wir wachsen mit Frauenarbeit.", color: "#3b82f6" },
+    { text: "Frisch aus deiner Stadt – sicher einkaufen.", color: "#6366f1" },
+    { text: "Qualität, Sorgfalt und Transparenz.", color: "#8b5cf6" },
+    { text: "Das Handgemachte, das du brauchst – hier.", color: "#d946ef" },
+    { text: "Guter Preis, sicherer Ablauf, gutes Ende.", color: "#ec4899" },
+  ],
+};
+
+/* ----------------------------- Kategoriler (tam) ----------------------------- */
 const CATS = {
   tr: [
     { icon: "🍲", title: "Yemekler", subs: ["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"] },
@@ -239,7 +340,7 @@ const CATS = {
     { icon: "🧵", title: "ماكرامه وديكور", subs: ["تعليقة حائط","حامل نبات","ميدالية","إضاءة معلّقة","مفرش","سلة","رف/ديكور"] },
     { icon: "🏠", title: "ديكور المنزل", subs: ["فيلت","وسادة","زينة باب","صينية مزخرفة","إطار","صائد أحلام","لوحة"] },
     { icon: "🕯️", title: "شموع وروائح", subs: ["شموع صويا/نحل","حجر عطري","معطر غرف","بخور","شمعة جل","أطقم هدايا"] },
-    { icon: "🧼", title: "صابون طبيعي وتجميلي", subs: ["صابون زيت زيتون","أعشاب","شامبو صلب","بلسم شفاه","كريم/مرهم","ملح حمام","كيس لافندر"] },
+    { icon: "🧼", title: "صابون طبيعي وتجميلي", subs: ["صابون زيت زيتون","أعشاب","شامبو صلب","بلسم شفاه","كريم/مرهم","ملح حمام","أكياس لافندر"] },
     { icon: "🧸", title: "أميجورومي وألعاب (ديكور)", subs: ["ميدالية","مغناطيس","فيجور","دمية ديكور","أميجورومي بالاسم"] },
   ],
   de: [
@@ -260,19 +361,46 @@ const CATS = {
   ],
 };
 
-/* ----------------------------- BİLEŞEN ----------------------------- */
-export default function CustomerPortalHome() {
-  const router = useRouter();
-  const go = useCallback((href) => router.push(href), [router]);
-  const { lang, t } = useLang();
+/* ----------------------------- Yardımcılar ----------------------------- */
+const go = (href) => { window.location.href = href; };
 
-  // login sonrası bu sayfa; yine de kontrol edelim
+/* ----------------------------- Canlı Destek (basit yerel) ----------------------------- */
+function useChat(lang) {
+  const key = "chat_msgs";
+  const [open, setOpen] = useState(false);
+  const [msgs, setMsgs] = useState([]);
+  useEffect(() => {
+    try { const m = JSON.parse(localStorage.getItem(key) || "[]"); setMsgs(Array.isArray(m) ? m : []); } catch {}
+  }, []);
+  const persist = (arr) => { setMsgs(arr); try { localStorage.setItem(key, JSON.stringify(arr)); } catch {} };
+  const send = (content, img) => {
+    const me = { id: Date.now() + "-me", from: "me", content, img, at: new Date().toISOString() };
+    const next = [...msgs, me];
+    persist(next);
+    // bot karşılama yoksa ekle
+    if (!msgs.some(m => m.from === "admin")) {
+      setTimeout(() => {
+        const admin = { id: Date.now() + "-ad", from: "admin", content: LBL[lang].chat.hello, at: new Date().toISOString() };
+        persist([...next, admin]);
+      }, 300);
+    }
+  };
+  return { open, setOpen, msgs, send };
+}
+
+/* ----------------------------- Sayfa ----------------------------- */
+export default function SellerHome() {
+  const { lang, setLang, t } = useLang();
+
+  // auth kontrol – login sonrası burada; yoksa /login
   const [authed, setAuthed] = useState(true);
   useEffect(() => {
-    setAuthed(localStorage.getItem("authed") === "1");
+    const a = localStorage.getItem("authed") === "1";
+    setAuthed(a);
+    if (!a) go("/login?role=seller");
   }, []);
 
-  // PRO (vitrin) + standart ilanlar
+  // Vitrin / Standart ilanlar (ads.json)
   const [proAds, setProAds] = useState([]);
   const [stdAds, setStdAds] = useState([]);
   useEffect(() => {
@@ -282,124 +410,116 @@ export default function CustomerPortalHome() {
         const res = await fetch("/ads.json", { cache: "no-store" });
         if (res.ok) {
           const all = await res.json();
-          if (!Array.isArray(all)) throw new Error("bad ads.json");
-          const pros = all.filter((x) => x?.isPro);
-          const std = all.filter((x) => !x?.isPro);
-          if (alive) {
-            setProAds(pros.slice(0, 50));
-            setStdAds(std.slice(0, 20));
-          }
+          const pros = (all || []).filter((x) => x?.isPro).slice(0, 50);
+          const std = (all || []).filter((x) => !x?.isPro).slice(0, 20);
+          if (alive) { setProAds(pros); setStdAds(std); }
         }
       } catch {}
     })();
     return () => { alive = false; };
   }, []);
 
-  // Çıkış
-  const onLogout = async () => {
-    try { const supa = getSupabase(); if (supa) await supa.auth.signOut(); } catch {}
-    localStorage.removeItem("authed");
-    localStorage.setItem("support_chat", "1"); // anasayfada canlı destek balonu göster
-    window.location.href = "/"; // tam çıkış, index'e dön
-  };
+  // Dönen motto
+  const phrases = useMemo(() => PHRASES[lang] || PHRASES.tr, [lang]);
+  const [pi, setPi] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setPi((x) => (x + 1) % Math.max(1, phrases.length)), 4000);
+    return () => clearInterval(id);
+  }, [phrases.length]);
+  const currentPhrase = phrases[pi % phrases.length];
 
+  // Kategoriler
   const cats = CATS[lang] || CATS.tr;
-  const tab = "home"; // alt barda aktif sekme
 
-  if (!authed) {
-    return (
-      <main className="wrap">
-        <Head><title>{t.brand} • {t.roleName}</title></Head>
-        <div className="guard">
-          <p>Bu alana erişmek için giriş yapmalısınız.</p>
-          <button className="primary" onClick={() => go("/login?role=customer")}>/login</button>
-        </div>
-        <style>{`.wrap{padding:24px;font-family:system-ui} .primary{padding:10px 14px;border-radius:10px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer}`}</style>
-      </main>
-    );
-  }
+  // Sohbet
+  const { open, setOpen, msgs, send } = useChat(lang);
+  const [text, setText] = useState("");
+  const fileRef = useRef(null);
+
+  const onLogout = () => {
+    localStorage.removeItem("authed");
+    go("/");
+  };
 
   return (
     <>
       <Head>
-        <title>{t.brand} – {t.roleName}</title>
+        <title>{t.brand} – {t.home}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* Faviconlar */}
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=4" />
-        <link rel="icon" href="/favicon.png?v=4" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=5" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=5" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=5" />
+        <link rel="icon" href="/favicon.png?v=5" />
         <meta name="theme-color" content="#0b0b0b" />
       </Head>
 
-      {/* ÜST BAR — sadece Profil & Çıkış */}
-      <header className="topbar">
-        <div className="brand" onClick={() => go("/")}>👐 {t.brand}</div>
-        <div className="spacer" />
+      {/* ÜST BAR */}
+      <header className="topbar" role="banner">
+        <div className="brand" onClick={() => go("/")}>
+          <img src="/logo.png" alt={t.brand} width="36" height="36" />
+          <strong>{t.brand}</strong>
+        </div>
+
         <div className="actions">
+          <button className="ghost" onClick={() => go("/search")}>{t.findListing}</button>
+          <button className="primary" onClick={() => go("/portal/seller/post")}>{t.addListing}</button>
           <button className="ghost" onClick={() => go("/profile")}>{t.profile}</button>
           <button className="danger" onClick={onLogout}>{t.logout}</button>
+          <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
+            {SUPPORTED.map((k) => <option key={k} value={k}>{LOCALE_LABEL[k]}</option>)}
+          </select>
         </div>
       </header>
 
-      {/* HERO */}
+      {/* HERO – renkli arka plan, dönen motto */}
       <section className="hero">
-        <div className="left">
-          <h1>{t.roleName}</h1>
-          <p className="lead">{t.heroLead}</p>
-          <div className="cta">
-            <button className="primary" onClick={() => go("/search")}>{t.findListing}</button>
-            <button className="ghost" onClick={() => go("/portal/customer")}>{t.dashboard}</button>
-          </div>
+        <div className="heroText">
+          <h1>{t.welcome}</h1>
+          <p key={pi} className="phrase" style={{ color: currentPhrase?.color || "#111827" }}>
+            {currentPhrase?.text}
+          </p>
         </div>
-        <div className="right" aria-hidden>
+        <div className="heroArt" aria-hidden>
           <div className="blob b1" />
           <div className="blob b2" />
           <div className="blob b3" />
         </div>
       </section>
 
-      {/* VİTRİN (PRO) */}
+      {/* VİTRİN */}
       <section className="section">
         <div className="sectionHead"><h2>✨ {t.showcase}</h2></div>
         <div className="grid ads">
-          {proAds.length === 0 ? (
-            <div className="empty">{t.empty}</div>
-          ) : (
-            proAds.map((a, i) => (
-              <article key={i} className="ad">
-                <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }}>
-                  <span className="badge">{t.proBadge}</span>
-                </div>
-                <div className="body">
-                  <div className="title">{a?.title || "İlan"}</div>
-                  <div className="meta"><span>{a?.cat || a?.category || ""}</span><b>{a?.price || ""}</b></div>
-                </div>
-                <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>{t.view}</button>
-              </article>
-            ))
-          )}
+          {proAds.length ? proAds.map((a, i) => (
+            <article key={i} className="ad">
+              <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }}>
+                <span className="badge">{t.proBadge}</span>
+              </div>
+              <div className="body">
+                <div className="title">{a?.title || "İlan"}</div>
+                <div className="meta"><span>{a?.cat || a?.category || ""}</span><b>{a?.price || ""}</b></div>
+              </div>
+              <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>{t.view}</button>
+            </article>
+          )) : <div className="empty">{t.empty}</div>}
         </div>
       </section>
 
-      {/* STANDART İLANLAR */}
+      {/* STANDART */}
       <section className="section">
         <div className="sectionHead"><h2>🧺 {t.standard}</h2></div>
         <div className="grid ads">
-          {stdAds.length === 0 ? (
-            <div className="empty">{t.empty}</div>
-          ) : (
-            stdAds.map((a, i) => (
-              <article key={i} className="ad">
-                <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }} />
-                <div className="body">
-                  <div className="title">{a?.title || "İlan"}</div>
-                  <div className="meta"><span>{a?.cat || a?.category || ""}</span><b>{a?.price || ""}</b></div>
-                </div>
-                <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>{t.view}</button>
-              </article>
-            ))
-          )}
+          {stdAds.length ? stdAds.map((a, i) => (
+            <article key={i} className="ad">
+              <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }} />
+              <div className="body">
+                <div className="title">{a?.title || "İlan"}</div>
+                <div className="meta"><span>{a?.cat || a?.category || ""}</span><b>{a?.price || ""}</b></div>
+              </div>
+              <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>{t.view}</button>
+            </article>
+          )) : <div className="empty">{t.empty}</div>}
         </div>
       </section>
 
@@ -407,32 +527,29 @@ export default function CustomerPortalHome() {
       <section className="section">
         <div className="sectionHead"><h2>🗂️ {t.categories}</h2></div>
         <div className="grid cats">
-          {(cats || []).map((c, i) => (
-            <article key={i} className="catCard">
-              <div className="head"><span className="icn">{c.icon}</span><h3>{c.title}</h3><span className="count">{c.subs.length}</span></div>
-              <div className="subs">{(c.subs || []).map((s, k) => <span key={k} className="chip">{s}</span>)}</div>
+          {cats.map((c, idx) => (
+            <article key={idx} className="catCard" style={{ backgroundImage: `linear-gradient(135deg, var(--g${(idx%5)+1}a), var(--g${(idx%5)+1}b))` }}>
+              <div className="head">
+                <span className="icn">{c.icon}</span>
+                <h3>{c.title}</h3>
+                <span className="count">{c.subs.length}</span>
+              </div>
+              <div className="subs">
+                {c.subs.map((s, k) => <span key={k} className="chip">{s}</span>)}
+              </div>
             </article>
           ))}
         </div>
       </section>
 
-      {/* ALT BAR (sabit) */}
+      {/* ALT BAR – sabit */}
       <nav className="bottombar" aria-label="Bottom Navigation">
-        <button className={tab === "home" ? "tab active" : "tab"} onClick={() => go("/portal/customer")}>
-          <span className="tIc">🏠</span><span>{t.dashboard}</span>
-        </button>
-        <button className="tab" onClick={() => go("/messages")}>
-          <span className="tIc">💬</span><span>{t.messages}</span>
-        </button>
-        <button className="tab" onClick={() => go("/notifications")}>
-          <span className="tIc">🔔</span><span>{t.notifications}</span>
-        </button>
+        <button className="tab active" onClick={() => go("/portal/seller")}>🏠 {t.home}</button>
+        <button className="tab" onClick={() => go("/messages")}>💬 {t.messages}</button>
+        <button className="tab" onClick={() => go("/notifications")}>🔔 {t.notifications}</button>
       </nav>
 
-      {/* CANLI DESTEK BALONU (sağ altta) */}
-      <SupportBubble t={t.support} />
-
-      {/* SİYAH LEGAL BAR — kenardan kenara */}
+      {/* SİYAH LEGAL ALAN */}
       <footer className="legal">
         <div className="inner">
           <div className="ttl">{t.legalBar}</div>
@@ -454,169 +571,165 @@ export default function CustomerPortalHome() {
         </div>
       </footer>
 
-      {/* STYLES */}
-      <style>{`
-        :root{ --ink:#0f172a; --muted:#475569; --line:rgba(0,0,0,.08); }
-        html,body{height:100%}
-        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--ink);background:
-          radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
-          radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
-          linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
-          background-attachment:fixed;}
-
-        .topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-        .brand{font-weight:900;cursor:pointer}
-        .actions{display:flex;gap:8px;align-items:center}
-        .ghost{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
-        .danger{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
-
-        .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;max-width:1100px;margin:16px auto 0;padding:10px 16px}
-        .left h1{margin:6px 0 4px;font-size:34px}
-        .lead{margin:0 0 10px;color:#1f2937}
-        .cta{display:flex;gap:10px;flex-wrap:wrap}
-        .primary{padding:12px 16px;border-radius:12px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer}
-        .ghost{padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:#fff;color:#111827;font-weight:700;cursor:pointer}
-        .right{position:relative;min-height:160px}
-        .blob{position:absolute;filter:blur(30px);opacity:.6;border-radius:50%}
-        .b1{width:180px;height:180px;background:#f472b6;top:10px;left:10px}
-        .b2{width:220px;height:220px;background:#93c5fd;top:40px;right:20px}
-        .b3{width:160px;height:160px;background:#86efac;bottom:-30px;left:120px}
-
-        .section{max-width:1100px;margin:12px auto;padding:0 16px}
-        .sectionHead{display:flex;align-items:center;justify-content:space-between;margin:8px 0}
-        .grid.ads{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-        .ad{border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;background:#fff;display:flex;flex-direction:column;box-shadow:0 8px 22px rgba(0,0,0,.06)}
-        .thumb{aspect-ratio:4/3;background:#f1f5f9;background-size:cover;background-position:center;position:relative}
-        .badge{position:absolute;top:8px;left:8px;background:#111827;color:#fff;font-size:12px;padding:4px 8px;border-radius:999px}
-        .body{padding:10px}
-        .title{font-weight:800;margin:0 0 6px}
-        .meta{display:flex;justify-content:space-between;color:#475569;font-size:13px}
-        .view{margin:0 10px 12px;border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer}
-        .empty{padding:18px;border:1px dashed #e5e7eb;border-radius:14px;text-align:center;color:#475569}
-
-        .grid.cats{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-        .catCard{border:1px solid #e5e7eb;border-radius:16px;background:rgba(255,255,255,.92);box-shadow:0 8px 22px rgba(0,0,0,.06);padding:12px}
-        .catCard .head{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center}
-        .icn{font-size:20px}
-        .catCard h3{margin:0;font-size:18px}
-        .count{justify-self:end;background:#ffffffc0;border:1px solid #e5e7eb;font-size:12px;border-radius:999px;padding:2px 8px}
-        .subs{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:8px}
-        .chip{display:block;text-align:center;padding:8px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;font-size:12px}
-
-        .bottombar{position:sticky;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
-        .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:700}
-        .tab.active{border-color:#111827;background:#111827;color:#fff}
-        .tIc{font-size:16px}
-
-        .legal{background:#0b0b0b;color:#f8fafc;border-top:1px solid rgba(255,255,255,.12);width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);margin-top:14px}
-        .inner{max-width:1100px;margin:0 auto;padding:12px 16px}
-        .ttl{font-weight:800;margin-bottom:6px}
-        .links{display:flex;flex-wrap:wrap;gap:10px}
-        .links a{color:#e2e8f0;font-size:13px;padding:6px 8px;border-radius:8px;text-decoration:none}
-        .links a:hover{background:rgba(255,255,255,.08);color:#fff}
-        .homeLink{margin-left:auto;font-weight:800}
-        .copy{margin-top:6px;font-size:12px;color:#cbd5e1}
-
-        @media (max-width:820px){ .hero{grid-template-columns:1fr} .right{min-height:120px} }
-      `}</style>
-    </>
-  );
-}
-
-/* ----------------------------- CANLI DESTEK BİLEŞENİ ----------------------------- */
-function SupportBubble({ t }) {
-  const [open, setOpen] = useState(false);
-  const [msgs, setMsgs] = useState([]);
-  const [text, setText] = useState("");
-
-  // ilk açılışta
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("support_chat_msgs") || "[]");
-      if (Array.isArray(saved)) setMsgs(saved);
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    try { localStorage.setItem("support_chat_msgs", JSON.stringify(msgs)); } catch {}
-  }, [msgs]);
-
-  const onSend = () => {
-    if (!text.trim()) return;
-    const m = { id: Date.now(), kind: "text", from: "me", content: text.trim(), at: new Date().toISOString() };
-    setMsgs((p) => [...p, m]);
-    setText("");
-  };
-
-  const onAttach = (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const m = { id: Date.now(), kind: "img", from: "me", content: reader.result, name: f.name, at: new Date().toISOString() };
-      setMsgs((p) => [...p, m]);
-    };
-    reader.readAsDataURL(f);
-    e.target.value = "";
-  };
-
-  return (
-    <div className={`support ${open ? "open" : ""}`}>
-      {!open && (
-        <button className="fab" onClick={() => setOpen(true)} title={t.start}>💬</button>
-      )}
+      {/* CANLI DESTEK BALONU */}
+      <button className="chatFab" aria-label={t.chat.open} onClick={() => setOpen(v => !v)}>💬</button>
       {open && (
-        <div className="panel">
-          <div className="phd">
-            <strong>{t.title}</strong>
+        <div className="chatBox" role="dialog" aria-label={t.chat.open}>
+          <div className="chatHead">
+            <strong>{t.chat.open}</strong>
             <button className="x" onClick={() => setOpen(false)}>✕</button>
           </div>
-          <div className="pbd">
-            {msgs.length === 0 ? (
-              <div className="empty">{t.start}</div>
-            ) : (
-              msgs.map((m) => (
-                <div key={m.id} className={`msg ${m.from === "me" ? "me" : "admin"}`}>
-                  {m.kind === "text" && <div className="bubble">{m.content}</div>}
-                  {m.kind === "img" && (
-                    <div className="bubble img">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={m.content} alt={m.name || "image"} />
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
+          <div className="chatBody">
+            {msgs.map(m => (
+              <div key={m.id} className={`msg ${m.from}`}>
+                {m.img && <img src={m.img} alt="" />}
+                {m.content && <p>{m.content}</p>}
+              </div>
+            ))}
+            {!msgs.length && <div className="msg admin"><p>{t.chat.hello}</p></div>}
           </div>
-          <div className="pft">
-            <label className="attach">
-              <input type="file" accept="image/*" onChange={onAttach} />📎
-            </label>
-            <input className="in" value={text} onChange={(e) => setText(e.target.value)} placeholder={t.placeholder} onKeyDown={(e)=>{ if(e.key==='Enter') onSend(); }} />
-            <button className="send" onClick={onSend}>{t.send}</button>
+          <div className="chatFoot">
+            <input
+              value={text}
+              onChange={(e)=>setText(e.target.value)}
+              placeholder={t.chat.placeholder}
+              onKeyDown={(e)=>{ if(e.key==="Enter"&&text.trim()){ send(text.trim()); setText(""); } }}
+            />
+            <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}}
+              onChange={(e)=>{
+                const f=e.target.files?.[0]; if(!f) return;
+                const r=new FileReader();
+                r.onload=()=>{ send("", r.result); };
+                r.readAsDataURL(f);
+                e.target.value="";
+              }} />
+            <button className="ghost" onClick={()=>fileRef.current?.click()} title={t.chat.attach}>📎</button>
+            <button className="primary" onClick={()=>{ if(text.trim()){ send(text.trim()); setText(""); } }}>{t.chat.send}</button>
           </div>
         </div>
       )}
 
+      {/* STYLES */}
       <style>{`
-        .support{position:fixed;right:14px;bottom:80px;z-index:60}
-        .fab{width:56px;height:56px;border-radius:50%;border:none;background:#111827;color:#fff;box-shadow:0 12px 28px rgba(0,0,0,.18);cursor:pointer;font-size:22px}
-        .panel{width:320px;max-height:60vh;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 12px 28px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden}
-        .phd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e5e7eb;background:#111827;color:#fff}
-        .pbd{padding:10px;display:flex;flex-direction:column;gap:8px;overflow:auto}
-        .msg{display:flex}
-        .msg.me{justify-content:flex-end}
-        .bubble{max-width:70%;padding:8px 10px;border-radius:12px;border:1px solid #e5e7eb;background:#fff}
-        .msg.me .bubble{background:#111827;color:#fff;border-color:#111827}
-        .bubble.img{padding:4px}
-        .bubble.img img{max-width:220px;border-radius:10px;display:block}
-        .pft{display:flex;gap:6px;align-items:center;padding:8px;border-top:1px solid #e5e7eb}
-        .attach{display:grid;place-items:center;width:36px;height:36px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;cursor:pointer}
-        .attach input{display:none}
-        .in{flex:1;padding:10px;border:1px solid #e5e7eb;border-radius:10px}
-        .send{padding:10px 12px;border-radius:10px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer}
-        @media (max-width:420px){ .panel{width:92vw} }
+        :root{
+          --ink:#0f172a; --muted:#475569; --line:rgba(0,0,0,.08);
+          --g1a:#ff80ab; --g1b:#ffd166;
+          --g2a:#a78bfa; --g2b:#60a5fa;
+          --g3a:#34d399; --g3b:#a7f3d0;
+          --g4a:#f59e0b; --g4b:#f97316;
+          --g5a:#06b6d4; --g5b:#3b82f6;
+        }
+        html,body{height:100%}
+        body{
+          margin:0; color:var(--ink);
+          font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+          background: radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
+                      radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
+                      linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
+          background-attachment:fixed;
+          padding-bottom: 74px; /* alt bar için güvenli boşluk */
+        }
+
+        /* Üst bar */
+        .topbar{
+          position:sticky; top:0; z-index:60;
+          display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center;
+          padding:10px 14px; background:rgba(255,255,255,.92);
+          backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
+        }
+        .brand{display:flex; gap:8px; align-items:center; cursor:pointer; font-weight:900}
+        .brand img{border-radius:10px}
+        .actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+        .actions select{border:1px solid var(--line); border-radius:10px; padding:6px 8px; background:#fff}
+        .primary{padding:9px 12px; border-radius:10px; border:1px solid #111827; background:#111827; color:#fff; font-weight:800; cursor:pointer}
+        .ghost{padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:#fff; color:#111827; font-weight:700; cursor:pointer}
+        .danger{padding:9px 12px; border-radius:10px; border:1px solid #ef4444; background:#ef4444; color:#fff; font-weight:800; cursor:pointer}
+
+        /* Hero */
+        .hero{max-width:1100px; margin:12px auto 0; padding:0 16px; display:grid; grid-template-columns:1.1fr .9fr; gap:18px}
+        .heroText h1{margin:6px 0 4px; font-size:30px}
+        .phrase{margin:0; font-size:18px; font-weight:700; transition:opacity .3s}
+        .heroArt{position:relative; min-height:160px}
+        .blob{position:absolute; filter:blur(32px); opacity:.6; border-radius:50%}
+        .b1{width:180px;height:180px;background:#f472b6;top:10px;left:10px}
+        .b2{width:220px;height:220px;background:#93c5fd;top:40px;right:20px}
+        .b3{width:160px;height:160px;background:#86efac;bottom:-30px;left:120px}
+
+        /* Bölümler */
+        .section{max-width:1100px; margin:12px auto; padding:0 16px}
+        .sectionHead{display:flex; align-items:center; justify-content:space-between; margin:8px 0}
+        .grid.ads{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+        .ad{border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; background:#fff; display:flex; flex-direction:column; box-shadow:0 8px 22px rgba(0,0,0,.06)}
+        .thumb{aspect-ratio:4/3; background:#f1f5f9; background-size:cover; background-position:center; position:relative}
+        .badge{position:absolute; top:8px; left:8px; background:#111827; color:#fff; font-size:12px; padding:4px 8px; border-radius:999px}
+        .body{padding:10px}
+        .title{font-weight:800; margin:0 0 6px}
+        .meta{display:flex; justify-content:space-between; color:#475569; font-size:13px}
+        .view{margin:0 10px 12px; border:1px solid #111827; background:#111827; color:#fff; border-radius:10px; padding:8px 10px; font-weight:700; cursor:pointer}
+        .empty{padding:18px; border:1px dashed #e5e7eb; border-radius:14px; text-align:center; color:#475569}
+
+        /* Kategoriler */
+        .grid.cats{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+        .catCard{
+          border-radius:18px; padding:12px; background-size:cover; background-position:center;
+          border:1px solid rgba(255,255,255,.35); backdrop-filter: blur(2px);
+          box-shadow:0 10px 24px rgba(0,0,0,.08);
+        }
+        .head{display:grid; grid-template-columns:1fr auto auto; gap:6px; align-items:center}
+        .icn{font-size:22px}
+        .head h3{margin:0; font-size:18px; text-align:center}
+        .count{justify-self:end; background:#ffffffc8; border:1px solid #e5e7eb; font-size:12px; border-radius:999px; padding:2px 8px}
+        .subs{display:grid; gap:8px; grid-template-columns:repeat(2,minmax(0,1fr)); margin-top:8px}
+        .chip{display:block; text-align:center; padding:8px 10px; border-radius:12px; font-size:12px; background: rgba(255,255,255,0.98); border:1px solid #e5e7eb}
+
+        /* Alt bar – sabit */
+        .bottombar{
+          position: fixed; left:0; right:0; bottom:0; width:100vw;
+          z-index:50; padding:6px; padding-bottom: max(6px, env(safe-area-inset-bottom));
+          background:rgba(255,255,255,.94); backdrop-filter:blur(8px); border-top:1px solid var(--line);
+          display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
+        }
+        .tab{display:flex; align-items:center; justify-content:center; gap:6px; padding:10px; border-radius:10px; border:1px solid transparent; background:transparent; cursor:pointer; font-weight:800}
+        .tab.active{border-color:#111827; background:#111827; color:#fff}
+
+        /* Legal full-bleed */
+        .legal{background:#0b0b0b; color:#f8fafc; border-top:1px solid rgba(255,255,255,.12);
+               width:100vw; margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); margin-top:14px}
+        .inner{max-width:1100px; margin:0 auto; padding:12px 16px}
+        .ttl{font-weight:800; margin-bottom:6px}
+        .links{display:flex; flex-wrap:wrap; gap:10px}
+        .links a{color:#e2e8f0; font-size:13px; padding:6px 8px; border-radius:8px; text-decoration:none}
+        .links a:hover{background:rgba(255,255,255,.08); color:#fff}
+        .homeLink{margin-left:auto; font-weight:800}
+        .copy{margin-top:6px; font-size:12px; color:#cbd5e1}
+
+        /* Chat */
+        .chatFab{
+          position:fixed; right:14px; bottom:88px; z-index:60;
+          width:52px; height:52px; border-radius:50%;
+          border:1px solid #111827; background:#111827; color:#fff; font-size:20px; cursor:pointer;
+          box-shadow:0 10px 20px rgba(0,0,0,.2);
+        }
+        .chatBox{
+          position:fixed; right:14px; bottom:150px; width:320px; max-height:60vh; z-index:60;
+          background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 10px 24px rgba(0,0,0,.15);
+          display:flex; flex-direction:column; overflow:hidden;
+        }
+        .chatHead{display:flex; align-items:center; justify-content:space-between; padding:8px 10px; font-weight:800; background:#111827; color:#fff}
+        .chatHead .x{background:transparent; border:none; color:#fff; font-size:16px; cursor:pointer}
+        .chatBody{padding:10px; display:flex; flex-direction:column; gap:8px; overflow:auto}
+        .msg{max-width:85%; padding:8px 10px; border-radius:12px; line-height:1.3; word-break:break-word}
+        .msg.me{align-self:flex-end; background:#111827; color:#fff}
+        .msg.admin{align-self:flex-start; background:#f1f5f9; color:#0f172a}
+        .msg img{display:block; max-width:200px; border-radius:10px; border:1px solid #e5e7eb}
+        .chatFoot{display:grid; grid-template-columns:1fr auto auto; gap:6px; padding:8px; border-top:1px solid #e5e7eb; background:#fafafa}
+        .chatFoot input{padding:10px; border-radius:10px; border:1px solid #e5e7eb; background:#fff}
+        @media (max-width:820px){
+          .hero{grid-template-columns:1fr}
+          .heroArt{min-height:120px}
+          .chatBox{right:10px; width:92vw}
+        }
       `}</style>
-    </div>
+    </>
   );
 }
