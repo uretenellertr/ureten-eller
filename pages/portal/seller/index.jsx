@@ -1,11 +1,11 @@
-// pages/portal/seller/index.jsx
+// pages/portal/customer/index.jsx
 "use client";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 
-/* ------------------------------ SUPABASE (opsiyonel) ------------------------------ */
+/* ----------------------------- SUPABASE (opsiyonel) ----------------------------- */
 let sb = null;
 function getSupabase() {
   if (sb) return sb;
@@ -16,26 +16,25 @@ function getSupabase() {
   return sb;
 }
 
-/* ------------------------------ DİL / ÇEVİRİ ------------------------------ */
+/* ----------------------------- DİLLER / METİNLER ----------------------------- */
 const SUPPORTED = ["tr", "en", "ar", "de"]; // RTL: ar
-const LBL = {
+const TXT = {
   tr: {
     brand: "Üreten Eller",
-    addListing: "İlan Ver",
-    profile: "Profil",
-    logout: "Çıkış",
+    roleName: "Müşteri Portalı",
     dashboard: "Ana Sayfa",
     messages: "Mesajlar",
     notifications: "Bildirimler",
+    profile: "Profil",
+    logout: "Çıkış",
+    findListing: "İlan Ara",
     showcase: "Vitrin",
     standard: "Standart İlanlar",
     categories: "Kategorilerimiz",
-    proBadge: "PRO",
     empty: "Henüz ilan yok.",
-    support: "Canlı Destek",
-    typeMsg: "Mesaj yazın...",
-    send: "Gönder",
-    attach: "Görsel ekle",
+    view: "İncele",
+    proBadge: "PRO",
+    heroLead: "Bölendeki el emeği ürünleri keşfet, güvenle sipariş ver, süreci kolayca takip et.",
     legalBar: "Kurumsal",
     legal: {
       corporate: "Kurumsal",
@@ -50,30 +49,35 @@ const LBL = {
       rules: "Topluluk Kuralları",
       banned: "Yasaklı Ürünler",
       all: "Tüm Legal",
-      home: "Ana Sayfa",
+    },
+    support: {
+      title: "Canlı Destek",
+      start: "Yardım gerekiyor mu?",
+      placeholder: "Mesajınızı yazın…",
+      send: "Gönder",
+      attach: "Resim ekle",
     },
   },
   en: {
     brand: "Ureten Eller",
-    addListing: "Post Listing",
-    profile: "Profile",
-    logout: "Logout",
+    roleName: "Customer Portal",
     dashboard: "Home",
     messages: "Messages",
     notifications: "Notifications",
+    profile: "Profile",
+    logout: "Logout",
+    findListing: "Find Listing",
     showcase: "Showcase",
     standard: "Standard Listings",
     categories: "Categories",
-    proBadge: "PRO",
     empty: "No listings yet.",
-    support: "Live Support",
-    typeMsg: "Type a message...",
-    send: "Send",
-    attach: "Attach image",
+    view: "View",
+    proBadge: "PRO",
+    heroLead: "Discover handmade products nearby, order safely, track easily.",
     legalBar: "Corporate",
     legal: {
       corporate: "Corporate",
-      about: "About",
+      about: "About Us",
       contact: "Contact",
       privacy: "Privacy",
       kvkk: "KVKK Notice",
@@ -84,26 +88,31 @@ const LBL = {
       rules: "Community Rules",
       banned: "Prohibited Products",
       all: "All Legal",
-      home: "Home",
+    },
+    support: {
+      title: "Live Support",
+      start: "Need help?",
+      placeholder: "Type your message…",
+      send: "Send",
+      attach: "Attach image",
     },
   },
   ar: {
     brand: "أُنتِج بالأيادي",
-    addListing: "أنشئ إعلانًا",
-    profile: "الملف الشخصي",
-    logout: "تسجيل الخروج",
-    dashboard: "الرئيسية",
+    roleName: "بوابة العملاء",
+    dashboard: "الصفحة الرئيسية",
     messages: "الرسائل",
     notifications: "الإشعارات",
+    profile: "الملف الشخصي",
+    logout: "تسجيل الخروج",
+    findListing: "ابحث عن إعلان",
     showcase: "الواجهة (Vitrin)",
     standard: "إعلانات عادية",
     categories: "التصنيفات",
-    proBadge: "محترف",
     empty: "لا توجد إعلانات بعد.",
-    support: "الدعم المباشر",
-    typeMsg: "اكتب رسالة...",
-    send: "إرسال",
-    attach: "إرفاق صورة",
+    view: "عرض",
+    proBadge: "محترف",
+    heroLead: "اكتشف المنتجات اليدوية القريبة واطلب بثقة وتابع بسهولة.",
     legalBar: "المعلومات المؤسسية",
     legal: {
       corporate: "المؤسسة",
@@ -118,26 +127,31 @@ const LBL = {
       rules: "قواعد المجتمع",
       banned: "منتجات محظورة",
       all: "كل السياسات",
-      home: "الرئيسية",
+    },
+    support: {
+      title: "دعم مباشر",
+      start: "تحتاج مساعدة؟",
+      placeholder: "اكتب رسالتك…",
+      send: "إرسال",
+      attach: "إرفاق صورة",
     },
   },
   de: {
     brand: "Ureten Eller",
-    addListing: "Inserat einstellen",
-    profile: "Profil",
-    logout: "Abmelden",
-    dashboard: "Start",
+    roleName: "Kundenportal",
+    dashboard: "Startseite",
     messages: "Nachrichten",
     notifications: "Mitteilungen",
+    profile: "Profil",
+    logout: "Abmelden",
+    findListing: "Inserat suchen",
     showcase: "Vitrin",
     standard: "Standard-Inserate",
     categories: "Kategorien",
-    proBadge: "PRO",
     empty: "Noch keine Inserate.",
-    support: "Live-Support",
-    typeMsg: "Nachricht schreiben...",
-    send: "Senden",
-    attach: "Bild anhängen",
+    view: "Ansehen",
+    proBadge: "PRO",
+    heroLead: "Handgemachtes in deiner Nähe entdecken, sicher bestellen und verfolgen.",
     legalBar: "Unternehmen",
     legal: {
       corporate: "Unternehmen",
@@ -152,7 +166,13 @@ const LBL = {
       rules: "Community-Regeln",
       banned: "Verbotene Produkte",
       all: "Alle Rechtliches",
-      home: "Startseite",
+    },
+    support: {
+      title: "Live-Support",
+      start: "Brauchst du Hilfe?",
+      placeholder: "Nachricht eingeben…",
+      send: "Senden",
+      attach: "Bild anhängen",
     },
   },
 };
@@ -168,11 +188,11 @@ function useLang() {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
   }, [lang]);
-  const t = useMemo(() => LBL[lang] || LBL.tr, [lang]);
+  const t = useMemo(() => TXT[lang] || TXT.tr, [lang]);
   return { lang, t };
 }
 
-/* ------------------------------ KATEGORİLER (tam set) ------------------------------ */
+/* ----------------------------- KATEGORİLER (tam) ----------------------------- */
 const CATS = {
   tr: [
     { icon: "🍲", title: "Yemekler", subs: ["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"] },
@@ -219,7 +239,7 @@ const CATS = {
     { icon: "🧵", title: "ماكرامه وديكور", subs: ["تعليقة حائط","حامل نبات","ميدالية","إضاءة معلّقة","مفرش","سلة","رف/ديكور"] },
     { icon: "🏠", title: "ديكور المنزل", subs: ["فيلت","وسادة","زينة باب","صينية مزخرفة","إطار","صائد أحلام","لوحة"] },
     { icon: "🕯️", title: "شموع وروائح", subs: ["شموع صويا/نحل","حجر عطري","معطر غرف","بخور","شمعة جل","أطقم هدايا"] },
-    { icon: "🧼", title: "صابون طبيعي وتجميلي", subs: ["صابون زيت زيتون","أعشاب","شامبو صلب","بلسم شفاه","كريم/مرهم","ملح حمام"] },
+    { icon: "🧼", title: "صابون طبيعي وتجميلي", subs: ["صابون زيت زيتون","أعشاب","شامبو صلب","بلسم شفاه","كريم/مرهم","ملح حمام","كيس لافندر"] },
     { icon: "🧸", title: "أميجورومي وألعاب (ديكور)", subs: ["ميدالية","مغناطيس","فيجور","دمية ديكور","أميجورومي بالاسم"] },
   ],
   de: [
@@ -240,16 +260,19 @@ const CATS = {
   ],
 };
 
-/* ------------------------------ BİLEŞEN ------------------------------ */
-export default function SellerHome() {
+/* ----------------------------- BİLEŞEN ----------------------------- */
+export default function CustomerPortalHome() {
   const router = useRouter();
+  const go = useCallback((href) => router.push(href), [router]);
   const { lang, t } = useLang();
 
-  // Auth (login sonrası bu sayfaya gelir)
+  // login sonrası bu sayfa; yine de kontrol edelim
   const [authed, setAuthed] = useState(true);
-  useEffect(() => { setAuthed(localStorage.getItem("authed") === "1"); }, []);
+  useEffect(() => {
+    setAuthed(localStorage.getItem("authed") === "1");
+  }, []);
 
-  // İlanlar: vitrin (pro) + standart — /public/ads.json
+  // PRO (vitrin) + standart ilanlar
   const [proAds, setProAds] = useState([]);
   const [stdAds, setStdAds] = useState([]);
   useEffect(() => {
@@ -259,63 +282,75 @@ export default function SellerHome() {
         const res = await fetch("/ads.json", { cache: "no-store" });
         if (res.ok) {
           const all = await res.json();
-          if (!Array.isArray(all)) throw new Error();
-          const pros = all.filter(x => x?.isPro);
-          const std = all.filter(x => !x?.isPro);
-          if (alive) { setProAds(pros.slice(0,50)); setStdAds(std.slice(0,20)); }
+          if (!Array.isArray(all)) throw new Error("bad ads.json");
+          const pros = all.filter((x) => x?.isPro);
+          const std = all.filter((x) => !x?.isPro);
+          if (alive) {
+            setProAds(pros.slice(0, 50));
+            setStdAds(std.slice(0, 20));
+          }
         }
       } catch {}
     })();
     return () => { alive = false; };
   }, []);
 
-  const cats = CATS[lang] || CATS.tr;
-
-  const go = useCallback((href) => router.push(href), [router]);
-
+  // Çıkış
   const onLogout = async () => {
     try { const supa = getSupabase(); if (supa) await supa.auth.signOut(); } catch {}
     localStorage.removeItem("authed");
-    localStorage.setItem("support_chat", "1"); // anasayfada baloncuk tetikleyici
-    window.location.href = "/"; // tam çıkış
+    localStorage.setItem("support_chat", "1"); // anasayfada canlı destek balonu göster
+    window.location.href = "/"; // tam çıkış, index'e dön
   };
 
-  if (!authed) {
-    if (typeof window !== "undefined") window.location.href = "/login?role=seller";
-    return null;
-  }
+  const cats = CATS[lang] || CATS.tr;
+  const tab = "home"; // alt barda aktif sekme
 
-  // Bottom bar aktif sekme
-  const activeTab = "home";
+  if (!authed) {
+    return (
+      <main className="wrap">
+        <Head><title>{t.brand} • {t.roleName}</title></Head>
+        <div className="guard">
+          <p>Bu alana erişmek için giriş yapmalısınız.</p>
+          <button className="primary" onClick={() => go("/login?role=customer")}>/login</button>
+        </div>
+        <style>{`.wrap{padding:24px;font-family:system-ui} .primary{padding:10px 14px;border-radius:10px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer}`}</style>
+      </main>
+    );
+  }
 
   return (
     <>
       <Head>
-        <title>{t.brand} – {t.dashboard}</title>
+        <title>{t.brand} – {t.roleName}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* Faviconlar */}
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=5" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=5" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=5" />
-        <link rel="icon" href="/favicon.png?v=5" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=4" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=4" />
+        <link rel="icon" href="/favicon.png?v=4" />
         <meta name="theme-color" content="#0b0b0b" />
       </Head>
 
-      {/* ÜST BAR — yalnız 3 buton */}
+      {/* ÜST BAR — sadece Profil & Çıkış */}
       <header className="topbar">
-        <div className="brand" onClick={() => go("/portal/seller")}>👐 {t.brand}</div>
+        <div className="brand" onClick={() => go("/")}>👐 {t.brand}</div>
+        <div className="spacer" />
         <div className="actions">
-          <button className="primary" onClick={() => go("/portal/seller/post")}>{t.addListing}</button>
           <button className="ghost" onClick={() => go("/profile")}>{t.profile}</button>
           <button className="danger" onClick={onLogout}>{t.logout}</button>
         </div>
       </header>
 
-      {/* HERO / renkli bloblar */}
+      {/* HERO */}
       <section className="hero">
         <div className="left">
-          <h1>{t.dashboard}</h1>
-          <p className="lead">El emeği ürünlerini güvenle vitrine çıkar, siparişlerini tek panelden yönet.</p>
+          <h1>{t.roleName}</h1>
+          <p className="lead">{t.heroLead}</p>
+          <div className="cta">
+            <button className="primary" onClick={() => go("/search")}>{t.findListing}</button>
+            <button className="ghost" onClick={() => go("/portal/customer")}>{t.dashboard}</button>
+          </div>
         </div>
         <div className="right" aria-hidden>
           <div className="blob b1" />
@@ -324,63 +359,80 @@ export default function SellerHome() {
         </div>
       </section>
 
-      {/* Vitrin (PRO) */}
+      {/* VİTRİN (PRO) */}
       <section className="section">
         <div className="sectionHead"><h2>✨ {t.showcase}</h2></div>
         <div className="grid ads">
-          {proAds.length === 0 ? (<div className="empty">{t.empty}</div>) : proAds.map((a,i) => (
-            <article key={i} className="ad">
-              <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }}>
-                <span className="badge">{t.proBadge}</span>
-              </div>
-              <div className="body">
-                <div className="title">{a?.title || "İlan"}</div>
-                <div className="meta"><span>{a?.cat || a?.category || ""}</span><b>{a?.price || ""}</b></div>
-              </div>
-              <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>İncele</button>
-            </article>
-          ))}
+          {proAds.length === 0 ? (
+            <div className="empty">{t.empty}</div>
+          ) : (
+            proAds.map((a, i) => (
+              <article key={i} className="ad">
+                <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }}>
+                  <span className="badge">{t.proBadge}</span>
+                </div>
+                <div className="body">
+                  <div className="title">{a?.title || "İlan"}</div>
+                  <div className="meta"><span>{a?.cat || a?.category || ""}</span><b>{a?.price || ""}</b></div>
+                </div>
+                <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>{t.view}</button>
+              </article>
+            ))
+          )}
         </div>
       </section>
 
-      {/* Standart ilanlar */}
+      {/* STANDART İLANLAR */}
       <section className="section">
         <div className="sectionHead"><h2>🧺 {t.standard}</h2></div>
         <div className="grid ads">
-          {stdAds.length === 0 ? (<div className="empty">{t.empty}</div>) : stdAds.map((a,i) => (
-            <article key={i} className="ad">
-              <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }} />
-              <div className="body">
-                <div className="title">{a?.title || "İlan"}</div>
-                <div className="meta"><span>{a?.cat || a?.category || ""}</span><b>{a?.price || ""}</b></div>
-              </div>
-              <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>İncele</button>
-            </article>
-          ))}
+          {stdAds.length === 0 ? (
+            <div className="empty">{t.empty}</div>
+          ) : (
+            stdAds.map((a, i) => (
+              <article key={i} className="ad">
+                <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }} />
+                <div className="body">
+                  <div className="title">{a?.title || "İlan"}</div>
+                  <div className="meta"><span>{a?.cat || a?.category || ""}</span><b>{a?.price || ""}</b></div>
+                </div>
+                <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>{t.view}</button>
+              </article>
+            ))
+          )}
         </div>
       </section>
 
-      {/* Kategoriler */}
+      {/* KATEGORİLER */}
       <section className="section">
         <div className="sectionHead"><h2>🗂️ {t.categories}</h2></div>
         <div className="grid cats">
-          {(cats||[]).map((c,idx) => (
-            <article key={idx} className="catCard">
+          {(cats || []).map((c, i) => (
+            <article key={i} className="catCard">
               <div className="head"><span className="icn">{c.icon}</span><h3>{c.title}</h3><span className="count">{c.subs.length}</span></div>
-              <div className="subs">{c.subs.map((s,i) => <span key={i} className="chip">{s}</span>)}</div>
+              <div className="subs">{(c.subs || []).map((s, k) => <span key={k} className="chip">{s}</span>)}</div>
             </article>
           ))}
         </div>
       </section>
 
-      {/* ALT BAR — sabit */}
+      {/* ALT BAR (sabit) */}
       <nav className="bottombar" aria-label="Bottom Navigation">
-        <button className={activeTab === "home" ? "tab active" : "tab"} onClick={() => go("/portal/seller")}>🏠 <span>{t.dashboard}</span></button>
-        <button className="tab" onClick={() => go("/messages")}>💬 <span>{t.messages}</span></button>
-        <button className="tab" onClick={() => go("/notifications")}>🔔 <span>{t.notifications}</span></button>
+        <button className={tab === "home" ? "tab active" : "tab"} onClick={() => go("/portal/customer")}>
+          <span className="tIc">🏠</span><span>{t.dashboard}</span>
+        </button>
+        <button className="tab" onClick={() => go("/messages")}>
+          <span className="tIc">💬</span><span>{t.messages}</span>
+        </button>
+        <button className="tab" onClick={() => go("/notifications")}>
+          <span className="tIc">🔔</span><span>{t.notifications}</span>
+        </button>
       </nav>
 
-      {/* Siyah LEGAL ALAN — kenardan kenara */}
+      {/* CANLI DESTEK BALONU (sağ altta) */}
+      <SupportBubble t={t.support} />
+
+      {/* SİYAH LEGAL BAR — kenardan kenara */}
       <footer className="legal">
         <div className="inner">
           <div className="ttl">{t.legalBar}</div>
@@ -402,9 +454,6 @@ export default function SellerHome() {
         </div>
       </footer>
 
-      {/* Canlı Destek Baloncuğu (yerel) */}
-      <SupportBubble t={t} />
-
       {/* STYLES */}
       <style>{`
         :root{ --ink:#0f172a; --muted:#475569; --line:rgba(0,0,0,.08); }
@@ -415,16 +464,18 @@ export default function SellerHome() {
           linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
           background-attachment:fixed;}
 
-        .topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:10px 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+        .topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
         .brand{font-weight:900;cursor:pointer}
         .actions{display:flex;gap:8px;align-items:center}
-        .primary{padding:10px 14px;border-radius:12px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer}
-        .ghost{padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:#fff;font-weight:700;cursor:pointer}
-        .danger{padding:10px 14px;border-radius:12px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer}
+        .ghost{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+        .danger{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
 
         .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;max-width:1100px;margin:16px auto 0;padding:10px 16px}
-        .left h1{margin:6px 0 4px;font-size:30px}
+        .left h1{margin:6px 0 4px;font-size:34px}
         .lead{margin:0 0 10px;color:#1f2937}
+        .cta{display:flex;gap:10px;flex-wrap:wrap}
+        .primary{padding:12px 16px;border-radius:12px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer}
+        .ghost{padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:#fff;color:#111827;font-weight:700;cursor:pointer}
         .right{position:relative;min-height:160px}
         .blob{position:absolute;filter:blur(30px);opacity:.6;border-radius:50%}
         .b1{width:180px;height:180px;background:#f472b6;top:10px;left:10px}
@@ -445,16 +496,17 @@ export default function SellerHome() {
 
         .grid.cats{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
         .catCard{border:1px solid #e5e7eb;border-radius:16px;background:rgba(255,255,255,.92);box-shadow:0 8px 22px rgba(0,0,0,.06);padding:12px}
-        .catCard .head{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
-        .icn{font-size:22px}
+        .catCard .head{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center}
+        .icn{font-size:20px}
         .catCard h3{margin:0;font-size:18px}
         .count{justify-self:end;background:#ffffffc0;border:1px solid #e5e7eb;font-size:12px;border-radius:999px;padding:2px 8px}
         .subs{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:8px}
         .chip{display:block;text-align:center;padding:8px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;font-size:12px}
 
         .bottombar{position:sticky;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
-        .tab{display:flex;gap:6px;align-items:center;justify-content:center;padding:8px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:700}
+        .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:700}
         .tab.active{border-color:#111827;background:#111827;color:#fff}
+        .tIc{font-size:16px}
 
         .legal{background:#0b0b0b;color:#f8fafc;border-top:1px solid rgba(255,255,255,.12);width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);margin-top:14px}
         .inner{max-width:1100px;margin:0 auto;padding:12px 16px}
@@ -465,78 +517,106 @@ export default function SellerHome() {
         .homeLink{margin-left:auto;font-weight:800}
         .copy{margin-top:6px;font-size:12px;color:#cbd5e1}
 
-        /* Canlı Destek */
-        .supBubble{position:fixed;right:16px;bottom:86px;z-index:60}
-        .supBtn{display:flex;align-items:center;gap:8px;border-radius:999px;padding:10px 14px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.2)}
-        .supPanel{position:fixed;right:16px;bottom:86px;width:320px;max-height:60vh;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden}
-        .supHd{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:800}
-        .supBody{padding:10px;overflow:auto;display:flex;flex-direction:column;gap:8px}
-        .msg{max-width:86%;padding:8px 10px;border-radius:12px;border:1px solid #e5e7eb;background:#fff}
-        .mine{align-self:flex-end;background:#111827;color:#fff;border-color:#111827}
-        .supFt{display:flex;gap:6px;padding:10px;border-top:1px solid #e5e7eb}
-        .supFt input[type="text"]{flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:8px}
-        .supFt input[type="file"]{display:none}
-        .supFt .btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer}
-
-        @media (max-width:820px){ .hero{grid-template-columns:1fr} }
+        @media (max-width:820px){ .hero{grid-template-columns:1fr} .right{min-height:120px} }
       `}</style>
     </>
   );
 }
 
-/* ------------------------------ Canlı Destek Bileşeni ------------------------------ */
+/* ----------------------------- CANLI DESTEK BİLEŞENİ ----------------------------- */
 function SupportBubble({ t }) {
   const [open, setOpen] = useState(false);
-  const [txt, setTxt] = useState("");
-  const [items, setItems] = useState([]); // {me:boolean, text?, img?}
+  const [msgs, setMsgs] = useState([]);
+  const [text, setText] = useState("");
 
+  // ilk açılışta
   useEffect(() => {
-    try { const saved = JSON.parse(localStorage.getItem("support_items") || "[]"); if (Array.isArray(saved)) setItems(saved); } catch {}
+    try {
+      const saved = JSON.parse(localStorage.getItem("support_chat_msgs") || "[]");
+      if (Array.isArray(saved)) setMsgs(saved);
+    } catch {}
   }, []);
 
   useEffect(() => {
-    try { localStorage.setItem("support_items", JSON.stringify(items)); } catch {}
-  }, [items]);
+    try { localStorage.setItem("support_chat_msgs", JSON.stringify(msgs)); } catch {}
+  }, [msgs]);
 
   const onSend = () => {
-    if (!txt.trim()) return;
-    setItems((x) => [...x, { me: true, text: txt.trim() }]);
-    setTxt("");
+    if (!text.trim()) return;
+    const m = { id: Date.now(), kind: "text", from: "me", content: text.trim(), at: new Date().toISOString() };
+    setMsgs((p) => [...p, m]);
+    setText("");
   };
 
   const onAttach = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    const url = URL.createObjectURL(f);
-    setItems((x) => [...x, { me: true, img: url }]);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const m = { id: Date.now(), kind: "img", from: "me", content: reader.result, name: f.name, at: new Date().toISOString() };
+      setMsgs((p) => [...p, m]);
+    };
+    reader.readAsDataURL(f);
     e.target.value = "";
   };
 
-  if (!open) return (
-    <div className="supBubble">
-      <button className="supBtn" onClick={() => setOpen(true)}>💬 {t.support}</button>
-    </div>
-  );
-
   return (
-    <div className="supPanel" role="dialog" aria-label={t.support}>
-      <div className="supHd">
-        <span>💬 {t.support}</span>
-        <button className="ghost" onClick={() => setOpen(false)}>✕</button>
-      </div>
-      <div className="supBody">
-        {items.length === 0 && <div className="msg">{t.typeMsg}</div>}
-        {items.map((m, i) => (
-          <div key={i} className={"msg " + (m.me ? "mine" : "")}>{m.img ? <img src={m.img} alt="" style={{maxWidth:"100%",borderRadius:8}}/> : m.text}</div>
-        ))}
-      </div>
-      <div className="supFt">
-        <input type="text" placeholder={t.typeMsg} value={txt} onChange={(e)=>setTxt(e.target.value)} onKeyDown={(e)=>{ if(e.key==="Enter") onSend(); }} />
-        <label className="btn" title={t.attach}>
-          📎<input type="file" accept="image/*" onChange={onAttach} />
-        </label>
-        <button className="btn" onClick={onSend}>{t.send}</button>
-      </div>
+    <div className={`support ${open ? "open" : ""}`}>
+      {!open && (
+        <button className="fab" onClick={() => setOpen(true)} title={t.start}>💬</button>
+      )}
+      {open && (
+        <div className="panel">
+          <div className="phd">
+            <strong>{t.title}</strong>
+            <button className="x" onClick={() => setOpen(false)}>✕</button>
+          </div>
+          <div className="pbd">
+            {msgs.length === 0 ? (
+              <div className="empty">{t.start}</div>
+            ) : (
+              msgs.map((m) => (
+                <div key={m.id} className={`msg ${m.from === "me" ? "me" : "admin"}`}>
+                  {m.kind === "text" && <div className="bubble">{m.content}</div>}
+                  {m.kind === "img" && (
+                    <div className="bubble img">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={m.content} alt={m.name || "image"} />
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+          <div className="pft">
+            <label className="attach">
+              <input type="file" accept="image/*" onChange={onAttach} />📎
+            </label>
+            <input className="in" value={text} onChange={(e) => setText(e.target.value)} placeholder={t.placeholder} onKeyDown={(e)=>{ if(e.key==='Enter') onSend(); }} />
+            <button className="send" onClick={onSend}>{t.send}</button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .support{position:fixed;right:14px;bottom:80px;z-index:60}
+        .fab{width:56px;height:56px;border-radius:50%;border:none;background:#111827;color:#fff;box-shadow:0 12px 28px rgba(0,0,0,.18);cursor:pointer;font-size:22px}
+        .panel{width:320px;max-height:60vh;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 12px 28px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden}
+        .phd{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #e5e7eb;background:#111827;color:#fff}
+        .pbd{padding:10px;display:flex;flex-direction:column;gap:8px;overflow:auto}
+        .msg{display:flex}
+        .msg.me{justify-content:flex-end}
+        .bubble{max-width:70%;padding:8px 10px;border-radius:12px;border:1px solid #e5e7eb;background:#fff}
+        .msg.me .bubble{background:#111827;color:#fff;border-color:#111827}
+        .bubble.img{padding:4px}
+        .bubble.img img{max-width:220px;border-radius:10px;display:block}
+        .pft{display:flex;gap:6px;align-items:center;padding:8px;border-top:1px solid #e5e7eb}
+        .attach{display:grid;place-items:center;width:36px;height:36px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;cursor:pointer}
+        .attach input{display:none}
+        .in{flex:1;padding:10px;border:1px solid #e5e7eb;border-radius:10px}
+        .send{padding:10px 12px;border-radius:10px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer}
+        @media (max-width:420px){ .panel{width:92vw} }
+      `}</style>
     </div>
   );
 }
