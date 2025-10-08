@@ -2,57 +2,40 @@
 "use client";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 
-/* ---------------- SUPABASE (varsa çıkışta kullanır) ---------------- */
+/* ------------------------------ SUPABASE (opsiyonel) ------------------------------ */
 let sb = null;
 function getSupabase() {
   if (sb) return sb;
-  const url =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    (typeof window !== "undefined" ? window.__SUPABASE_URL__ : "");
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    (typeof window !== "undefined" ? window.__SUPABASE_ANON__ : "");
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || (typeof window !== "undefined" ? window.__SUPABASE_URL__ : "");
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || (typeof window !== "undefined" ? window.__SUPABASE_ANON__ : "");
   if (!url || !key) return null;
   sb = createClient(url, key);
   return sb;
 }
 
-/* ---------------- DİL/ÇEVİRİ ---------------- */
-const SUP = ["tr", "en", "ar", "de"];
-const T = {
+/* ------------------------------ DİL / ÇEVİRİ ------------------------------ */
+const SUPPORTED = ["tr", "en", "ar", "de"]; // RTL: ar
+const LBL = {
   tr: {
     brand: "Üreten Eller",
-    sellerPortal: "Üreten El Portalı",
-    needLogin: "Bu alana erişmek için giriş yapmalısınız.",
-    goHome: "Ana sayfa",
-    loginReg: "Giriş / Kayıt",
-    tabs: { new: "Yeni İlan", my: "İlanlarım", orders: "Siparişler", payouts: "Ödemeler", profile: "Profil" },
-    form: {
-      title: "Başlık *",
-      cat: "Kategori *",
-      price: "Fiyat",
-      img: "Görsel (URL)",
-      desc: "Açıklama",
-      save: "Kaydet",
-      clear: "Temizle",
-      note: "Not: Şimdilik ilanlar tarayıcı hafızasına kaydedilir. Anasayfadaki “İlanlar” bölümünde görünür.",
-      required: "Başlık ve kategori zorunludur.",
-      saved: "İlan taslak olarak kaydedildi.",
-      saveErr: "Kaydetme sırasında hata (localStorage).",
-    },
-    tips: {
-      title: "İpucu",
-      li1: "Görsel için Cloudinary linki kullanabilirsiniz.",
-      li2: "Gerçek ödeme & mesajlaşma sonradan eklenecek.",
-      li3: "“İlanlarım” sekmesinden silebilirsiniz.",
-    },
-    my: { empty: "Henüz ilan yok. “Yeni İlan” sekmesinden ekleyin.", view: "Görüntüle", del: "Sil" },
-    orders: "Bu sayfa ileride gerçek siparişleri gösterecek.",
-    payouts: "Banka bilgileri ve ödemeler burada listelenecek.",
-    profile: { text: "Çıkış yaparsanız tamamen oturum kapanır ve ana sayfaya dönersiniz.", logout: "Çıkış Yap" },
-    bottom: { home: "Ana Sayfa", msgs: "Mesajlar", notifs: "Bildirimler" },
+    addListing: "İlan Ver",
+    profile: "Profil",
+    logout: "Çıkış",
+    dashboard: "Ana Sayfa",
+    messages: "Mesajlar",
+    notifications: "Bildirimler",
+    showcase: "Vitrin",
+    standard: "Standart İlanlar",
+    categories: "Kategorilerimiz",
+    proBadge: "PRO",
+    empty: "Henüz ilan yok.",
+    support: "Canlı Destek",
+    typeMsg: "Mesaj yazın...",
+    send: "Gönder",
+    attach: "Görsel ekle",
     legalBar: "Kurumsal",
     legal: {
       corporate: "Kurumsal",
@@ -67,39 +50,26 @@ const T = {
       rules: "Topluluk Kuralları",
       banned: "Yasaklı Ürünler",
       all: "Tüm Legal",
+      home: "Ana Sayfa",
     },
   },
   en: {
     brand: "Ureten Eller",
-    sellerPortal: "Maker Portal",
-    needLogin: "You must sign in to access this area.",
-    goHome: "Home",
-    loginReg: "Sign in / Sign up",
-    tabs: { new: "Post Listing", my: "My Listings", orders: "Orders", payouts: "Payouts", profile: "Profile" },
-    form: {
-      title: "Title *",
-      cat: "Category *",
-      price: "Price",
-      img: "Image (URL)",
-      desc: "Description",
-      save: "Save",
-      clear: "Clear",
-      note: "Note: For now, listings are stored in browser storage and appear on the homepage list.",
-      required: "Title and category are required.",
-      saved: "Listing saved as draft.",
-      saveErr: "Error while saving (localStorage).",
-    },
-    tips: {
-      title: "Tip",
-      li1: "You can use a Cloudinary image link.",
-      li2: "Real payments & messaging will arrive later.",
-      li3: "You can delete in the “My Listings” tab.",
-    },
-    my: { empty: "No listings yet. Add one in “Post Listing”.", view: "View", del: "Delete" },
-    orders: "This page will show real orders later.",
-    payouts: "Bank details and payouts will be listed here.",
-    profile: { text: "Logging out fully ends your session and returns to home.", logout: "Logout" },
-    bottom: { home: "Home", msgs: "Messages", notifs: "Notifications" },
+    addListing: "Post Listing",
+    profile: "Profile",
+    logout: "Logout",
+    dashboard: "Home",
+    messages: "Messages",
+    notifications: "Notifications",
+    showcase: "Showcase",
+    standard: "Standard Listings",
+    categories: "Categories",
+    proBadge: "PRO",
+    empty: "No listings yet.",
+    support: "Live Support",
+    typeMsg: "Type a message...",
+    send: "Send",
+    attach: "Attach image",
     legalBar: "Corporate",
     legal: {
       corporate: "Corporate",
@@ -114,34 +84,26 @@ const T = {
       rules: "Community Rules",
       banned: "Prohibited Products",
       all: "All Legal",
+      home: "Home",
     },
   },
   ar: {
     brand: "أُنتِج بالأيادي",
-    sellerPortal: "بوابة المُنتِجات",
-    needLogin: "يجب تسجيل الدخول للوصول إلى هذه الصفحة.",
-    goHome: "الرئيسية",
-    loginReg: "تسجيل / إنشاء حساب",
-    tabs: { new: "إنشاء إعلان", my: "إعلاناتي", orders: "الطلبات", payouts: "المدفوعات", profile: "الملف الشخصي" },
-    form: {
-      title: "العنوان *",
-      cat: "التصنيف *",
-      price: "السعر",
-      img: "الصورة (رابط)",
-      desc: "الوصف",
-      save: "حفظ",
-      clear: "مسح",
-      note: "ملاحظة: حاليًا يتم حفظ الإعلانات في المتصفح وتظهر في الصفحة الرئيسية.",
-      required: "العنوان والتصنيف مطلوبان.",
-      saved: "تم حفظ الإعلان كمسودة.",
-      saveErr: "خطأ أثناء الحفظ (localStorage).",
-    },
-    tips: { title: "نصيحة", li1: "يمكنك استخدام رابط صورة Cloudinary.", li2: "الدفع والمراسلة لاحقًا.", li3: "يمكنك الحذف من “إعلاناتي”." },
-    my: { empty: "لا توجد إعلانات بعد.", view: "عرض", del: "حذف" },
-    orders: "ستظهر الطلبات هنا لاحقًا.",
-    payouts: "ستُعرض المدفوعات هنا.",
-    profile: { text: "تسجيل الخروج سيُنهي الجلسة ويعيدك للرئيسية.", logout: "تسجيل الخروج" },
-    bottom: { home: "الصفحة الرئيسية", msgs: "رسائل", notifs: "إشعارات" },
+    addListing: "أنشئ إعلانًا",
+    profile: "الملف الشخصي",
+    logout: "تسجيل الخروج",
+    dashboard: "الرئيسية",
+    messages: "الرسائل",
+    notifications: "الإشعارات",
+    showcase: "الواجهة (Vitrin)",
+    standard: "إعلانات عادية",
+    categories: "التصنيفات",
+    proBadge: "محترف",
+    empty: "لا توجد إعلانات بعد.",
+    support: "الدعم المباشر",
+    typeMsg: "اكتب رسالة...",
+    send: "إرسال",
+    attach: "إرفاق صورة",
     legalBar: "المعلومات المؤسسية",
     legal: {
       corporate: "المؤسسة",
@@ -156,39 +118,26 @@ const T = {
       rules: "قواعد المجتمع",
       banned: "منتجات محظورة",
       all: "كل السياسات",
+      home: "الرئيسية",
     },
   },
   de: {
     brand: "Ureten Eller",
-    sellerPortal: "Anbieterinnen-Portal",
-    needLogin: "Bitte zuerst anmelden.",
-    goHome: "Startseite",
-    loginReg: "Anmelden / Registrieren",
-    tabs: { new: "Inserat einstellen", my: "Meine Inserate", orders: "Bestellungen", payouts: "Auszahlungen", profile: "Profil" },
-    form: {
-      title: "Titel *",
-      cat: "Kategorie *",
-      price: "Preis",
-      img: "Bild (URL)",
-      desc: "Beschreibung",
-      save: "Speichern",
-      clear: "Leeren",
-      note: "Hinweis: Inserate werden vorerst im Browser gespeichert und erscheinen auf der Startseite.",
-      required: "Titel und Kategorie sind Pflicht.",
-      saved: "Inserat als Entwurf gespeichert.",
-      saveErr: "Fehler beim Speichern (localStorage).",
-    },
-    tips: {
-      title: "Tipp",
-      li1: "Cloudinary-Bildlink verwenden.",
-      li2: "Zahlung & Messaging folgen später.",
-      li3: "Löschen in „Meine Inserate“ möglich.",
-    },
-    my: { empty: "Noch keine Inserate.", view: "Ansehen", del: "Löschen" },
-    orders: "Diese Seite zeigt später echte Bestellungen.",
-    payouts: "Bankdaten & Auszahlungen erscheinen hier.",
-    profile: { text: "Abmelden beendet die Sitzung und führt zur Startseite.", logout: "Abmelden" },
-    bottom: { home: "Start", msgs: "Nachrichten", notifs: "Mitteilungen" },
+    addListing: "Inserat einstellen",
+    profile: "Profil",
+    logout: "Abmelden",
+    dashboard: "Start",
+    messages: "Nachrichten",
+    notifications: "Mitteilungen",
+    showcase: "Vitrin",
+    standard: "Standard-Inserate",
+    categories: "Kategorien",
+    proBadge: "PRO",
+    empty: "Noch keine Inserate.",
+    support: "Live-Support",
+    typeMsg: "Nachricht schreiben...",
+    send: "Senden",
+    attach: "Bild anhängen",
     legalBar: "Unternehmen",
     legal: {
       corporate: "Unternehmen",
@@ -203,6 +152,7 @@ const T = {
       rules: "Community-Regeln",
       banned: "Verbotene Produkte",
       all: "Alle Rechtliches",
+      home: "Startseite",
     },
   },
 };
@@ -211,111 +161,137 @@ function useLang() {
   const [lang, setLang] = useState("tr");
   useEffect(() => {
     const saved = localStorage.getItem("lang");
-    if (saved && SUP.includes(saved)) setLang(saved);
+    if (saved && SUPPORTED.includes(saved)) setLang(saved);
   }, []);
   useEffect(() => {
     localStorage.setItem("lang", lang);
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
   }, [lang]);
-  const t = useMemo(() => T[lang] || T.tr, [lang]);
-  return { lang, setLang, t };
+  const t = useMemo(() => LBL[lang] || LBL.tr, [lang]);
+  return { lang, t };
 }
 
-/* ---------------- Yardımcılar ---------------- */
-const uid = () => Math.random().toString(36).slice(2, 9);
-const slugify = (s = "") =>
-  s.toString().toLowerCase().trim().replace(/\s+/g, "-").replace(/[^\w-]+/g, "");
+/* ------------------------------ KATEGORİLER (tam set) ------------------------------ */
+const CATS = {
+  tr: [
+    { icon: "🍲", title: "Yemekler", subs: ["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"] },
+    { icon: "🎂", title: "Pasta & Tatlı", subs: ["Yaş pasta","Kek-cupcake","Kurabiye","Şerbetli","Sütlü","Cheesecake","Diyet tatlı","Çikolata/şekerleme","Doğum günü setleri"] },
+    { icon: "🫙", title: "Reçel • Turşu • Sos", subs: ["Reçel-marmelat","Pekmez","Turşu","Domates/biber sos","Acı sos","Salça","Sirke","Konserve"] },
+    { icon: "🌾", title: "Yöresel / Kışlık", subs: ["Erişte","Tarhana","Yufka","Mantı","Kurutulmuş sebze-meyve","Salça","Sirke","Konserve"] },
+    { icon: "🥗", title: "Diyet / Vegan / Glutensiz", subs: ["Fit tabaklar","Vegan yemekler","GF unlu mamuller","Şekersiz tatlı","Keto ürün","Protein atıştırmalık"] },
+    { icon: "💍", title: "Takı", subs: ["Bileklik","Kolye","Küpe","Yüzük","Halhal","Broş","Setler","İsimli/kişiye özel","Makrome","Doğal taş","Reçine","Tel sarma"] },
+    { icon: "👶", title: "Bebek & Çocuk", subs: ["Hayvan/bebek figürleri","Çıngırak","Diş kaşıyıcı örgü","Bez oyuncak/kitap","Montessori oyuncak","Setler","Örgü patik-bere","Bebek battaniyesi","Önlük-ağız bezi","Lohusa seti","Saç aksesuarı","El emeği kıyafet"] },
+    { icon: "🧶", title: "Örgü / Triko", subs: ["Hırka","Kazak","Atkı-bere","Panço","Şal","Çorap","Bebek takımı","Yelek","Kırlent-örtü"] },
+    { icon: "✂️", title: "Dikiş / Terzilik", subs: ["Paça/onarım","Fermuar değişimi","Perde dikişi","Nevresim-yastık","Masa örtüsü","Özel dikim","Kostüm"] },
+    { icon: "🧵", title: "Makrome & Dekor", subs: ["Duvar süsü","Saksı askısı","Anahtarlık","Avize","Amerikan servis/runner","Sepet","Raf/duvar dekoru"] },
+    { icon: "🏠", title: "Ev Dekor & Aksesuar", subs: ["Keçe işleri","Kırlent","Kapı süsü","Tepsi süsleme","Çerçeve","Rüya kapanı","Tablo"] },
+    { icon: "🕯️", title: "Mum & Kokulu Ürünler", subs: ["Soya/balmumu mum","Kokulu taş","Oda spreyi","Tütsü","Jel mum","Hediye seti"] },
+    { icon: "🧼", title: "Doğal Sabun & Kozmetik", subs: ["Zeytinyağlı sabun","Bitkisel sabunlar","Katı şampuan","Dudak balmı","Krem/merhem","Banyo tuzu","Lavanta kesesi"] },
+    { icon: "🧸", title: "Amigurumi & Oyuncak (dekoratif)", subs: ["Anahtarlık","Magnet","Koleksiyon figürü","Dekor bebek/karakter","İsimli amigurumi"] },
+  ],
+  en: [
+    { icon: "🍲", title: "Meals", subs: ["Home meals","Savory bakes","Soup","Olive oil dishes","Rice-pasta","Meat-chicken","Breakfast","Meze","Frozen","Kids meals","Diet/vegan/gf"] },
+    { icon: "🎂", title: "Cakes & Sweets", subs: ["Layer cake","Cupcake","Cookies","Syrupy","Milk desserts","Cheesecake","Diet sweets","Chocolate/candy","Birthday sets"] },
+    { icon: "🫙", title: "Jam • Pickle • Sauce", subs: ["Jam-marmalade","Molasses","Pickles","Tomato/pepper sauce","Hot sauce","Paste","Vinegar","Canned"] },
+    { icon: "🌾", title: "Regional / Winter Prep", subs: ["Noodles","Tarhana","Yufka","Manti","Dried veg/fruit","Paste","Vinegar","Canned"] },
+    { icon: "🥗", title: "Diet / Vegan / Gluten-free", subs: ["Fit bowls","Vegan meals","GF bakery","Sugar-free desserts","Keto items","Protein snacks"] },
+    { icon: "💍", title: "Jewelry", subs: ["Bracelet","Necklace","Earrings","Ring","Anklet","Brooch","Sets","Personalized","Macrame","Gemstones","Resin","Wire wrap"] },
+    { icon: "👶", title: "Baby & Kids", subs: ["Animal/baby figures","Rattle","Knit teether","Cloth toy/book","Montessori toy","Sets","Knit booties-hats","Baby blanket","Bib/burp cloth","Maternity set","Hair accessory","Handmade wear"] },
+    { icon: "🧶", title: "Knitwear", subs: ["Cardigan","Sweater","Scarf-hat","Poncho","Shawl","Socks","Baby set","Vest","Pillow/cover"] },
+    { icon: "✂️", title: "Sewing / Tailor", subs: ["Hemming/repair","Zipper change","Curtains","Bedding","Tablecloth","Custom sew","Costume"] },
+    { icon: "🧵", title: "Macrame & Decor", subs: ["Wall hanging","Plant hanger","Keychain","Pendant lamp","Table runner","Basket","Shelf/decor"] },
+    { icon: "🏠", title: "Home Decor & Accessories", subs: ["Felt crafts","Pillow","Door wreath","Tray decor","Frame","Dreamcatcher","Painting"] },
+    { icon: "🕯️", title: "Candles & Scents", subs: ["Soy/beeswax candles","Aroma stone","Room spray","Incense","Gel candle","Gift sets"] },
+    { icon: "🧼", title: "Natural Soap & Cosmetics", subs: ["Olive oil soap","Herbal soaps","Solid shampoo","Lip balm","Cream/salve","Bath salt","Lavender sachet"] },
+    { icon: "🧸", title: "Amigurumi & Toys (decor)", subs: ["Keychain","Magnet","Collectible figure","Decor doll/character","Named amigurumi"] },
+  ],
+  ar: [
+    { icon: "🍲", title: "وجبات", subs: ["بيتي","معجنات مالحة","شوربة","أكلات بزيت الزيتون","أرز/معكرونة","لحم/دجاج","فطور","مقبلات","مجمدة","وجبات أطفال","نباتي/خالٍ من الغلوتين"] },
+    { icon: "🎂", title: "كعك وحلويات", subs: ["كيك طبقات","كب كيك","بسكويت","حلويات بالقطر","حلويات ألبان","تشيز كيك","دايت","شوكولاتة/حلوى","طقم عيد ميلاد"] },
+    { icon: "🫙", title: "مربى • مخلل • صوص", subs: ["مربى","دبس","مخللات","صلصة طماطم/فلفل","حار","معجون","خل","معلبات"] },
+    { icon: "🌾", title: "تراثي / مؤونة الشتاء", subs: ["مكرونة منزلية","طرحنة","يوفكا","مانطي","مجففات","معجون","خل","معلبات"] },
+    { icon: "🥗", title: "حمية / نباتي / خالٍ من الغلوتين", subs: ["أطباق صحية","نباتي","مخبوزات GF","حلويات بدون سكر","كيتو","سناك بروتين"] },
+    { icon: "💍", title: "إكسسوارات", subs: ["أساور","قلائد","أقراط","خواتم","خلخال","بروش","أطقم","مخصص بالاسم","ماكرامه","أحجار","ريزن","سلك"] },
+    { icon: "👶", title: "رضع وأطفال", subs: ["مجسّمات","خشخيشة","عضّاضة تريكو","لعبة/كتاب قماشي","مونتيسوري","أطقم","حذاء/قبعة تريكو","بطانية","مريلة","طقم نفاس","اكسسوار شعر","ملابس يدوية"] },
+    { icon: "🧶", title: "تريكو", subs: ["جاكيت","بلوز","وشاح/قبعة","بونشو","شال","جوارب","طقم أطفال","صديري","وسادة/غطاء"] },
+    { icon: "✂️", title: "خياطة/تفصيل", subs: ["تقصير/تصليح","تغيير سحاب","ستائر","مفارش سرير","مفرش طاولة","تفصيل خاص","ملابس تنكرية"] },
+    { icon: "🧵", title: "ماكرامه وديكور", subs: ["تعليقة حائط","حامل نبات","ميدالية","إضاءة معلّقة","مفرش","سلة","رف/ديكور"] },
+    { icon: "🏠", title: "ديكور المنزل", subs: ["فيلت","وسادة","زينة باب","صينية مزخرفة","إطار","صائد أحلام","لوحة"] },
+    { icon: "🕯️", title: "شموع وروائح", subs: ["شموع صويا/نحل","حجر عطري","معطر غرف","بخور","شمعة جل","أطقم هدايا"] },
+    { icon: "🧼", title: "صابون طبيعي وتجميلي", subs: ["صابون زيت زيتون","أعشاب","شامبو صلب","بلسم شفاه","كريم/مرهم","ملح حمام"] },
+    { icon: "🧸", title: "أميجورومي وألعاب (ديكور)", subs: ["ميدالية","مغناطيس","فيجور","دمية ديكور","أميجورومي بالاسم"] },
+  ],
+  de: [
+    { icon: "🍲", title: "Speisen", subs: ["Hausmannskost","Herzhafte Backwaren","Suppe","Olivenölgerichte","Reis/Pasta","Fleisch/Hähnchen","Frühstück","Meze","Tiefgekühlt","Kindermahlzeiten","Diät/Vegan/GF"] },
+    { icon: "🎂", title: "Torten & Süßes", subs: ["Sahnetorte","Cupcake","Kekse","Sirupgebäck","Milchdesserts","Käsekuchen","Diät-Desserts","Schoko/Bonbon","Geburtstags-Sets"] },
+    { icon: "🫙", title: "Marmelade • Pickles • Soßen", subs: ["Marmelade","Melasse","Eingelegtes","Tomaten/Pfeffersoße","Scharfsoße","Paste","Essig","Eingewecktes"] },
+    { icon: "🌾", title: "Regional / Wintervorrat", subs: ["Hausgem. Nudeln","Tarhana","Yufka","Manti","Getrocknetes","Paste","Essig","Vorrat"] },
+    { icon: "🥗", title: "Diät / Vegan / Glutenfrei", subs: ["Fit Bowls","Vegan","GF-Bäckerei","Zuckerfrei","Keto","Protein-Snacks"] },
+    { icon: "💍", title: "Schmuck", subs: ["Armband","Kette","Ohrringe","Ring","Fußkettchen","Brosche","Sets","Personalisiert","Makramee","Edelsteine","Harz","Draht"] },
+    { icon: "👶", title: "Baby & Kinder", subs: ["Figuren","Rassel","Beißring Strick","Stoffspielzeug/Buch","Montessori","Sets","Schühchen/Mützen","Babydecke","Lätzchen","Wochenbett-Set","Haar-Accessoire","Handgemachte Kleidung"] },
+    { icon: "🧶", title: "Strickwaren", subs: ["Cardigan","Pullover","Schal/Mütze","Poncho","Tuch","Socken","Baby-Set","Weste","Kissen/Decke"] },
+    { icon: "✂️", title: "Nähen / Schneiderei", subs: ["Saum/Reparatur","Reißverschluss","Gardinen","Bettwäsche","Tischdecke","Maßanfertigung","Kostüm"] },
+    { icon: "🧵", title: "Makramee & Deko", subs: ["Wandbehang","Pflanzenhänger","Schlüsselanh.","Pendelleuchte","Läufer","Korb","Regal/Deko"] },
+    { icon: "🏠", title: "Wohndeko & Accessoires", subs: ["Filzarbeiten","Kissen","Türkranz","Tablettdeko","Rahmen","Traumfänger","Bild"] },
+    { icon: "🕯️", title: "Kerzen & Düfte", subs: ["Soja/Bienenwachs","Duftstein","Raumspray","Weihrauch","Gelkerze","Geschenksets"] },
+    { icon: "🧼", title: "Naturseife & Kosmetik", subs: ["Olivenölseife","Kräuterseifen","Festes Shampoo","Lippenbalsam","Creme/Salbe","Badesalz","Lavendelsäckchen"] },
+    { icon: "🧸", title: "Amigurumi & Spielzeug (Deko)", subs: ["Schlüsselanh.","Magnet","Sammelfigur","Deko-Puppe","Amigurumi mit Name"] },
+  ],
+};
 
-/* ---------------- Ana Bileşen ---------------- */
-export default function SellerPortal() {
-  const { lang, setLang, t } = useLang();
+/* ------------------------------ BİLEŞEN ------------------------------ */
+export default function SellerHome() {
+  const router = useRouter();
+  const { lang, t } = useLang();
 
-  const [authed, setAuthed] = useState(false);
-  const [tab, setTab] = useState("new"); // new | my | orders | payouts | profile
-  const [ads, setAds] = useState([]);
-  const [msg, setMsg] = useState("");
+  // Auth (login sonrası bu sayfaya gelir)
+  const [authed, setAuthed] = useState(true);
+  useEffect(() => { setAuthed(localStorage.getItem("authed") === "1"); }, []);
 
-  // Form state
-  const [title, setTitle] = useState("");
-  const [cat, setCat] = useState("");
-  const [price, setPrice] = useState("");
-  const [img, setImg] = useState("");
-  const [desc, setDesc] = useState("");
-
-  // Giriş kontrolü + ilanları yükle
+  // İlanlar: vitrin (pro) + standart — /public/ads.json
+  const [proAds, setProAds] = useState([]);
+  const [stdAds, setStdAds] = useState([]);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    setAuthed(localStorage.getItem("authed") === "1");
-    try {
-      const local = JSON.parse(localStorage.getItem("ads") || "[]");
-      setAds(Array.isArray(local) ? local : []);
-    } catch {
-      setAds([]);
-    }
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/ads.json", { cache: "no-store" });
+        if (res.ok) {
+          const all = await res.json();
+          if (!Array.isArray(all)) throw new Error();
+          const pros = all.filter(x => x?.isPro);
+          const std = all.filter(x => !x?.isPro);
+          if (alive) { setProAds(pros.slice(0,50)); setStdAds(std.slice(0,20)); }
+        }
+      } catch {}
+    })();
+    return () => { alive = false; };
   }, []);
 
-  const go = useCallback((href) => (window.location.href = href), []);
+  const cats = CATS[lang] || CATS.tr;
 
-  // Çıkış
+  const go = useCallback((href) => router.push(href), [router]);
+
   const onLogout = async () => {
-    try {
-      const supa = getSupabase();
-      if (supa) await supa.auth.signOut();
-    } catch {}
+    try { const supa = getSupabase(); if (supa) await supa.auth.signOut(); } catch {}
     localStorage.removeItem("authed");
-    localStorage.setItem("support_chat", "1"); // anasayfada canlı destek baloncuğu
-    go("/");
+    localStorage.setItem("support_chat", "1"); // anasayfada baloncuk tetikleyici
+    window.location.href = "/"; // tam çıkış
   };
 
-  // Kaydet
-  function saveAd(e) {
-    e.preventDefault();
-    setMsg("");
-    if (!title || !cat) {
-      setMsg(t.form.required);
-      return;
-    }
-    const ad = {
-      id: uid(),
-      slug: slugify(title),
-      title,
-      cat,
-      price,
-      img,
-      desc,
-      created_at: new Date().toISOString(),
-      status: "active",
-    };
-    const next = [ad, ...ads];
-    setAds(next);
-    try {
-      localStorage.setItem("ads", JSON.stringify(next));
-      setMsg(t.form.saved);
-    } catch {
-      setMsg(t.form.saveErr);
-    }
-    setTitle("");
-    setCat("");
-    setPrice("");
-    setImg("");
-    setDesc("");
-    setTab("my");
+  if (!authed) {
+    if (typeof window !== "undefined") window.location.href = "/login?role=seller";
+    return null;
   }
 
-  function removeAd(id) {
-    const next = ads.filter((a) => a.id !== id);
-    setAds(next);
-    try {
-      localStorage.setItem("ads", JSON.stringify(next));
-    } catch {}
-  }
+  // Bottom bar aktif sekme
+  const activeTab = "home";
 
-  /* ---------------- UI ---------------- */
   return (
     <>
       <Head>
-        <title>{t.brand} • {t.sellerPortal}</title>
+        <title>{t.brand} – {t.dashboard}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* Faviconlar */}
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=5" />
@@ -325,185 +301,87 @@ export default function SellerPortal() {
         <meta name="theme-color" content="#0b0b0b" />
       </Head>
 
-      {/* Üst Bar */}
+      {/* ÜST BAR — yalnız 3 buton */}
       <header className="topbar">
-        <div className="brand" onClick={() => go("/")}>👐 {t.brand}</div>
-        <nav className="tabs" aria-label="Tabs">
-          {["new","my","orders","payouts","profile"].map((k) => (
-            <button key={k} className={`tab ${tab === k ? "active" : ""}`} onClick={() => setTab(k)}>
-              {t.tabs[k]}
-            </button>
-          ))}
-        </nav>
+        <div className="brand" onClick={() => go("/portal/seller")}>👐 {t.brand}</div>
         <div className="actions">
-          <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
-            {SUP.map((k) => (<option key={k} value={k}>{k.toUpperCase()}</option>))}
-          </select>
-          <button className="ghost" onClick={() => go("/")}>{t.goHome}</button>
-          <button className="danger" onClick={onLogout}>{t.profile.logout}</button>
+          <button className="primary" onClick={() => go("/portal/seller/post")}>{t.addListing}</button>
+          <button className="ghost" onClick={() => go("/profile")}>{t.profile}</button>
+          <button className="danger" onClick={onLogout}>{t.logout}</button>
         </div>
       </header>
 
-      {/* Renkli Hero Şerit */}
+      {/* HERO / renkli bloblar */}
       <section className="hero">
-        <div className="heroText">
-          <h1>{t.sellerPortal}</h1>
-          <p className="lead">
-            {lang === "tr" && "El emeği ürünlerini güvenle vitrine çıkar, siparişlerini tek panelden yönet."}
-            {lang === "en" && "Showcase your handmade products and manage orders from one place."}
-            {lang === "ar" && "اعرض منتجاتك اليدوية بثقة وادِر الطلبات من مكان واحد."}
-            {lang === "de" && "Präsentiere Handgemachtes und verwalte Bestellungen zentral."}
-          </p>
+        <div className="left">
+          <h1>{t.dashboard}</h1>
+          <p className="lead">El emeği ürünlerini güvenle vitrine çıkar, siparişlerini tek panelden yönet.</p>
         </div>
-        <div className="heroArt" aria-hidden>
+        <div className="right" aria-hidden>
           <div className="blob b1" />
           <div className="blob b2" />
           <div className="blob b3" />
         </div>
       </section>
 
-      {/* İçerik */}
-      <main className="wrap">
-        {!authed ? (
-          <div className="card">
-            <div className="hd">{t.sellerPortal}</div>
-            <div className="bd">
-              <p className="note">{t.needLogin} (<code>authed=1</code>)</p>
-              <div className="actionsRow">
-                <button className="primary" onClick={() => go("/login?role=seller")}>{t.loginReg}</button>
-                <button className="ghost" onClick={() => go("/")}>{t.goHome}</button>
+      {/* Vitrin (PRO) */}
+      <section className="section">
+        <div className="sectionHead"><h2>✨ {t.showcase}</h2></div>
+        <div className="grid ads">
+          {proAds.length === 0 ? (<div className="empty">{t.empty}</div>) : proAds.map((a,i) => (
+            <article key={i} className="ad">
+              <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }}>
+                <span className="badge">{t.proBadge}</span>
               </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            {tab === "new" && (
-              <div className="grid">
-                <div className="card">
-                  <div className="hd">{t.tabs.new}</div>
-                  <div className="bd">
-                    {msg && (
-                      <div className={/zorunlu|required|hata|error/i.test(msg) ? "alert danger" : "alert ok"}>
-                        {msg}
-                      </div>
-                    )}
-                    <form onSubmit={saveAd}>
-                      <label><span>{t.form.title}</span>
-                        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Örn: Ev Yapımı Mantı 1 kg" required />
-                      </label>
-                      <div className="row" style={{ marginTop: 10 }}>
-                        <label><span>{t.form.cat}</span>
-                          <input value={cat} onChange={(e) => setCat(e.target.value)} placeholder="Örn: Yemekler" required />
-                        </label>
-                        <label><span>{t.form.price}</span>
-                          <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Örn: 250 TL" />
-                        </label>
-                      </div>
-                      <label style={{ marginTop: 10 }}><span>{t.form.img}</span>
-                        <input value={img} onChange={(e) => setImg(e.target.value)} placeholder="https://res.cloudinary.com/.../image/upload/..." />
-                      </label>
-                      <label style={{ marginTop: 10 }}><span>{t.form.desc}</span>
-                        <textarea rows={4} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Ürününüzü anlatın (içerik, teslimat, vb.)" />
-                      </label>
-                      <div className="actionsRow">
-                        <button className="primary" type="submit">{t.form.save}</button>
-                        <button
-                          className="ghost"
-                          type="button"
-                          onClick={() => { setTitle(""); setCat(""); setPrice(""); setImg(""); setDesc(""); setMsg(""); }}
-                        >
-                          {t.form.clear}
-                        </button>
-                      </div>
-                      <p className="note">{t.form.note}</p>
-                    </form>
-                  </div>
-                </div>
-
-                <div className="card">
-                  <div className="hd">{t.tips.title}</div>
-                  <div className="bd">
-                    <ul className="ul">
-                      <li>{t.tips.li1}</li>
-                      <li>{t.tips.li2}</li>
-                      <li>{t.tips.li3}</li>
-                    </ul>
-                  </div>
-                </div>
+              <div className="body">
+                <div className="title">{a?.title || "İlan"}</div>
+                <div className="meta"><span>{a?.cat || a?.category || ""}</span><b>{a?.price || ""}</b></div>
               </div>
-            )}
+              <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>İncele</button>
+            </article>
+          ))}
+        </div>
+      </section>
 
-            {tab === "my" && (
-              <div className="card">
-                <div className="hd">{t.tabs.my} ({ads.length})</div>
-                <div className="bd">
-                  {!ads.length ? (
-                    <p className="note">{t.my.empty}</p>
-                  ) : (
-                    <div className="list">
-                      {ads.map((a) => (
-                        <article className="ad" key={a.id}>
-                          <div className="thumb" style={a.img ? { backgroundImage: `url(${a.img})` } : undefined} />
-                          <div className="adBody">
-                            <div className="ttl">{a.title}</div>
-                            <div className="meta">{a.cat} • <b>{a.price || "-"}</b></div>
-                          </div>
-                          <div className="adActions">
-                            <button className="ghost" onClick={() => go(`/ads/${a.slug || a.id}`)}>{t.my.view}</button>
-                            <button className="dangerSoft" onClick={() => removeAd(a.id)}>{t.my.del}</button>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </div>
+      {/* Standart ilanlar */}
+      <section className="section">
+        <div className="sectionHead"><h2>🧺 {t.standard}</h2></div>
+        <div className="grid ads">
+          {stdAds.length === 0 ? (<div className="empty">{t.empty}</div>) : stdAds.map((a,i) => (
+            <article key={i} className="ad">
+              <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }} />
+              <div className="body">
+                <div className="title">{a?.title || "İlan"}</div>
+                <div className="meta"><span>{a?.cat || a?.category || ""}</span><b>{a?.price || ""}</b></div>
               </div>
-            )}
+              <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>İncele</button>
+            </article>
+          ))}
+        </div>
+      </section>
 
-            {tab === "orders" && (
-              <div className="card">
-                <div className="hd">{t.tabs.orders}</div>
-                <div className="bd"><p className="note">{t.orders}</p></div>
-              </div>
-            )}
+      {/* Kategoriler */}
+      <section className="section">
+        <div className="sectionHead"><h2>🗂️ {t.categories}</h2></div>
+        <div className="grid cats">
+          {(cats||[]).map((c,idx) => (
+            <article key={idx} className="catCard">
+              <div className="head"><span className="icn">{c.icon}</span><h3>{c.title}</h3><span className="count">{c.subs.length}</span></div>
+              <div className="subs">{c.subs.map((s,i) => <span key={i} className="chip">{s}</span>)}</div>
+            </article>
+          ))}
+        </div>
+      </section>
 
-            {tab === "payouts" && (
-              <div className="card">
-                <div className="hd">{t.tabs.payouts}</div>
-                <div className="bd"><p className="note">{t.payouts}</p></div>
-              </div>
-            )}
-
-            {tab === "profile" && (
-              <div className="card">
-                <div className="hd">{t.tabs.profile}</div>
-                <div className="bd">
-                  <p className="note">{t.profile.text}</p>
-                  <div className="actionsRow">
-                    <button className="danger" onClick={onLogout}>{t.profile.logout}</button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </main>
-
-      {/* Alt gezinme çubuğu */}
+      {/* ALT BAR — sabit */}
       <nav className="bottombar" aria-label="Bottom Navigation">
-        <button className="tabB active" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          <span>🏠</span><b>{t.bottom.home}</b>
-        </button>
-        <button className="tabB" onClick={() => go("/messages")}>
-          <span>💬</span><b>{t.bottom.msgs}</b>
-        </button>
-        <button className="tabB" onClick={() => go("/notifications")}>
-          <span>🔔</span><b>{t.bottom.notifs}</b>
-        </button>
+        <button className={activeTab === "home" ? "tab active" : "tab"} onClick={() => go("/portal/seller")}>🏠 <span>{t.dashboard}</span></button>
+        <button className="tab" onClick={() => go("/messages")}>💬 <span>{t.messages}</span></button>
+        <button className="tab" onClick={() => go("/notifications")}>🔔 <span>{t.notifications}</span></button>
       </nav>
 
-      {/* Siyah LEGAL alan — tam genişlik */}
-      <footer className="legal" role="contentinfo">
+      {/* Siyah LEGAL ALAN — kenardan kenara */}
+      <footer className="legal">
         <div className="inner">
           <div className="ttl">{t.legalBar}</div>
           <nav className="links" aria-label={t.legalBar}>
@@ -524,71 +402,61 @@ export default function SellerPortal() {
         </div>
       </footer>
 
+      {/* Canlı Destek Baloncuğu (yerel) */}
+      <SupportBubble t={t} />
+
       {/* STYLES */}
       <style>{`
         :root{ --ink:#0f172a; --muted:#475569; --line:rgba(0,0,0,.08); }
         html,body{height:100%}
-        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--ink);
-          background:
-            radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
-            radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
-            linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--ink);background:
+          radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
+          radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
+          linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
           background-attachment:fixed;}
 
-        .topbar{position:sticky;top:0;z-index:60;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
-          padding:10px 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+        .topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:10px 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
         .brand{font-weight:900;cursor:pointer}
-        .tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-        .tab{padding:8px 12px;border:1px solid var(--line);background:#fff;border-radius:999px;cursor:pointer;font-weight:800}
-        .tab.active{background:#111827;color:#fff;border-color:#111827}
         .actions{display:flex;gap:8px;align-items:center}
-        .actions select{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:#fff}
-        .ghost{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
-        .danger{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
-        .dangerSoft{border:1px solid #fecaca;background:#fee2e2;color:#991b1b;border-radius:10px;padding:8px 10px;font-weight:800;cursor:pointer}
+        .primary{padding:10px 14px;border-radius:12px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer}
+        .ghost{padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:#fff;font-weight:700;cursor:pointer}
+        .danger{padding:10px 14px;border-radius:12px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer}
 
-        .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;max-width:1100px;margin:14px auto 0;padding:0 16px}
-        .heroText h1{margin:6px 0 4px;font-size:32px}
-        .lead{margin:0 0 8px;color:#1f2937}
-        .heroArt{position:relative;min-height:160px}
+        .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;max-width:1100px;margin:16px auto 0;padding:10px 16px}
+        .left h1{margin:6px 0 4px;font-size:30px}
+        .lead{margin:0 0 10px;color:#1f2937}
+        .right{position:relative;min-height:160px}
         .blob{position:absolute;filter:blur(30px);opacity:.6;border-radius:50%}
         .b1{width:180px;height:180px;background:#f472b6;top:10px;left:10px}
         .b2{width:220px;height:220px;background:#93c5fd;top:40px;right:20px}
         .b3{width:160px;height:160px;background:#86efac;bottom:-30px;left:120px}
 
-        .wrap{max-width:1100px;margin:0 auto;padding:14px 16px}
-        .grid{display:grid;gap:14px;grid-template-columns:1.2fr .8fr}
-        @media (max-width:880px){ .grid{grid-template-columns:1fr} .hero{grid-template-columns:1fr} .heroArt{min-height:120px} }
+        .section{max-width:1100px;margin:12px auto;padding:0 16px}
+        .sectionHead{display:flex;align-items:center;justify-content:space-between;margin:8px 0}
+        .grid.ads{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+        .ad{border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;background:#fff;display:flex;flex-direction:column;box-shadow:0 8px 22px rgba(0,0,0,.06)}
+        .thumb{aspect-ratio:4/3;background:#f1f5f9;background-size:cover;background-position:center;position:relative}
+        .badge{position:absolute;top:8px;left:8px;background:#111827;color:#fff;font-size:12px;padding:4px 8px;border-radius:999px}
+        .body{padding:10px}
+        .title{font-weight:800;margin:0 0 6px}
+        .meta{display:flex;justify-content:space-between;color:#475569;font-size:13px}
+        .view{margin:0 10px 12px;border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer}
+        .empty{padding:18px;border:1px dashed #e5e7eb;border-radius:14px;text-align:center;color:#475569}
 
-        .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 8px 22px rgba(0,0,0,.06)}
-        .card .hd{padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:900}
-        .card .bd{padding:12px}
+        .grid.cats{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+        .catCard{border:1px solid #e5e7eb;border-radius:16px;background:rgba(255,255,255,.92);box-shadow:0 8px 22px rgba(0,0,0,.06);padding:12px}
+        .catCard .head{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+        .icn{font-size:22px}
+        .catCard h3{margin:0;font-size:18px}
+        .count{justify-self:end;background:#ffffffc0;border:1px solid #e5e7eb;font-size:12px;border-radius:999px;padding:2px 8px}
+        .subs{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:8px}
+        .chip{display:block;text-align:center;padding:8px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;font-size:12px}
 
-        label span{display:block;font-size:13px;color:#334155;margin-bottom:4px}
-        input,textarea,select{width:100%;padding:12px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;font-size:15px}
-        .row{display:grid;gap:10px;grid-template-columns:1fr 1fr}
-        @media (max-width:520px){ .row{grid-template-columns:1fr} }
-        .actionsRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-        .primary{padding:10px 14px;border-radius:10px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer}
-        .ghost{padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:700;cursor:pointer}
-        .note{margin:8px 0 0;color:#475569;font-size:14px}
-        .alert{border-radius:10px;padding:8px 10px;margin-bottom:10px}
-        .alert.ok{border:1px solid #a5f3fc;background:#ecfeff;color:#0e7490}
-        .alert.danger{border:1px solid #fecaca;background:#fee2e2;color:#991b1b}
+        .bottombar{position:sticky;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+        .tab{display:flex;gap:6px;align-items:center;justify-content:center;padding:8px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:700}
+        .tab.active{border-color:#111827;background:#111827;color:#fff}
 
-        .list{display:grid;gap:10px}
-        .ad{display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;border:1px solid #e5e7eb;border-radius:12px;padding:8px;background:#fff}
-        .thumb{width:96px;height:72px;background:#f1f5f9;border-radius:10px;background-size:cover;background-position:center}
-        .ttl{font-weight:900}
-        .meta{font-size:13px;color:#475569}
-        .adActions{display:flex;gap:8px}
-
-        .bottombar{position:sticky;bottom:0;z-index:50;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
-        .tabB{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:700}
-        .tabB.active{border-color:#111827;background:#111827;color:#fff}
-
-        .legal{background:#0b0b0b;color:#f8fafc;border-top:1px solid rgba(255,255,255,.12);width:100vw;
-          margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);margin-top:14px}
+        .legal{background:#0b0b0b;color:#f8fafc;border-top:1px solid rgba(255,255,255,.12);width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);margin-top:14px}
         .inner{max-width:1100px;margin:0 auto;padding:12px 16px}
         .ttl{font-weight:800;margin-bottom:6px}
         .links{display:flex;flex-wrap:wrap;gap:10px}
@@ -596,7 +464,79 @@ export default function SellerPortal() {
         .links a:hover{background:rgba(255,255,255,.08);color:#fff}
         .homeLink{margin-left:auto;font-weight:800}
         .copy{margin-top:6px;font-size:12px;color:#cbd5e1}
+
+        /* Canlı Destek */
+        .supBubble{position:fixed;right:16px;bottom:86px;z-index:60}
+        .supBtn{display:flex;align-items:center;gap:8px;border-radius:999px;padding:10px 14px;border:1px solid #111827;background:#111827;color:#fff;font-weight:800;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+        .supPanel{position:fixed;right:16px;bottom:86px;width:320px;max-height:60vh;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 28px rgba(0,0,0,.18);display:flex;flex-direction:column;overflow:hidden}
+        .supHd{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:800}
+        .supBody{padding:10px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+        .msg{max-width:86%;padding:8px 10px;border-radius:12px;border:1px solid #e5e7eb;background:#fff}
+        .mine{align-self:flex-end;background:#111827;color:#fff;border-color:#111827}
+        .supFt{display:flex;gap:6px;padding:10px;border-top:1px solid #e5e7eb}
+        .supFt input[type="text"]{flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:8px}
+        .supFt input[type="file"]{display:none}
+        .supFt .btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer}
+
+        @media (max-width:820px){ .hero{grid-template-columns:1fr} }
       `}</style>
     </>
+  );
+}
+
+/* ------------------------------ Canlı Destek Bileşeni ------------------------------ */
+function SupportBubble({ t }) {
+  const [open, setOpen] = useState(false);
+  const [txt, setTxt] = useState("");
+  const [items, setItems] = useState([]); // {me:boolean, text?, img?}
+
+  useEffect(() => {
+    try { const saved = JSON.parse(localStorage.getItem("support_items") || "[]"); if (Array.isArray(saved)) setItems(saved); } catch {}
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem("support_items", JSON.stringify(items)); } catch {}
+  }, [items]);
+
+  const onSend = () => {
+    if (!txt.trim()) return;
+    setItems((x) => [...x, { me: true, text: txt.trim() }]);
+    setTxt("");
+  };
+
+  const onAttach = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    setItems((x) => [...x, { me: true, img: url }]);
+    e.target.value = "";
+  };
+
+  if (!open) return (
+    <div className="supBubble">
+      <button className="supBtn" onClick={() => setOpen(true)}>💬 {t.support}</button>
+    </div>
+  );
+
+  return (
+    <div className="supPanel" role="dialog" aria-label={t.support}>
+      <div className="supHd">
+        <span>💬 {t.support}</span>
+        <button className="ghost" onClick={() => setOpen(false)}>✕</button>
+      </div>
+      <div className="supBody">
+        {items.length === 0 && <div className="msg">{t.typeMsg}</div>}
+        {items.map((m, i) => (
+          <div key={i} className={"msg " + (m.me ? "mine" : "")}>{m.img ? <img src={m.img} alt="" style={{maxWidth:"100%",borderRadius:8}}/> : m.text}</div>
+        ))}
+      </div>
+      <div className="supFt">
+        <input type="text" placeholder={t.typeMsg} value={txt} onChange={(e)=>setTxt(e.target.value)} onKeyDown={(e)=>{ if(e.key==="Enter") onSend(); }} />
+        <label className="btn" title={t.attach}>
+          📎<input type="file" accept="image/*" onChange={onAttach} />
+        </label>
+        <button className="btn" onClick={onSend}>{t.send}</button>
+      </div>
+    </div>
   );
 }
