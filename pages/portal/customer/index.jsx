@@ -1,35 +1,26 @@
-// pages/portal/customer/index.jsx
 "use client";
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Head from "next/head";
+import { useRouter } from "next/router";
 
-/* ----------------------------- Dil / Çeviriler ----------------------------- */
-const SUPPORTED = ["tr", "en", "ar", "de"];
-const LOCALE_LABEL = { tr: "TR", en: "EN", ar: "AR", de: "DE" };
-
+/* ---------------------------- DİL / ÇEVİRİLER ---------------------------- */
+const SUPPORTED = ["tr", "en", "ar", "de"]; // RTL: ar
 const LBL = {
   tr: {
     brand: "Üreten Eller",
-    welcome: "Üreten Ellere Hoş Geldiniz",
+    heroWelcome: "Üreten Ellere Hoş Geldiniz",
+    dashboard: "Ana Sayfa",
+    messages: "Mesajlar",
+    notifications: "Bildirimler",
+    profile: "Profil",
+    logout: "Çıkış",
+    findListing: "İlan Ara",
     showcase: "Vitrin",
     standard: "Standart İlanlar",
     categories: "Kategorilerimiz",
-    view: "İncele",
-    empty: "Henüz ilan yok.",
-    findListing: "İlan Ara",
-    profile: "Profil",
-    logout: "Çıkış",
-    home: "Ana Sayfa",
-    messages: "Mesajlar",
-    notifications: "Bildirimler",
     proBadge: "PRO",
-    chat: {
-      open: "Canlı Destek",
-      placeholder: "Mesaj yazın…",
-      hello: "Merhaba! Size nasıl yardımcı olabilirim?",
-      send: "Gönder",
-      attach: "Resim ekle",
-    },
+    empty: "Henüz ilan yok.",
+    chat_greet: "Merhaba! Size nasıl yardımcı olabilirim?",
     legalBar: "Kurumsal",
     legal: {
       corporate: "Kurumsal",
@@ -44,34 +35,28 @@ const LBL = {
       rules: "Topluluk Kuralları",
       banned: "Yasaklı Ürünler",
       all: "Tüm Legal",
+      home: "Ana Sayfa",
     },
   },
   en: {
     brand: "Ureten Eller",
-    welcome: "Welcome to Ureten Eller",
-    showcase: "Showcase",
-    standard: "Standard Listings",
-    categories: "Our Categories",
-    view: "View",
-    empty: "No listings yet.",
-    findListing: "Find Listing",
-    profile: "Profile",
-    logout: "Logout",
-    home: "Home",
+    heroWelcome: "Welcome to Ureten Eller",
+    dashboard: "Home",
     messages: "Messages",
     notifications: "Notifications",
+    profile: "Profile",
+    logout: "Logout",
+    findListing: "Find Listing",
+    showcase: "Showcase",
+    standard: "Standard Listings",
+    categories: "Categories",
     proBadge: "PRO",
-    chat: {
-      open: "Live Support",
-      placeholder: "Type a message…",
-      hello: "Hello! How can I help you?",
-      send: "Send",
-      attach: "Attach image",
-    },
+    empty: "No listings yet.",
+    chat_greet: "Hello! How can I help you?",
     legalBar: "Corporate",
     legal: {
       corporate: "Corporate",
-      about: "About Us",
+      about: "About",
       contact: "Contact",
       privacy: "Privacy",
       kvkk: "KVKK Notice",
@@ -82,30 +67,24 @@ const LBL = {
       rules: "Community Rules",
       banned: "Prohibited Products",
       all: "All Legal",
+      home: "Home",
     },
   },
   ar: {
     brand: "أُنتِج بالأيادي",
-    welcome: "مرحبًا بكم في منصتنا",
-    showcase: "الواجهة (Vitrin)",
-    standard: "إعلانات عادية",
-    categories: "تصنيفاتنا",
-    view: "عرض",
-    empty: "لا توجد إعلانات بعد.",
-    findListing: "ابحث عن إعلان",
-    profile: "الملف الشخصي",
-    logout: "تسجيل الخروج",
-    home: "الرئيسية",
+    heroWelcome: "مرحبًا بكم في منصتنا",
+    dashboard: "الرئيسية",
     messages: "الرسائل",
     notifications: "الإشعارات",
+    profile: "الملف الشخصي",
+    logout: "تسجيل الخروج",
+    findListing: "ابحث عن إعلان",
+    showcase: "الواجهة (Vitrin)",
+    standard: "إعلانات عادية",
+    categories: "التصنيفات",
     proBadge: "محترف",
-    chat: {
-      open: "الدعم المباشر",
-      placeholder: "اكتب رسالة…",
-      hello: "مرحبًا! كيف يمكنني مساعدتك؟",
-      send: "إرسال",
-      attach: "إرفاق صورة",
-    },
+    empty: "لا توجد إعلانات بعد.",
+    chat_greet: "مرحبًا! كيف أستطيع مساعدتك؟",
     legalBar: "المعلومات المؤسسية",
     legal: {
       corporate: "المؤسسة",
@@ -120,30 +99,24 @@ const LBL = {
       rules: "قواعد المجتمع",
       banned: "منتجات محظورة",
       all: "كل السياسات",
+      home: "الرئيسية",
     },
   },
   de: {
     brand: "Ureten Eller",
-    welcome: "Willkommen bei Ureten Eller",
-    showcase: "Vitrin",
-    standard: "Standard-Inserate",
-    categories: "Unsere Kategorien",
-    view: "Ansehen",
-    empty: "Noch keine Inserate.",
-    findListing: "Inserat finden",
-    profile: "Profil",
-    logout: "Abmelden",
-    home: "Start",
+    heroWelcome: "Willkommen bei Ureten Eller",
+    dashboard: "Start",
     messages: "Nachrichten",
     notifications: "Mitteilungen",
+    profile: "Profil",
+    logout: "Abmelden",
+    findListing: "Inserat suchen",
+    showcase: "Vitrin",
+    standard: "Standard-Inserate",
+    categories: "Kategorien",
     proBadge: "PRO",
-    chat: {
-      open: "Live-Support",
-      placeholder: "Nachricht schreiben…",
-      hello: "Hallo! Wobei kann ich helfen?",
-      send: "Senden",
-      attach: "Bild anhängen",
-    },
+    empty: "Noch keine Inserate.",
+    chat_greet: "Hallo! Wie kann ich helfen?",
     legalBar: "Unternehmen",
     legal: {
       corporate: "Unternehmen",
@@ -158,134 +131,40 @@ const LBL = {
       rules: "Community-Regeln",
       banned: "Verbotene Produkte",
       all: "Alle Rechtliches",
+      home: "Startseite",
     },
   },
 };
 
-function useLang() {
-  const [lang, setLang] = useState("tr");
-  useEffect(() => {
-    const saved = localStorage.getItem("lang");
-    if (saved && SUPPORTED.includes(saved)) setLang(saved);
-  }, []);
-  useEffect(() => {
-    localStorage.setItem("lang", lang);
-    document.documentElement.lang = lang;
-    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
-  }, [lang]);
-  const t = useMemo(() => LBL[lang] || LBL.tr, [lang]);
-  return { lang, setLang, t };
-}
+/* ---------------------------- ROTASYON SÖZLERİ (TR) ---------------------------- */
+const PHRASES_TR = [
+  { text: "Amacımız: ev hanımlarına bütçe katkısı sağlamak.", color: "#e11d48" },
+  { text: "Kadın emeği değer bulsun.", color: "#c026d3" },
+  { text: "El emeği ürünler adil fiyata.", color: "#7c3aed" },
+  { text: "Mahalle lezzetleri kapınıza gelsin.", color: "#2563eb" },
+  { text: "Usta ellerden taze üretim.", color: "#0ea5e9" },
+  { text: "Her siparişte platform güvencesi.", color: "#14b8a6" },
+  { text: "Küçük üreticiye büyük destek.", color: "#059669" },
+  { text: "Şeffaf fiyat, net teslimat.", color: "#16a34a" },
+  { text: "Güvenli ödeme, kolay iade.", color: "#65a30d" },
+  { text: "Yerelden al, ekonomiye can ver.", color: "#ca8a04" },
+  { text: "Emeğin karşılığı, müşteriye kazanç.", color: "#d97706" },
+  { text: "Ev yapımı tatlar, el işi güzellikler.", color: "#ea580c" },
+  { text: "Her kategoride özenli üretim.", color: "#f97316" },
+  { text: "Siparişten teslimata kesintisiz takip.", color: "#f59e0b" },
+  { text: "Güvenilir satıcı rozetleri.", color: "#eab308" },
+  { text: "Topluluğumuzla daha güçlüyüz.", color: "#84cc16" },
+  { text: "Sürdürülebilir üretime destek.", color: "#22c55e" },
+  { text: "Adil ticaret, mutlu müşteri.", color: "#10b981" },
+  { text: "El emeğine saygı, bütçeye dost fiyat.", color: "#06b6d4" },
+  { text: "Kadınların emeğiyle büyüyoruz.", color: "#3b82f6" },
+  { text: "Şehrinden taze üretim, güvenle alışveriş.", color: "#6366f1" },
+  { text: "Kalite, özen ve şeffaflık.", color: "#8b5cf6" },
+  { text: "İhtiyacın olan el emeği burada.", color: "#d946ef" },
+  { text: "Uygun fiyat, güvenli süreç, mutlu son.", color: "#ec4899" },
+];
 
-/* ----------------------------- Dönen motto (4 dil) ----------------------------- */
-const PHRASES = {
-  tr: [
-    { text: "Amacımız: ev hanımlarına bütçe katkısı sağlamak.", color: "#e11d48" },
-    { text: "Kadın emeği değer bulsun.", color: "#c026d3" },
-    { text: "El emeği ürünler adil fiyata.", color: "#7c3aed" },
-    { text: "Mahalle lezzetleri kapınıza gelsin.", color: "#2563eb" },
-    { text: "Usta ellerden taze üretim.", color: "#0ea5e9" },
-    { text: "Her siparişte platform güvencesi.", color: "#14b8a6" },
-    { text: "Küçük üreticiye büyük destek.", color: "#059669" },
-    { text: "Şeffaf fiyat, net teslimat.", color: "#16a34a" },
-    { text: "Güvenli ödeme, kolay iade.", color: "#65a30d" },
-    { text: "Yerelden al, ekonomiye can ver.", color: "#ca8a04" },
-    { text: "Emeğin karşılığı, müşteriye kazanç.", color: "#d97706" },
-    { text: "Ev yapımı tatlar, el işi güzellikler.", color: "#ea580c" },
-    { text: "Her kategoride özenli üretim.", color: "#f97316" },
-    { text: "Siparişten teslimata kesintisiz takip.", color: "#f59e0b" },
-    { text: "Güvenilir satıcı rozetleri.", color: "#eab308" },
-    { text: "Topluluğumuzla daha güçlüyüz.", color: "#84cc16" },
-    { text: "Sürdürülebilir üretime destek.", color: "#22c55e" },
-    { text: "Adil ticaret, mutlu müşteri.", color: "#10b981" },
-    { text: "El emeğine saygı, bütçeye dost fiyat.", color: "#06b6d4" },
-    { text: "Kadınların emeğiyle büyüyoruz.", color: "#3b82f6" },
-    { text: "Şehrinden taze üretim, güvenle alışveriş.", color: "#6366f1" },
-    { text: "Kalite, özen ve şeffaflık.", color: "#8b5cf6" },
-    { text: "İhtiyacın olan el emeği burada.", color: "#d946ef" },
-    { text: "Uygun fiyat, güvenli süreç, mutlu son.", color: "#ec4899" },
-  ],
-  en: [
-    { text: "Our aim: support household budgets of women.", color: "#e11d48" },
-    { text: "Women’s labor should be valued.", color: "#c026d3" },
-    { text: "Handmade products at fair prices.", color: "#7c3aed" },
-    { text: "Neighborhood flavors to your door.", color: "#2563eb" },
-    { text: "Fresh production from skilled hands.", color: "#0ea5e9" },
-    { text: "Platform protection on every order.", color: "#14b8a6" },
-    { text: "Big support for small producers.", color: "#059669" },
-    { text: "Transparent pricing, clear delivery.", color: "#16a34a" },
-    { text: "Secure payments, easy returns.", color: "#65a30d" },
-    { text: "Buy local, boost the economy.", color: "#ca8a04" },
-    { text: "Fair reward for labor, savings for customers.", color: "#d97706" },
-    { text: "Homemade tastes, handcrafted beauty.", color: "#ea580c" },
-    { text: "Careful production across categories.", color: "#f97316" },
-    { text: "Seamless tracking from order to delivery.", color: "#f59e0b" },
-    { text: "Trusted seller badges.", color: "#eab308" },
-    { text: "Stronger together as a community.", color: "#84cc16" },
-    { text: "Support sustainable production.", color: "#22c55e" },
-    { text: "Fair trade, happy customers.", color: "#10b981" },
-    { text: "Respect for craft, budget-friendly prices.", color: "#06b6d4" },
-    { text: "We grow with women’s work.", color: "#3b82f6" },
-    { text: "Fresh from your city, shop with confidence.", color: "#6366f1" },
-    { text: "Quality, care and transparency.", color: "#8b5cf6" },
-    { text: "The handmade you need is here.", color: "#d946ef" },
-    { text: "Good price, safe process, happy ending.", color: "#ec4899" },
-  ],
-  ar: [
-    { text: "هدفنا: دعم ميزانية ربّات البيوت.", color: "#e11d48" },
-    { text: "قيمة عمل المرأة يجب أن تُكرَّم.", color: "#c026d3" },
-    { text: "منتجات يدوية بأسعار عادلة.", color: "#7c3aed" },
-    { text: "نَكهات الحي إلى بابك.", color: "#2563eb" },
-    { text: "إنتاج طازج بأيادٍ ماهرة.", color: "#0ea5e9" },
-    { text: "حماية المنصّة مع كل طلب.", color: "#14b8a6" },
-    { text: "دعم كبير للمنتِجات الصُغرى.", color: "#059669" },
-    { text: "أسعار شفافة وتسليم واضح.", color: "#16a34a" },
-    { text: "دفع آمن وإرجاع سهل.", color: "#65a30d" },
-    { text: "اشترِ محليًا وادعم الاقتصاد.", color: "#ca8a04" },
-    { text: "أجر عادل للعمل وتوفير للعميل.", color: "#d97706" },
-    { text: "مذاقات منزلية وجمال مصنوع يدويًا.", color: "#ea580c" },
-    { text: "عناية في كل فئة إنتاج.", color: "#f97316" },
-    { text: "تتبع سلس من الطلب حتى التسليم.", color: "#f59e0b" },
-    { text: "شارات بائعات موثوقات.", color: "#eab308" },
-    { text: "نقوى معًا كمجتمع.", color: "#84cc16" },
-    { text: "ندعم الإنتاج المستدام.", color: "#22c55e" },
-    { text: "تجارة عادلة وزبائن سعداء.", color: "#10b981" },
-    { text: "احترام للحِرفة وأسعار مناسبة.", color: "#06b6d4" },
-    { text: "ننمو بعمل النساء.", color: "#3b82f6" },
-    { text: "طازج من مدينتك وتسوق بثقة.", color: "#6366f1" },
-    { text: "جودة وعناية وشفافية.", color: "#8b5cf6" },
-    { text: "كل ما تحتاجه من أعمال يدوية هنا.", color: "#d946ef" },
-    { text: "سعر جيد، عملية آمنة، نهاية سعيدة.", color: "#ec4899" },
-  ],
-  de: [
-    { text: "Ziel: Haushaltsbudgets von Frauen stärken.", color: "#e11d48" },
-    { text: "Frauenarbeit soll wertgeschätzt werden.", color: "#c026d3" },
-    { text: "Handgemachtes zum fairen Preis.", color: "#7c3aed" },
-    { text: "Nachbarschafts-Geschmack bis vor die Tür.", color: "#2563eb" },
-    { text: "Frische Produktion aus geübten Händen.", color: "#0ea5e9" },
-    { text: "Plattformschutz bei jeder Bestellung.", color: "#14b8a6" },
-    { text: "Große Unterstützung für kleine Anbieterinnen.", color: "#059669" },
-    { text: "Transparente Preise, klare Lieferung.", color: "#16a34a" },
-    { text: "Sichere Zahlung, einfache Rückgabe.", color: "#65a30d" },
-    { text: "Kauf lokal – stärke die Wirtschaft.", color: "#ca8a04" },
-    { text: "Faire Entlohnung, glückliche Kund:innen.", color: "#d97706" },
-    { text: "Hausgemachter Geschmack, liebevolle Handarbeit.", color: "#ea580c" },
-    { text: "Sorgfalt in jeder Kategorie.", color: "#f97316" },
-    { text: "Nahtloses Tracking von Bestellung bis Lieferung.", color: "#f59e0b" },
-    { text: "Vertrauens-Abzeichen für Anbieterinnen.", color: "#eab308" },
-    { text: "Gemeinsam als Community stärker.", color: "#84cc16" },
-    { text: "Unterstütze nachhaltige Produktion.", color: "#22c55e" },
-    { text: "Fairer Handel, glückliche Kund:innen.", color: "#10b981" },
-    { text: "Respekt für Handwerk, faire Preise.", color: "#06b6d4" },
-    { text: "Wir wachsen mit Frauenarbeit.", color: "#3b82f6" },
-    { text: "Frisch aus deiner Stadt – sicher einkaufen.", color: "#6366f1" },
-    { text: "Qualität, Sorgfalt und Transparenz.", color: "#8b5cf6" },
-    { text: "Das Handgemachte, das du brauchst – hier.", color: "#d946ef" },
-    { text: "Guter Preis, sicherer Ablauf, gutes Ende.", color: "#ec4899" },
-  ],
-};
-
-/* ----------------------------- Kategoriler (tam) ----------------------------- */
+/* ---------------------------- KATEGORİLER ---------------------------- */
 const CATS = {
   tr: [
     { icon: "🍲", title: "Yemekler", subs: ["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"] },
@@ -304,9 +183,9 @@ const CATS = {
     { icon: "🧸", title: "Amigurumi & Oyuncak (dekoratif)", subs: ["Anahtarlık","Magnet","Koleksiyon figürü","Dekor bebek/karakter","İsimli amigurumi"] },
   ],
   en: [
-    { icon: "🍲", title: "Meals", subs: ["Home meals","Savory bakes","Soup","Olive oil dishes","Rice-pasta","Meat-chicken","Breakfast","Meze","Frozen","Kids meals","Diet/vegan/gf"] },
+    { icon: "🍲", title: "Meals", subs: ["Home meals","Savory bakes","Soup","Olive oil dishes","Rice/pasta","Meat-chicken","Breakfast","Meze","Frozen","Kids meals","Diet/vegan/gf"] },
     { icon: "🎂", title: "Cakes & Sweets", subs: ["Layer cake","Cupcake","Cookies","Syrupy","Milk desserts","Cheesecake","Diet sweets","Chocolate/candy","Birthday sets"] },
-    { icon: "🫙", title: "Jam • Pickle • Sauce", subs: ["Jam-marmalade","Molasses","Pickles","Tomato/pepper sauce","Hot sauce","Paste","Vinegar","Canned"] },
+    { icon: "🫙", title: "Jam • Pickle • Sauce", subs: ["Jam/marmalade","Molasses","Pickles","Tomato/pepper sauce","Hot sauce","Paste","Vinegar","Canned"] },
     { icon: "🌾", title: "Regional / Winter Prep", subs: ["Noodles","Tarhana","Yufka","Manti","Dried veg/fruit","Paste","Vinegar","Canned"] },
     { icon: "🥗", title: "Diet / Vegan / Gluten-free", subs: ["Fit bowls","Vegan meals","GF bakery","Sugar-free desserts","Keto items","Protein snacks"] },
     { icon: "💍", title: "Jewelry", subs: ["Bracelet","Necklace","Earrings","Ring","Anklet","Brooch","Sets","Personalized","Macrame","Gemstones","Resin","Wire wrap"] },
@@ -353,43 +232,31 @@ const CATS = {
   ],
 };
 
-/* ----------------------------- Yardımcılar ----------------------------- */
-const go = (href) => { window.location.href = href; };
-
-/* ----------------------------- Canlı Destek (yerel) ----------------------------- */
-function useChat(lang) {
-  const key = "chat_msgs";
-  const [open, setOpen] = useState(false);
-  const [msgs, setMsgs] = useState([]);
+function useLang() {
+  const [lang, setLang] = useState("tr");
   useEffect(() => {
-    try { const m = JSON.parse(localStorage.getItem(key) || "[]"); setMsgs(Array.isArray(m) ? m : []); } catch {}
+    const saved = localStorage.getItem("lang");
+    if (saved && SUPPORTED.includes(saved)) setLang(saved);
   }, []);
-  const persist = (arr) => { setMsgs(arr); try { localStorage.setItem(key, JSON.stringify(arr)); } catch {} };
-  const send = (content, img) => {
-    const me = { id: Date.now() + "-me", from: "me", content, img, at: new Date().toISOString() };
-    const next = [...msgs, me];
-    persist(next);
-    if (!msgs.some(m => m.from === "admin")) {
-      setTimeout(() => {
-        const admin = { id: Date.now() + "-ad", from: "admin", content: LBL[lang].chat.hello, at: new Date().toISOString() };
-        persist([...next, admin]);
-      }, 300);
-    }
-  };
-  return { open, setOpen, msgs, send };
+  useEffect(() => {
+    localStorage.setItem("lang", lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  }, [lang]);
+  const t = useMemo(() => LBL[lang] || LBL.tr, [lang]);
+  return { lang, setLang, t };
 }
 
-/* ----------------------------- Sayfa ----------------------------- */
+/* ---------------------------- BİLEŞEN ---------------------------- */
 export default function CustomerHome() {
+  const router = useRouter();
   const { lang, setLang, t } = useLang();
 
-  // auth guard
-  useEffect(() => {
-    const a = localStorage.getItem("authed") === "1";
-    if (!a) go("/login?role=customer");
-  }, []);
+  // auth (bilgi amaçlı)
+  const [authed, setAuthed] = useState(true);
+  useEffect(() => { setAuthed(localStorage.getItem("authed") === "1"); }, []);
 
-  // ads.json’dan veriler
+  // ilanlar
   const [proAds, setProAds] = useState([]);
   const [stdAds, setStdAds] = useState([]);
   useEffect(() => {
@@ -408,34 +275,32 @@ export default function CustomerHome() {
     return () => { alive = false; };
   }, []);
 
-  // dönen motto
-  const phrases = useMemo(() => PHRASES[lang] || PHRASES.tr, [lang]);
+  // sözler
+  const phrases = PHRASES_TR;
   const [pi, setPi] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setPi((x) => (x + 1) % Math.max(1, phrases.length)), 4000);
+    const id = setInterval(() => setPi((x) => (x + 1) % phrases.length), 4000);
     return () => clearInterval(id);
   }, [phrases.length]);
-  const currentPhrase = phrases[pi % phrases.length];
 
-  // kategoriler
+  const go = useCallback((href) => router.push(href), [router]);
+  const onLogout = () => { localStorage.removeItem("authed"); window.location.href = "/"; };
+
+  const tab = "home";
+  const GRADS = [
+    "linear-gradient(135deg,#ff80ab,#ffd166)",
+    "linear-gradient(135deg,#a78bfa,#60a5fa)",
+    "linear-gradient(135deg,#34d399,#a7f3d0)",
+    "linear-gradient(135deg,#f59e0b,#f97316)",
+    "linear-gradient(135deg,#06b6d4,#3b82f6)",
+  ];
   const cats = CATS[lang] || CATS.tr;
-
-  // chat state
-  const { open, setOpen, msgs, send } = useChat(lang);
-  const [text, setText] = useState("");
-  const fileRef = useRef(null);
-
-  const onLogout = () => {
-    localStorage.removeItem("authed");
-    go("/");
-  };
 
   return (
     <>
       <Head>
-        <title>{t.brand} – {t.home}</title>
+        <title>{t.brand} – {t.dashboard}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* Faviconlar */}
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=5" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=5" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=5" />
@@ -444,35 +309,34 @@ export default function CustomerHome() {
       </Head>
 
       {/* ÜST BAR */}
-      <header className="topbar" role="banner">
+      <header className="topbar">
         <div className="brand" onClick={() => go("/")}>
-          <img src="/logo.png" alt={t.brand} width="36" height="36" />
-          <strong>{t.brand}</strong>
+          <img src="/logo.png" width="36" height="36" alt="logo" />
+          <span>{t.brand}</span>
         </div>
 
         <div className="actions">
-          <button className="primary" onClick={() => go("/search")}>{t.findListing}</button>
-          <button className="ghost" onClick={() => go("/profile")}>{t.profile}</button>
-          <button className="danger" onClick={onLogout}>{t.logout}</button>
+          {/* Kullanıcı grubu — MOBİLDE ÜSTE */}
+          <div className="userGroup">
+            <button className="ghost" onClick={() => go("/profile")}>{t.profile}</button>
+            <button className="danger" onClick={onLogout}>{t.logout}</button>
+          </div>
+
+          {/* İşlem grubu — MOBİLDE ALTA (Customer: sadece İlan Ara) */}
+          <div className="actionGroup">
+            <button className="primary" onClick={() => go("/search")}>{t.findListing}</button>
+          </div>
+
           <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
-            {SUPPORTED.map((k) => <option key={k} value={k}>{LOCALE_LABEL[k]}</option>)}
+            {SUPPORTED.map((k) => (<option key={k} value={k}>{k.toUpperCase()}</option>))}
           </select>
         </div>
       </header>
 
-      {/* HERO – renkli arka plan, dönen motto */}
+      {/* HERO — ortalanmış başlık */}
       <section className="hero">
-        <div className="heroText">
-          <h1>{t.welcome}</h1>
-          <p key={pi} className="phrase" style={{ color: currentPhrase?.color || "#111827" }}>
-            {currentPhrase?.text}
-          </p>
-        </div>
-        <div className="heroArt" aria-hidden>
-          <div className="blob b1" />
-          <div className="blob b2" />
-          <div className="blob b3" />
-        </div>
+        <h1 className="heroTitle">{t.heroWelcome}</h1>
+        <p key={pi} className="phrase" style={{ color: phrases[pi].color }}>{phrases[pi].text}</p>
       </section>
 
       {/* VİTRİN */}
@@ -486,9 +350,12 @@ export default function CustomerHome() {
               </div>
               <div className="body">
                 <div className="title">{a?.title || "İlan"}</div>
-                <div className="meta"><span>{a?.cat || a?.category || ""}</span><b>{a?.price || ""}</b></div>
+                <div className="meta">
+                  <span>{a?.cat || a?.category || ""}</span>
+                  <b>{a?.price || ""}</b>
+                </div>
               </div>
-              <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>{t.view}</button>
+              <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>İncele</button>
             </article>
           )) : <div className="empty">{t.empty}</div>}
         </div>
@@ -503,9 +370,12 @@ export default function CustomerHome() {
               <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }} />
               <div className="body">
                 <div className="title">{a?.title || "İlan"}</div>
-                <div className="meta"><span>{a?.cat || a?.category || ""}</span><b>{a?.price || ""}</b></div>
+                <div className="meta">
+                  <span>{a?.cat || a?.category || ""}</span>
+                  <b>{a?.price || ""}</b>
+                </div>
               </div>
-              <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>{t.view}</button>
+              <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>İncele</button>
             </article>
           )) : <div className="empty">{t.empty}</div>}
         </div>
@@ -515,29 +385,34 @@ export default function CustomerHome() {
       <section className="section">
         <div className="sectionHead"><h2>🗂️ {t.categories}</h2></div>
         <div className="grid cats">
-          {cats.map((c, idx) => (
-            <article key={idx} className="catCard" style={{ backgroundImage: `linear-gradient(135deg, var(--g${(idx%5)+1}a), var(--g${(idx%5)+1}b))` }}>
-              <div className="head">
-                <span className="icn">{c.icon}</span>
-                <h3>{c.title}</h3>
-                <span className="count">{c.subs.length}</span>
-              </div>
+          {cats.map((c, i) => (
+            <article key={i} className="catCard" style={{ backgroundImage: GRADS[i % GRADS.length] }}>
+              <div className="head"><span className="icn">{c.icon}</span><h3>{c.title}</h3></div>
               <div className="subs">
-                {c.subs.map((s, k) => <span key={k} className="chip">{s}</span>)}
+                {(c.subs || []).map((s, k) => <span key={k} className="chip">{s}</span>)}
               </div>
             </article>
           ))}
         </div>
       </section>
 
-      {/* ALT BAR – sabit */}
+      {/* ALT GEZİNME ÇUBUĞU */}
       <nav className="bottombar" aria-label="Bottom Navigation">
-        <button className="tab active" onClick={() => go("/portal/customer")}>🏠 {t.home}</button>
-        <button className="tab" onClick={() => go("/messages")}>💬 {t.messages}</button>
-        <button className="tab" onClick={() => go("/notifications")}>🔔 {t.notifications}</button>
+        <button className={tab === "home" ? "tab active" : "tab"} onClick={() => go("/portal/customer")}>
+          <span className="tIc">🏠</span><span>{t.dashboard}</span>
+        </button>
+        <button className="tab" onClick={() => go("/messages")}>
+          <span className="tIc">💬</span><span>{t.messages}</span>
+        </button>
+        <button className="tab" onClick={() => go("/notifications")}>
+          <span className="tIc">🔔</span><span>{t.notifications}</span>
+        </button>
       </nav>
 
-      {/* SİYAH LEGAL ALAN */}
+      {/* CANLI DESTEK BALONU */}
+      <ChatBubble greet={t.chat_greet} />
+
+      {/* LEGAL FOOTER */}
       <footer className="legal">
         <div className="inner">
           <div className="ttl">{t.legalBar}</div>
@@ -559,166 +434,122 @@ export default function CustomerHome() {
         </div>
       </footer>
 
-      {/* CANLI DESTEK BALONU */}
-      <button className="chatFab" aria-label={t.chat.open} onClick={() => setOpen(v => !v)}>💬</button>
-      {open && (
-        <div className="chatBox" role="dialog" aria-label={t.chat.open}>
-          <div className="chatHead">
-            <strong>{t.chat.open}</strong>
-            <button className="x" onClick={() => setOpen(false)}>✕</button>
-          </div>
-          <div className="chatBody">
-            {msgs.map(m => (
-              <div key={m.id} className={`msg ${m.from}`}>
-                {m.img && <img src={m.img} alt="" />}
-                {m.content && <p>{m.content}</p>}
-              </div>
-            ))}
-            {!msgs.length && <div className="msg admin"><p>{t.chat.hello}</p></div>}
-          </div>
-          <div className="chatFoot">
-            <input
-              value={text}
-              onChange={(e)=>setText(e.target.value)}
-              placeholder={t.chat.placeholder}
-              onKeyDown={(e)=>{ if(e.key==="Enter"&&text.trim()){ send(text.trim()); setText(""); } }}
-            />
-            <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}}
-              onChange={(e)=>{
-                const f=e.target.files?.[0]; if(!f) return;
-                const r=new FileReader();
-                r.onload=()=>{ send("", r.result); };
-                r.readAsDataURL(f);
-                e.target.value="";
-              }} />
-            <button className="ghost" onClick={()=>fileRef.current?.click()} title={t.chat.attach}>📎</button>
-            <button className="primary" onClick={()=>{ if(text.trim()){ send(text.trim()); setText(""); } }}>{t.chat.send}</button>
-          </div>
-        </div>
-      )}
-
       {/* STYLES */}
       <style>{`
-        :root{
-          --ink:#0f172a; --muted:#475569; --line:rgba(0,0,0,.08);
-          --g1a:#ff80ab; --g1b:#ffd166;
-          --g2a:#a78bfa; --g2b:#60a5fa;
-          --g3a:#34d399; --g3b:#a7f3d0;
-          --g4a:#f59e0b; --g4b:#f97316;
-          --g5a:#06b6d4; --g5b:#3b82f6;
-        }
+        :root{ --ink:#0f172a; --muted:#475569; --line:rgba(0,0,0,.08); }
         html,body{height:100%}
-        body{
-          margin:0; color:var(--ink);
-          font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--ink);
           background: radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
                       radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
                       linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
-          background-attachment:fixed;
-          padding-bottom: 74px; /* alt bar için boşluk */
-        }
+          background-attachment:fixed;}
 
-        /* Üst bar */
-        .topbar{
-          position:sticky; top:0; z-index:60;
-          display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center;
-          padding:10px 14px; background:rgba(255,255,255,.92);
-          backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
-        }
-        .brand{display:flex; gap:8px; align-items:center; cursor:pointer; font-weight:900}
-        .brand img{border-radius:10px}
-        .actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-        .actions select{border:1px solid var(--line); border-radius:10px; padding:6px 8px; background:#fff}
-        .primary{padding:9px 12px; border-radius:10px; border:1px solid #111827; background:#111827; color:#fff; font-weight:800; cursor:pointer}
-        .ghost{padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:#fff; color:#111827; font-weight:700; cursor:pointer}
-        .danger{padding:9px 12px; border-radius:10px; border:1px solid #ef4444; background:#ef4444; color:#fff; font-weight:800; cursor:pointer}
+        /* TOPBAR */
+        .topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;
+          padding:10px 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+        .brand{display:flex;align-items:center;gap:8px;font-weight:900;cursor:pointer}
+        .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+        .userGroup{display:flex;gap:8px;order:1}
+        .actionGroup{display:flex;gap:8px;order:2}
+        .ghost{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+        .primary{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
+        .danger{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
+        .actions select{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:#fff}
+        @media (min-width:640px){ .actionGroup{order:1} .actions{flex-wrap:nowrap} }
 
-        /* Hero */
-        .hero{max-width:1100px; margin:12px auto 0; padding:0 16px; display:grid; grid-template-columns:1.1fr .9fr; gap:18px}
-        .heroText h1{margin:6px 0 4px; font-size:30px}
-        .phrase{margin:0; font-size:18px; font-weight:700}
-        .heroArt{position:relative; min-height:160px}
-        .blob{position:absolute; filter:blur(32px); opacity:.6; border-radius:50%}
-        .b1{width:180px;height:180px;background:#f472b6;top:10px;left:10px}
-        .b2{width:220px;height:220px;background:#93c5fd;top:40px;right:20px}
-        .b3{width:160px;height:160px;background:#86efac;bottom:-30px;left:120px}
+        /* HERO */
+        .hero{display:grid;place-items:center;text-align:center;gap:8px;max-width:1100px;margin:12px auto 0;padding:12px 16px}
+        .heroTitle{margin:0;font-size:42px;line-height:1.15;letter-spacing:.2px;text-shadow:0 8px 28px rgba(0,0,0,.15)}
+        .phrase{margin:4px 0 0;font-weight:700}
+        @media (max-width:520px){ .heroTitle{font-size:34px} }
 
-        /* Bölümler */
-        .section{max-width:1100px; margin:12px auto; padding:0 16px}
-        .sectionHead{display:flex; align-items:center; justify-content:space-between; margin:8px 0}
-        .grid.ads{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-        .ad{border:1px solid #e5e7eb; border-radius:16px; overflow:hidden; background:#fff; display:flex; flex-direction:column; box-shadow:0 8px 22px rgba(0,0,0,.06)}
-        .thumb{aspect-ratio:4/3; background:#f1f5f9; background-size:cover; background-position:center; position:relative}
-        .badge{position:absolute; top:8px; left:8px; background:#111827; color:#fff; font-size:12px; padding:4px 8px; border-radius:999px}
+        /* SECTIONS */
+        .section{max-width:1100px;margin:12px auto;padding:0 16px}
+        .sectionHead{display:flex;align-items:center;justify-content:space-between;margin:8px 0}
+        .grid.ads{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+        .ad{border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;background:#fff;display:flex;flex-direction:column;box-shadow:0 8px 22px rgba(0,0,0,.06)}
+        .thumb{aspect-ratio:4/3;background:#f1f5f9;background-size:cover;background-position:center;position:relative}
+        .badge{position:absolute;top:8px;left:8px;background:#111827;color:#fff;font-size:12px;padding:4px 8px;border-radius:999px}
         .body{padding:10px}
-        .title{font-weight:800; margin:0 0 6px}
-        .meta{display:flex; justify-content:space-between; color:#475569; font-size:13px}
-        .view{margin:0 10px 12px; border:1px solid #111827; background:#111827; color:#fff; border-radius:10px; padding:8px 10px; font-weight:700; cursor:pointer}
-        .empty{padding:18px; border:1px dashed #e5e7eb; border-radius:14px; text-align:center; color:#475569}
+        .title{font-weight:800;margin:0 0 6px}
+        .meta{display:flex;justify-content:space-between;color:#475569;font-size:13px}
+        .view{margin:0 10px 12px;border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer}
+        .empty{padding:18px;border:1px dashed #e5e7eb;border-radius:14px;text-align:center;color:#475569}
 
-        /* Kategoriler */
-        .grid.cats{display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-        .catCard{
-          border-radius:18px; padding:12px; background-size:cover; background-position:center;
-          border:1px solid rgba(255,255,255,.35); backdrop-filter: blur(2px);
-          box-shadow:0 10px 24px rgba(0,0,0,.08);
-        }
-        .head{display:grid; grid-template-columns:1fr auto auto; gap:6px; align-items:center}
+        .grid.cats{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+        .catCard{border:1px solid #e5e7eb;border-radius:16px;background:rgba(255,255,255,.92);background-size:cover;background-position:center;box-shadow:0 8px 22px rgba(0,0,0,.06);padding:12px}
+        .catCard .head{display:flex;gap:8px;align-items:center}
         .icn{font-size:22px}
-        .head h3{margin:0; font-size:18px; text-align:center}
-        .count{justify-self:end; background:#ffffffc8; border:1px solid #e5e7eb; font-size:12px; border-radius:999px; padding:2px 8px}
-        .subs{display:grid; gap:8px; grid-template-columns:repeat(2,minmax(0,1fr)); margin-top:8px}
-        .chip{display:block; text-align:center; padding:8px 10px; border-radius:12px; font-size:12px; background: rgba(255,255,255,0.98); border:1px solid #e5e7eb}
+        .catCard h3{margin:0;font-size:18px}
+        .subs{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:8px}
+        .chip{display:block;text-align:center;padding:8px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;font-size:12px}
 
-        /* Alt bar – sabit */
-        .bottombar{
-          position: fixed; left:0; right:0; bottom:0; width:100vw;
-          z-index:50; padding:6px; padding-bottom: max(6px, env(safe-area-inset-bottom));
-          background:rgba(255,255,255,.94); backdrop-filter:blur(8px); border-top:1px solid var(--line);
-          display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
-        }
-        .tab{display:flex; align-items:center; justify-content:center; gap:6px; padding:10px; border-radius:10px; border:1px solid transparent; background:transparent; cursor:pointer; font-weight:800}
-        .tab.active{border-color:#111827; background:#111827; color:#fff}
+        /* BOTTOM BAR */
+        .bottombar{position:sticky;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px;
+          background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+        .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:700}
+        .tab.active{border-color:#111827;background:#111827;color:#fff}
+        .tIc{font-size:16px}
 
-        /* Legal full-bleed */
-        .legal{background:#0b0b0b; color:#f8fafc; border-top:1px solid rgba(255,255,255,.12);
-               width:100vw; margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); margin-top:14px}
-        .inner{max-width:1100px; margin:0 auto; padding:12px 16px}
-        .ttl{font-weight:800; margin-bottom:6px}
-        .links{display:flex; flex-wrap:wrap; gap:10px}
-        .links a{color:#e2e8f0; font-size:13px; padding:6px 8px; border-radius:8px; text-decoration:none}
-        .links a:hover{background:rgba(255,255,255,.08); color:#fff}
-        .homeLink{margin-left:auto; font-weight:800}
-        .copy{margin-top:6px; font-size:12px; color:#cbd5e1}
+        /* CHAT */
+        .chatBtn{position:fixed;right:16px;bottom:76px;z-index:60;background:#111827;color:#fff;border:none;border-radius:999px;
+          width:54px;height:54px;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.18);font-size:20px}
+        .chatWin{position:fixed;right:16px;bottom:140px;z-index:60;width:320px;max-width:calc(100vw - 32px);
+          background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.18);overflow:hidden}
+        .chatHd{padding:10px 12px;font-weight:900;border-bottom:1px solid #e5e7eb;background:#111827;color:#fff}
+        .chatBd{max-height:300px;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+        .msg{padding:8px 10px;border-radius:12px;max-width:80%}
+        .msg.me{align-self:flex-end;background:#111827;color:#fff}
+        .msg.you{align-self:flex-start;background:#f1f5f9}
+        .chatFt{display:flex;gap:6px;padding:10px;border-top:1px solid #e5e7eb}
+        .chatFt input[type="text"]{flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:8px}
+        .send{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
 
-        /* Chat */
-        .chatFab{
-          position:fixed; right:14px; bottom:88px; z-index:60;
-          width:52px; height:52px; border-radius:50%;
-          border:1px solid #111827; background:#111827; color:#fff; font-size:20px; cursor:pointer;
-          box-shadow:0 10px 20px rgba(0,0,0,.2);
-        }
-        .chatBox{
-          position:fixed; right:14px; bottom:150px; width:320px; max-height:60vh; z-index:60;
-          background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 10px 24px rgba(0,0,0,.15);
-          display:flex; flex-direction:column; overflow:hidden;
-        }
-        .chatHead{display:flex; align-items:center; justify-content:space-between; padding:8px 10px; font-weight:800; background:#111827; color:#fff}
-        .chatHead .x{background:transparent; border:none; color:#fff; font-size:16px; cursor:pointer}
-        .chatBody{padding:10px; display:flex; flex-direction:column; gap:8px; overflow:auto}
-        .msg{max-width:85%; padding:8px 10px; border-radius:12px; line-height:1.3; word-break:break-word}
-        .msg.me{align-self:flex-end; background:#111827; color:#fff}
-        .msg.admin{align-self:flex-start; background:#f1f5f9; color:#0f172a}
-        .msg img{display:block; max-width:200px; border-radius:10px; border:1px solid #e5e7eb}
-        .chatFoot{display:grid; grid-template-columns:1fr auto auto; gap:6px; padding:8px; border-top:1px solid #e5e7eb; background:#fafafa}
-        .chatFoot input{padding:10px; border-radius:10px; border:1px solid #e5e7eb; background:#fff}
-
-        @media (max-width:820px){
-          .hero{grid-template-columns:1fr}
-          .heroArt{min-height:120px}
-          .chatBox{right:10px; width:92vw}
-        }
+        /* LEGAL */
+        .legal{background:#0b0b0b;color:#f8fafc;border-top:1px solid rgba(255,255,255,.12);width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);margin-top:14px}
+        .inner{max-width:1100px;margin:0 auto;padding:12px 16px}
+        .ttl{font-weight:800;margin-bottom:6px}
+        .links{display:flex;flex-wrap:wrap;gap:10px}
+        .links a{color:#e2e8f0;font-size:13px;padding:6px 8px;border-radius:8px;text-decoration:none}
+        .links a:hover{background:rgba(255,255,255,.08);color:#fff}
+        .homeLink{margin-left:auto;font-weight:800}
+        .copy{margin-top:6px;font-size:12px;color:#cbd5e1}
       `}</style>
+    </>
+  );
+}
+
+/* ---------------------------- Chat Bubble ---------------------------- */
+function ChatBubble({ greet }) {
+  const [open, setOpen] = useState(false);
+  const [list, setList] = useState([{ who: "you", text: greet }]);
+  const [text, setText] = useState("");
+
+  function send() {
+    const t = text.trim();
+    if (!t) return;
+    setList((l) => [...l, { who: "me", text: t }]);
+    setText("");
+  }
+
+  return (
+    <>
+      {open && (
+        <div className="chatWin" role="dialog" aria-label="Live Chat">
+          <div className="chatHd">Canlı Destek</div>
+          <div className="chatBd">
+            {list.map((m, i) => (
+              <div key={i} className={`msg ${m.who}`}>{m.text}</div>
+            ))}
+          </div>
+          <div className="chatFt">
+            <input type="file" accept="image/*" title="Resim gönder" />
+            <input type="text" value={text} onChange={(e)=>setText(e.target.value)} placeholder="Mesaj yaz..." />
+            <button className="send" onClick={send}>Gönder</button>
+          </div>
+        </div>
+      )}
+      <button className="chatBtn" onClick={() => setOpen((x)=>!x)}>💬</button>
     </>
   );
 }
