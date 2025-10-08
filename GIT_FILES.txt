@@ -1,30 +1,140 @@
+]633;E;for d in docs pages public portal legal;b61d3be7-af63-453b-86f8-310d90436f61]633;C### docs
+docs
+   favicon-16x16.png
+   index.html
+   favicon.ico
+   404.html
+   CNAME
+   _next
+      static
+         gzg6cpHqHJJzEBfRzySy1
+            _ssgManifest.js
+            _buildManifest.js
+         chunks
+            polyfills-42372ed130431b0a.js
+            941-74b3df481059fe12.js
+            webpack-59c5c889f52620d6.js
+            645-a643f384786cf0b2.js
+            framework-64ad27b21261a9ce.js
+            main-a16c617c42bd88d0.js
+            pages
+               404-1208da250268b311.js
+               portal
+                  customer-17cccb2376909dbc.js
+                  seller-1e85aa58e48d3789.js
+               legal
+                  topluluk-kurallari-ec0c5fb3dd21d88f.js
+                  kurumsal-316561c9b4be1e29.js
+                  kullanim-sartlari-5726515da8695b09.js
+                  iletisim-0ae32ba4693fa99c.js
+                  hakkimizda-1555505e7b92392a.js
+                  gizlilik-f5542bf61d22e18f.js
+                  teslimat-iade-27d5c60431162f91.js
+                  cerez-politikasi-d9d261558769f7dc.js
+                  mesafeli-satis-sozlesmesi-e767ab4e83faf64c.js
+                  yasakli-urunler-997221a556ca0517.js
+                  kvkk-aydinlatma-9ec8a88c1e448f2f.js
+               index-9945e2536114ac06.js
+               _error-7a92967bea80186d.js
+               login-80cc95c37d36a4dc.js
+               _app-5810f0a972a88d88.js
+               legal-247db17bd6dc535a.js
+      gzg6cpHqHJJzEBfRzySy1
+   favicon-32x32.png
+   portal
+      seller
+         index.html
+      customer
+         index.html
+   legal
+      iletisim
+         index.html
+      index.html
+      yasakli-urunler
+         index.html
+      mesafeli-satis-sozlesmesi
+         index.html
+      gizlilik
+         index.html
+      hakkimizda
+         index.html
+      kurumsal
+         index.html
+      kullanim-sartlari
+         index.html
+      kvkk-aydinlatma
+         index.html
+      topluluk-kurallari
+         index.html
+      teslimat-iade
+         index.html
+      cerez-politikasi
+         index.html
+   .nojekyll
+   ads.json
+   assets
+      js
+         i18n.js
+   404
+      index.html
+   logo.png
+   favicon.png
+   apple-touch-icon.png
+   login
+      index.html
+
+### pages
+pages
+   portal
+      seller
+         index.jsx
+      customer
+         index.jsx
+   legal
+      cerez-politikasi.jsx
+      mesafeli-satis-sozlesmesi.jsx
+      iletisim.jsx
+      kvkk-aydinlatma.jsx
+      index.jsx
+      teslimat-iade.jsx
+      kullanim-sartlari.jsx
+      gizlilik.jsx
+      topluluk-kurallari.jsx
+      yasakli-urunler.jsx
+      hakkimizda.jsx
+      kurumsal.jsx
+   404.jsx
+   index.jsx.bak.1759832266
+   login.jsx
+   index.jsx
+
+### public
+public
+   favicon-16x16.png
+   favicon.ico
+   favicon-32x32.png
+   ads.json
+   assets
+      js
+         i18n.js
+   logo.png
+   favicon.png
+   apple-touch-icon.png
+
+### portal
+
+### legal
+
+### ROOT FILES
+.env.local
 .gitignore
 CNAME
+FILES.txt
+GIT_FILES.txt
 LICENSE
 README.md
+TREE.txt
 next.config.js
 package-lock.json
 package.json
-pages/index.jsx
-pages/index.jsx.bak.1759832266
-pages/legal/cerez-politikasi.jsx
-pages/legal/gizlilik.jsx
-pages/legal/hakkimizda.jsx
-pages/legal/iletisim.jsx
-pages/legal/index.jsx
-pages/legal/kullanim-sartlari.jsx
-pages/legal/kurumsal.jsx
-pages/legal/kvkk-aydinlatma.jsx
-pages/legal/mesafeli-satis-sozlesmesi.jsx
-pages/legal/teslimat-iade.jsx
-pages/legal/topluluk-kurallari.jsx
-pages/legal/yasakli-urunler.jsx
-pages/login.jsx
-public/ads.json
-public/apple-touch-icon.png
-public/assets/js/i18n.js
-public/favicon-16x16.png
-public/favicon-32x32.png
-public/favicon.ico
-public/favicon.png
-public/logo.png
+tree.txt
