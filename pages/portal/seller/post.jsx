@@ -442,13 +442,14 @@ export default function SellerPost() {
         <title>{LBL.tr.brand} – {t.page.title}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* FAVICONS → public/ */}
-        <link rel="icon" type="image/png" href="/favicon.png" />
-        <link rel="shortcut icon" href="/favicon.png" />
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" href="/favicon.png?v=6" />
+        <link rel="shortcut icon" href="/favicon.png?v=6" />
+        <link rel="icon" href="/favicon.ico?v=6" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=6" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=6" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6" />
         <meta name="theme-color" content="#0b0b0b" />
+    <link rel="stylesheet" href="/post-overrides.css?v=1" />
       </Head>
 
       {/* ÜST BAR */}
