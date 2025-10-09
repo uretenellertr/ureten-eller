@@ -55,16 +55,13 @@ export default function AdminPanel(){
     return ()=>{alive=false};
   },[supa]);
 
-  // yetkisizse
   const noAdmin = !loading && role!=="admin";
 
-  // sayfa başı veri işçileri
   return (
     <>
       <Head>
         <title>Admin – Üreten Eller</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* Faviconlar global _document.jsx ile */}
       </Head>
 
       <audio ref={audioRef} src="/notify.wav" preload="auto" />
@@ -77,12 +74,12 @@ export default function AdminPanel(){
           </div>
 
           <nav className="menu">
-            <button className={active==="inbox"?"on":""} onClick={()=>setActive("inbox")}>💬 Mesajlar</button>
-            <button className={active==="pending"?"on":""} onClick={()=>setActive("pending")}>📝 İlan Onayı</button>
-            <button className={active==="showcase"?"on":""} onClick={()=>setActive("showcase")}>✨ Vitrin / PRO</button>
-            <button className={active==="users"?"on":""} onClick={()=>setActive("users")}>👥 Kullanıcılar</button>
-            <button className={active==="complaints"?"on":""} onClick={()=>setActive("complaints")}>🚩 Şikayetler</button>
-            <button className={active==="broadcast"?"on":""} onClick={()=>setActive("broadcast")}>📣 Bildiri Gönder</button>
+            <button className={active==="inbox"?"on":""} onClick={()=>setActive("inbox")}><span>💬</span> Mesajlar</button>
+            <button className={active==="pending"?"on":""} onClick={()=>setActive("pending")}><span>📝</span> İlan Onayı</button>
+            <button className={active==="showcase"?"on":""} onClick={()=>setActive("showcase")}><span>✨</span> Vitrin / PRO</button>
+            <button className={active==="users"?"on":""} onClick={()=>setActive("users")}><span>👥</span> Kullanıcılar</button>
+            <button className={active==="complaints"?"on":""} onClick={()=>setActive("complaints")}><span>🚩</span> Şikayetler</button>
+            <button className={active==="broadcast"?"on":""} onClick={()=>setActive("broadcast")}><span>📣</span> Bildiri Gönder</button>
           </nav>
 
           <div className="foot">
@@ -110,131 +107,61 @@ export default function AdminPanel(){
       </div>
 
       <style jsx>{`
-  /* === Koyu Tema Değerleri === */
+  /* === KOYU TEMA + AÇIK KAHVERENGİ PARLAK ÇERÇEVE === */
   :root{
     --bg:#0b0b0b;          /* tam siyah arka plan */
     --ink:#f8fafc;         /* beyaz yazı */
     --muted:#cbd5e1;       /* soluk yazı */
     --line:#222;           /* ince ayırıcı */
-    --accent:#d4a373;      /* açık kahverengi (sıcak) */
-    --accent-soft: rgba(212,163,115,.35); /* parlaklık için */
+    --accent:#d4a373;      /* açık kahverengi */
+    --accent-soft: rgba(212,163,115,.35); /* parlama */
   }
 
   html,body,#__next{height:100%}
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
-  }
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
 
-  /* Üst bar */
-  .topbar{
-    position:sticky; top:0; z-index:50;
-    display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center;
-    padding:12px 16px; background:rgba(12,12,12,.9); backdrop-filter:blur(8px);
-    border-bottom:1px solid var(--line);
+  .admin{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+  .side{background:#0e0e0e;color:var(--ink);display:flex;flex-direction:column;padding:14px;gap:14px;border-right:2px solid var(--accent);box-shadow:0 0 0 1px var(--accent) inset, 0 0 18px var(--accent-soft)}
+  .brand{display:flex;align-items:center;gap:10px;font-size:18px}
+
+  .menu{display:flex;flex-direction:column;gap:8px}
+  .menu button{all:unset;display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;cursor:pointer;color:var(--ink);border:2px solid var(--accent);background:linear-gradient(180deg, rgba(212,163,115,.08), rgba(212,163,115,.02));box-shadow:0 0 0 1px var(--accent) inset, 0 0 10px var(--accent-soft);transition:.2s}
+  .menu button.on{background:var(--accent);color:#0b0b0b;font-weight:900}
+  .menu button:hover{transform:translateX(2px);box-shadow:0 0 0 1px var(--accent) inset, 0 0 16px var(--accent-soft)}
+
+  .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .logout{all:unset;border:2px solid var(--accent);background:transparent;color:var(--ink);padding:8px 12px;border-radius:12px;cursor:pointer;box-shadow:0 0 0 1px var(--accent) inset, 0 0 12px var(--accent-soft)}
+
+  .main{padding:16px;display:grid;gap:16px;align-content:start}
+  .card{border-radius:18px;padding:16px;border:2px solid var(--accent);box-shadow:0 0 0 1px var(--accent) inset, 0 0 18px var(--accent-soft);background:rgba(20,20,20,.92)}
+  .muted{color:var(--muted)}
+  .err{background:#2a0f0f;border-color:#ff9999;color:#ffd1d1}
+
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+  /* Form elemanları */
+  .input, input[type="text"], input[type="number"], input[type="email"], input[type="password"], textarea, select{
+    border:2px solid var(--accent);background:#0f0f0f;color:var(--ink);border-radius:12px;padding:10px 12px;outline:none;box-shadow:0 0 0 1px var(--accent) inset, 0 0 10px var(--accent-soft)
   }
-  .brand{display:flex;align-items:center;gap:10px;font-weight:900}
-  .brand span{color:var(--ink)}
-  .actions{display:flex;gap:8px;align-items:center}
+  ::placeholder{color:#9aa4b2}
+  select option{background:#fff;color:#111}
 
   /* Butonlar */
-  .btn{
-    border:1.5px solid var(--accent);
-    background:transparent; color:var(--ink);
-    padding:8px 12px; border-radius:12px; font-weight:800; cursor:pointer;
-    box-shadow:
-      0 0 0 1px var(--accent) inset,
-      0 0 12px var(--accent-soft);
-    transition:.2s ease;
-  }
-  .btn:hover{ transform:translateY(-1px); box-shadow:
-    0 0 0 1px var(--accent) inset,
-    0 0 16px var(--accent-soft); }
-  .btn.primary{ background:var(--accent); color:#0b0b0b; }
-
-  /* Sayfa yerleşimi */
-  .wrap{ max-width:1200px; margin:16px auto; padding:0 16px; }
-  .grid{ display:grid; gap:16px; grid-template-columns:260px 1fr; }
-  @media (max-width:980px){ .grid{grid-template-columns:1fr} }
-
-  /* Sol menü (sekme listesi) */
-  .nav{
-    display:flex; flex-direction:column; gap:10px;
-    position:sticky; top:68px;
-  }
-  .nav .item{
-    display:flex; align-items:center; gap:10px;
-    padding:10px 12px; cursor:pointer; text-decoration:none;
-    color:var(--ink); border-radius:14px;
-    border:2px solid var(--accent);
-    box-shadow: 0 0 0 1px var(--accent) inset, 0 0 10px var(--accent-soft);
-    background:linear-gradient(180deg, rgba(212,163,115,.08), rgba(212,163,115,.02));
-    transition:.2s;
-  }
-  .nav .item:hover{ transform:translateX(2px); box-shadow:
-    0 0 0 1px var(--accent) inset, 0 0 16px var(--accent-soft); }
-  .nav .item.active{
-    background:var(--accent); color:#0b0b0b; font-weight:900;
-  }
-
-  /* Kart/Panel çerçeveleri (parlak açık kahverengi) */
-  .card{
-    border-radius:18px; padding:16px;
-    border:2px solid var(--accent);
-    box-shadow:
-      0 0 0 1px var(--accent) inset,
-      0 0 18px var(--accent-soft);
-    background:rgba(20,20,20,.92);
-  }
-  .card h2{ margin:0 0 10px; color:var(--ink) }
-
-  /* Form elemanları: siyah zeminde beyaz yazı */
-  .field{ display:grid; gap:6px; }
-  .field label{ color:var(--muted); font-weight:700; }
-  input[type="text"], input[type="number"], input[type="email"], input[type="password"],
-  textarea, select {
-    width:100%;
-    color:var(--ink);
-    background:#0f0f0f;
-    border:2px solid var(--accent);
-    border-radius:12px; padding:10px 12px; outline:none;
-    box-shadow: 0 0 0 1px var(--accent) inset, 0 0 10px var(--accent-soft);
-  }
-  input::placeholder, textarea::placeholder{ color:#9aa4b2 }
-  select option{ color:#0b0b0b; background:#fff; } /* açılır listede siyah yazı istendi */
+  .btn{border:2px solid var(--accent);background:transparent;color:var(--ink);padding:8px 12px;border-radius:12px;font-weight:800;cursor:pointer;box-shadow:0 0 0 1px var(--accent) inset, 0 0 12px var(--accent-soft);transition:.2s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 0 0 1px var(--accent) inset, 0 0 16px var(--accent-soft)}
+  .btn.primary{background:var(--accent);color:#0b0b0b}
+  .ghost{border:2px solid var(--accent);background:transparent;color:var(--ink);padding:6px 10px;border-radius:10px;cursor:pointer}
 
   /* Tablo */
-  table{ width:100%; border-collapse:separate; border-spacing:0; }
-  thead th{
-    text-align:left; font-weight:900; padding:10px 12px;
-    background:#131313; color:var(--ink);
-    border-bottom:2px solid var(--accent);
-  }
-  tbody td{
-    padding:10px 12px; color:var(--ink); border-bottom:1px solid #1a1a1a;
-  }
-  tbody tr{
-    background:rgba(255,255,255,.02);
-    border-left:2px solid var(--accent); border-right:2px solid var(--accent);
-  }
-  tbody tr:first-child{ border-top:2px solid var(--accent) }
-  tbody tr:last-child{ border-bottom:2px solid var(--accent) }
-  tbody tr:hover{
-    background:rgba(212,163,115,.08);
-    box-shadow: inset 0 0 12px var(--accent-soft);
-  }
+  table{width:100%;border-collapse:separate;border-spacing:0}
+  thead th{text-align:left;font-weight:900;padding:10px 12px;background:#131313;color:var(--ink);border-bottom:2px solid var(--accent)}
+  tbody td{padding:10px 12px;color:var(--ink);border-bottom:1px solid #1a1a1a}
+  tbody tr{background:rgba(255,255,255,.02);border-left:2px solid var(--accent);border-right:2px solid var(--accent)}
+  tbody tr:first-child{border-top:2px solid var(--accent)}
+  tbody tr:last-child{border-bottom:2px solid var(--accent)}
+  tbody tr:hover{background:rgba(212,163,115,.08);box-shadow:inset 0 0 12px var(--accent-soft)}
 
-  /* Bildirim barı */
-  .toast{
-    position:fixed; right:16px; bottom:16px; z-index:60;
-    background:#121212; color:var(--ink); padding:10px 14px; border-radius:12px;
-    border:2px solid var(--accent);
-    box-shadow: 0 0 0 1px var(--accent) inset, 0 0 14px var(--accent-soft);
-  }
-
-  /* Başlık & footer */
-  .title{ font-size:24px; font-weight:900; margin:10px 0 16px; }
-  .legal{ margin-top:18px; border-top:1px solid var(--line); color:var(--muted); }
+  @media (max-width:980px){ .admin{grid-template-columns:1fr} .side{position:sticky;top:0;z-index:40} .main{padding:10px} }
 `}</style>
     </>
   );
@@ -250,14 +177,12 @@ function Inbox({supa,audioRef,counts,setCounts,lastCounts}){
 
   const load = useCallback(async(play=false)=>{
     try{
-      // son konuşmalar
       const { data:c } = await supa
         .from("conversations")
         .select("id,buyer_auth_id,seller_auth_id,created_at")
         .order("id",{ascending:false})
         .limit(50);
       setConvs(c||[]);
-      // sayaç & ses
       const newCount = { ...counts, inbox: (c||[]).length };
       setCounts(newCount);
       if(play && audioRef.current && newCount.inbox> (lastCounts.current.inbox||0)){
@@ -279,36 +204,23 @@ function Inbox({supa,audioRef,counts,setCounts,lastCounts}){
   },[supa]);
 
   useEffect(()=>{ load(false); },[load]);
-
-  // 10 sn’de bir kontrol
-  useEffect(()=>{
-    const t = setInterval(()=> load(true), 10000);
-    return ()=> clearInterval(t);
-  },[load]);
+  useEffect(()=>{ const t = setInterval(()=> load(true), 10000); return ()=> clearInterval(t); },[load]);
 
   async function send(){
     setError("");
     const body = text.trim();
     if(!sel || !body) return;
     try{
-      // admin kendi adına mesaj atar → receiver, son mesajdaki karşı taraf varsayımı:
       const last = msgs[msgs.length-1];
       let receiver = last ? (last.sender_auth_id) : null;
       if(!receiver){ setError("Alıcı belirlenemedi."); return; }
       const { data:{ user } } = await supa.auth.getUser();
-      const payload = {
-        conv_id: sel,
-        sender_auth_id: user.id,
-        receiver_auth_id: receiver,
-        body
-      };
+      const payload = { conv_id: sel, sender_auth_id: user.id, receiver_auth_id: receiver, body };
       const { error } = await supa.from("messages").insert(payload);
       if(error) throw error;
       setText("");
       await loadMsgs(sel);
-    }catch(e){
-      setError(e?.message||"Gönderilemedi");
-    }
+    }catch(e){ setError(e?.message||"Gönderilemedi"); }
   }
 
   async function delHard(id){
@@ -336,8 +248,8 @@ function Inbox({supa,audioRef,counts,setCounts,lastCounts}){
                 <tr key={c.id}>
                   <td>#{c.id}</td>
                   <td style={{fontSize:12}}>
-                    <div al="buyer">buyer: <code>{c.buyer_auth_id}</code></div>
-                    <div al="seller">seller: <code>{c.seller_auth_id}</code></div>
+                    <div>buyer: <code>{c.buyer_auth_id}</code></div>
+                    <div>seller: <code>{c.seller_auth_id}</code></div>
                   </td>
                   <td>{fmtDate(c.created_at)}</td>
                   <td><button className="btn" onClick={()=>loadMsgs(c.id)}>Aç</button></td>
@@ -353,10 +265,10 @@ function Inbox({supa,audioRef,counts,setCounts,lastCounts}){
             <h4>Konuşma #{sel||"-"}</h4>
             <span className="muted">{msgs.length} mesaj</span>
           </div>
-          <div style={{maxHeight:360,overflow:"auto",border:"1px solid #eef2f7",borderRadius:10,padding:10}}>
+          <div style={{maxHeight:360,overflow:"auto",border:"2px solid var(--accent)",borderRadius:10,padding:10,boxShadow:"0 0 0 1px var(--accent) inset, 0 0 10px var(--accent-soft)"}}>
             {msgs.map(m=>(
-              <div key={m.id} style={{borderBottom:"1px dashed #eef2f7",padding:"6px 0"}}>
-                <div style={{fontSize:12,color:"#6b7280"}}>
+              <div key={m.id} style={{borderBottom:"1px dashed #3a3a3a",padding:"6px 0"}}>
+                <div style={{fontSize:12,color:"#aab4c0"}}>
                   #{m.id} • {fmtDate(m.created_at)}
                 </div>
                 <div style={{fontSize:12,margin:"4px 0"}}>
@@ -375,7 +287,7 @@ function Inbox({supa,audioRef,counts,setCounts,lastCounts}){
             <input className="input" style={{flex:1}} placeholder="Yanıt yaz…" value={text} onChange={e=>setText(e.target.value)} />
             <button className="btn" onClick={send}>Gönder</button>
           </div>
-          {error && <div className="bad" style={{marginTop:8}}>{error}</div>}
+          {error && <div className="card" style={{marginTop:8,background:"#2a0f0f",borderColor:"#ff9999",color:"#ffd1d1"}}>{error}</div>}
         </div>
       </div>
     </div>
@@ -432,7 +344,7 @@ function Pending({supa,audioRef,counts,setCounts,lastCounts}){
               <td>{it.title}</td>
               <td>{it.city} {it.district?`/ ${it.district}`:""}</td>
               <td>{it.price?`${it.price} ${it.currency||"TRY"}`:"-"}</td>
-              <td><span className="bad">pending</span></td>
+              <td><span>pending</span></td>
               <td className="row">
                 <button className="btn" onClick={()=>approve(it.id)}>Onayla</button>
                 <button className="ghost" onClick={()=>reject(it.id)}>Reddet</button>
@@ -479,7 +391,7 @@ function ShowcasePro({supa}){
         <h3>✨ Vitrin / PRO</h3>
         <button className="ghost" onClick={()=>load()}>Yenile</button>
       </div>
-      {info && <div className="bad" style={{marginBottom:8}}>{info}</div>}
+      {info && <div className="card" style={{marginBottom:8,background:"#2a0f0f",borderColor:"#ff9999",color:"#ffd1d1"}}>{info}</div>}
 
       <table className="table">
         <thead><tr><th>ID</th><th>Başlık</th><th>Fiyat</th><th>Konum</th><th>Vitrin</th><th></th></tr></thead>
@@ -530,10 +442,8 @@ function Users({supa}){
   async function grantPro(uid){
     setInfo("");
     const m = Number(months)||12;
-    // Önce RPC dener, yoksa direct update
     const tryRpc = await supa.rpc("admin_grant_pro", { p_user_id: uid, p_months:m });
     if(tryRpc.error){
-      // fallback: premium_until ileri al
       const { data:cur } = await supa.from("users").select("premium_until").eq("auth_user_id",uid).single();
       const now = new Date();
       const base = cur?.premium_until ? new Date(cur.premium_until) : now;
@@ -551,7 +461,7 @@ function Users({supa}){
         <h3>👥 Kullanıcılar</h3>
         <button className="ghost" onClick={()=>load()}>Yenile</button>
       </div>
-      {info && <div className="bad" style={{marginBottom:8}}>{info}</div>}
+      {info && <div className="card" style={{marginBottom:8,background:"#2a0f0f",borderColor:"#ff9999",color:"#ffd1d1"}}>{info}</div>}
 
       <div className="row" style={{marginBottom:8}}>
         <label>PRO ay (varsayılan 12):</label>
@@ -591,7 +501,7 @@ function Complaints({supa,audioRef,counts,setCounts,lastCounts}){
   const load = useCallback(async(play=false)=>{
     try{
       const { data, error } = await supa
-        .from("reports") // yoksa boş dönsün
+        .from("reports")
         .select("id, created_at, type, ref_id, reporter_auth_id, note, status");
       if(error){ setRows([]); return; }
       setRows(data||[]);
@@ -619,7 +529,7 @@ function Complaints({supa,audioRef,counts,setCounts,lastCounts}){
         <h3>🚩 Şikayetler</h3>
         <button className="ghost" onClick={()=>load(true)}>Yenile</button>
       </div>
-      {info && <div className="bad" style={{marginBottom:8}}>{info}</div>}
+      {info && <div className="card" style={{marginBottom:8,background:"#2a0f0f",borderColor:"#ff9999",color:"#ffd1d1"}}>{info}</div>}
 
       <table className="table">
         <thead><tr><th>ID</th><th>Tür</th><th>Referans</th><th>Rapor Eden</th><th>Not</th><th>Durum</th><th></th></tr></thead>
@@ -645,7 +555,7 @@ function Complaints({supa,audioRef,counts,setCounts,lastCounts}){
   );
 }
 
-/* ---------------- BROADCAST (push-like simple) ---------------- */
+/* ---------------- BROADCAST ---------------- */
 function Broadcast({supa}){
   const [title,setTitle]=useState("");
   const [body,setBody]=useState("");
@@ -654,8 +564,6 @@ function Broadcast({supa}){
   async function send(){
     setInfo("");
     if(!title.trim()||!body.trim()){ setInfo("Başlık ve mesaj zorunlu."); return; }
-    // “broadcasts” tablosu varsa yaz, yoksa messages’a admin → her user kısa not bırak (isteğe göre)
-    // Burada en güvenlisi küçük bir broadcast tablosu varsayalım:
     const { error } = await supa.from("broadcasts").insert({ title, body });
     if(error){ setInfo("Broadcast tablosu yoksa: admin kullanıcılarına e-posta veya push entegre edin."); return; }
     setTitle(""); setBody(""); setInfo("Gönderildi.");
@@ -671,7 +579,7 @@ function Broadcast({supa}){
         <textarea className="input" rows={5} style={{width:"100%"}} placeholder="Mesaj içeriği" value={body} onChange={e=>setBody(e.target.value)} />
       </div>
       <div className="row" style={{marginTop:8}}>
-        <button className="btn" onClick={send}>Gönder</button>
+        <button className="btn primary" onClick={send}>Gönder</button>
         {info && <div className="muted">{info}</div>}
       </div>
     </div>
