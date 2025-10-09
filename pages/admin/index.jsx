@@ -1,80 +1,44 @@
 "use client";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 
-/* ---------------- ENV / SUPABASE ---------------- */
+// --- Supabase helper
 let _sb = null;
-function getSupabase() {
+function sb() {
   if (_sb) return _sb;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || (typeof window !== "undefined" ? window.__SUPABASE_URL__ : "");
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || (typeof window !== "undefined" ? window.__SUPABASE_ANON__ : "");
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   _sb = createClient(url, key);
   return _sb;
 }
 
-/* ---------------- Basit UI parçaları ---------------- */
-function Badge({ children, color="gray" }) {
-  const map = {
-    gray: "#9ca3af", green: "#10b981", blue: "#3b82f6",
-    yellow: "#eab308", red:"#ef4444", purple:"#a78bfa"
-  };
-  return (
-    <span style={{
-      display:"inline-block", padding:"3px 8px", borderRadius:999,
-      fontSize:12, fontWeight:800, color:"#111", background: map[color] || "#9ca3af"
-    }}>{children}</span>
-  );
-}
-function Row({ label, children }) {
-  return (
-    <div className="row">
-      <div className="lab">{label}</div>
-      <div className="val">{children}</div>
-    </div>
-  );
-}
+// --- Basit format yardımcıları
+const fmtDate = (d) => new Date(d).toLocaleString("tr-TR");
+const addDaysIso = (days = 30) => new Date(Date.now() + days*24*60*60*1000).toISOString();
 
-/* ---------------- ANA KOMPONENT ---------------- */
 export default function AdminPanel() {
-  const supa = getSupabase();
+  const router = useRouter();
+  const supa = sb();
 
-  const [authedUser, setAuthedUser] = useState(null);       // auth.users
-  const [isAdmin, setIsAdmin] = useState(false);            // public.users.role === 'admin'
-  const [loadingAuth, setLoadingAuth] = useState(true);
+  const [me, setMe] = useState(null); // auth user
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState("pending"); // pending | users
+  const [err, setErr] = useState("");
+  const [msg, setMsg] = useState("");
 
-  // Sekme: pending, search, users, pro
-  const [tab, setTab] = useState("pending");
-
-  // --- Login formu ---
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loginErr, setLoginErr] = useState("");
-
-  // --- Bekleyen ilanlar ---
+  // data
   const [pending, setPending] = useState([]);
-  const [loadingPending, setLoadingPending] = useState(false);
+  const [users, setUsers] = useState([]);
 
-  // --- İlan arama ---
-  const [qTitle, setQTitle] = useState("");
-  const [qCity, setQCity] = useState("");
-  const [qStatus, setQStatus] = useState("all");
-  const [searchRes, setSearchRes] = useState([]);
-  const [loadingSearch, setLoadingSearch] = useState(false);
-
-  // --- Kullanıcılar ---
+  // filters
   const [uQuery, setUQuery] = useState("");
-  const [uRes, setURes] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [grantMonths, setGrantMonths] = useState(12);
 
-  // --- PRO İşlemleri ---
-  const [proEmail, setProEmail] = useState("");
-  const [proMonths, setProMonths] = useState(12);
-  const [proMsg, setProMsg] = useState("");
-  const [proErr, setProErr] = useState("");
-
-  // ---------------- AUTH KONTROL ----------------
+  // --- giriş kontrolü
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -83,437 +47,280 @@ export default function AdminPanel() {
         const { data: { user } } = await supa.auth.getUser();
         if (!alive) return;
         if (!user) {
-          setAuthedUser(null);
-          setIsAdmin(false);
-          return;
+          setLoading(false);
+          return; // login form gösterilecek
         }
-        setAuthedUser(user);
-        // role check
-        const { data: me } = await supa
+        setMe(user);
+        // rol kontrol
+        const { data: rec, error } = await supa
           .from("users")
           .select("role")
           .eq("auth_user_id", user.id)
           .single();
-        setIsAdmin(me?.role === "admin");
+        if (error) throw error;
+        const admin = rec?.role === "admin";
+        setIsAdmin(admin);
+        if (admin) {
+          await fetchPending();
+        }
+      } catch (e) {
+        setErr(e.message || "Hata");
       } finally {
-        if (alive) setLoadingAuth(false);
+        if (alive) setLoading(false);
       }
     })();
     return () => { alive = false; };
   }, [supa]);
 
-  // ---------------- GİRİŞ ----------------
-  const onLogin = useCallback(async (e) => {
-    e.preventDefault();
-    setLoginErr("");
-    try {
-      const { error } = await supa.auth.signInWithPassword({ email: email.trim(), password });
-      if (error) throw error;
-      // Yeniden kontrol
-      const { data: { user } } = await supa.auth.getUser();
-      setAuthedUser(user || null);
-      if (user) {
-        const { data: me } = await supa
-          .from("users")
-          .select("role")
-          .eq("auth_user_id", user.id)
-          .single();
-        setIsAdmin(me?.role === "admin");
-      }
-    } catch (err) {
-      setLoginErr(err?.message || "Giriş başarısız.");
-    }
-  }, [email, password, supa]);
-
-  const onLogout = useCallback(async () => {
-    try { await supa.auth.signOut(); } catch {}
-    setAuthedUser(null);
-    setIsAdmin(false);
+  const fetchPending = useCallback(async () => {
+    setErr("");
+    const { data, error } = await supa
+      .from("listings")
+      .select("id, title, description, price, currency, city, district, created_at, is_showcase, seller_auth_id")
+      .in("status", ["pending"]) // sadece bekleyenler
+      .order("created_at", { ascending: false });
+    if (error) { setErr(error.message); return; }
+    setPending(data || []);
   }, [supa]);
 
-  // ---------------- BEKLEYEN İLANLAR ----------------
-  const loadPending = useCallback(async () => {
-    setLoadingPending(true);
-    try {
-      const { data, error } = await supa
-        .from("listings")
-        .select("id, title, description, price, currency, city, district, created_at, is_showcase, status, seller_auth_id")
-        .eq("status", "pending")
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      setPending(data || []);
-    } finally {
-      setLoadingPending(false);
+  const fetchUsers = useCallback(async () => {
+    setErr("");
+    let q = supa.from("users").select("auth_user_id, email, full_name, role, premium_until").order("created_at", { ascending:false });
+    if (uQuery.trim()) {
+      q = q.ilike("email", `%${uQuery.trim()}%`);
     }
-  }, [supa]);
+    const { data, error } = await q;
+    if (error) { setErr(error.message); return; }
+    setUsers(data || []);
+  }, [supa, uQuery]);
 
-  useEffect(() => { if (isAdmin && tab === "pending") loadPending(); }, [isAdmin, tab, loadPending]);
+  // --- giriş
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const onLogin = async (e) => {
+    e.preventDefault(); setErr(""); setMsg("");
+    try {
+      const { error } = await supa.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      router.replace("/admin");
+    } catch (e) { setErr(e.message || "Giriş başarısız"); }
+  };
 
+  const onLogout = async () => { try { await supa.auth.signOut(); } catch{}; router.replace("/"); };
+
+  // --- İŞLEMLER: ilan onay/ret, vitrin kaldır
   const approveListing = async (id) => {
-    await supa.from("listings").update({ status: "active" }).eq("id", id);
-    await loadPending();
+    setErr(""); setMsg("");
+    const { error } = await supa
+      .from("listings")
+      .update({ status: "active", expires_at: addDaysIso(30) })
+      .eq("id", id);
+    if (error) { setErr(error.message); return; }
+    setMsg(`#${id} onaylandı`); fetchPending();
   };
+
   const rejectListing = async (id) => {
-    await supa.from("listings").update({ status: "rejected" }).eq("id", id);
-    await loadPending();
-  };
-  const toggleShowcase = async (id, current) => {
-    await supa.from("listings").update({ is_showcase: !current }).eq("id", id);
-    await loadPending();
-  };
-
-  // ---------------- İLAN ARAMA ----------------
-  const doSearch = useCallback(async () => {
-    setLoadingSearch(true);
-    try {
-      let q = supa.from("listings").select("id, title, price, currency, city, status, is_showcase, created_at").order("created_at", { ascending: false });
-      if (qTitle.trim()) q = q.ilike("title", `%${qTitle.trim()}%`);
-      if (qCity.trim()) q = q.eq("city", qCity.trim());
-      if (qStatus !== "all") q = q.eq("status", qStatus);
-      const { data, error } = await q.range(0, 99);
-      if (error) throw error;
-      setSearchRes(data || []);
-    } finally {
-      setLoadingSearch(false);
-    }
-  }, [qTitle, qCity, qStatus, supa]);
-
-  // ---------------- KULLANICI YÖNETİMİ ----------------
-  const searchUsers = useCallback(async () => {
-    setLoadingUsers(true);
-    try {
-      let q = supa.from("users").select("id, auth_user_id, email, full_name, role, premium_until").order("created_at", { ascending: false });
-      if (uQuery.trim()) {
-        q = q.or(`email.ilike.%${uQuery.trim()}%,full_name.ilike.%${uQuery.trim()}%`);
-      }
-      const { data, error } = await q.range(0, 99);
-      if (error) throw error;
-      setURes(data || []);
-    } finally {
-      setLoadingUsers(false);
-    }
-  }, [uQuery, supa]);
-
-  const setRole = async (authUserId, role) => {
-    await supa.from("users").update({ role }).eq("auth_user_id", authUserId);
-    await searchUsers();
-  };
-  const clearPro = async (authUserId) => {
-    await supa.from("users").update({ premium_until: null }).eq("auth_user_id", authUserId);
-    await searchUsers();
+    setErr(""); setMsg("");
+    const { error } = await supa
+      .from("listings")
+      .update({ status: "rejected" })
+      .eq("id", id);
+    if (error) { setErr(error.message); return; }
+    setMsg(`#${id} reddedildi`); fetchPending();
   };
 
-  // ---------------- PRO İŞLEMLERİ ----------------
-  const grantPro = async () => {
-    setProMsg(""); setProErr("");
-    try {
-      const { error } = await supa.rpc("admin_grant_pro_by_email", {
-        p_email: proEmail.trim(),
-        p_months: Number(proMonths) || 12,
-      });
-      if (error) throw error;
-      setProMsg("PRO tanımlandı.");
-    } catch (e) {
-      setProErr(e?.message || "İşlem başarısız.");
-    }
+  const clearShowcase = async (id) => {
+    setErr(""); setMsg("");
+    const { error } = await supa
+      .from("listings")
+      .update({ is_showcase: false })
+      .eq("id", id);
+    if (error) { setErr(error.message); return; }
+    setMsg(`#${id} vitrin kaldırıldı`); fetchPending();
   };
 
-  /* ---------------- RENDER ---------------- */
+  // --- Kullanıcı işlemleri: PRO ver / admin yap / admin al
+  const grantPro = async (mail) => {
+    setErr(""); setMsg("");
+    // RPC varsa onu kullan (yarın öbür gün log vs. için iyi)
+    const { error } = await supa.rpc("admin_grant_pro_by_email", { p_email: mail, p_months: grantMonths });
+    if (error) { setErr(error.message); return; }
+    setMsg(`${mail} → ${grantMonths} ay PRO verildi`);
+    fetchUsers();
+  };
+
+  const makeAdmin = async (auth_user_id) => {
+    setErr(""); setMsg("");
+    const { error } = await supa.from("users").update({ role: "admin" }).eq("auth_user_id", auth_user_id);
+    if (error) { setErr(error.message); return; }
+    setMsg(`Yetki verildi (admin)`);
+    fetchUsers();
+  };
+
+  const removeAdmin = async (auth_user_id) => {
+    setErr(""); setMsg("");
+    const { error } = await supa.from("users").update({ role: null }).eq("auth_user_id", auth_user_id);
+    if (error) { setErr(error.message); return; }
+    setMsg(`Admin yetkisi alındı`);
+    fetchUsers();
+  };
+
+  // --- UI ---
   return (
     <>
       <Head>
-        <title>Admin Paneli</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Admin Paneli · Üreten Eller</title>
+        <meta name="robots" content="noindex,nofollow" />
       </Head>
 
-      <div className="layout">
-        <header className="topbar">
-          <div className="brand">Admin Paneli</div>
-          <div className="spacer" />
-          {isAdmin && (
-            <button className="btn danger" onClick={onLogout}>Çıkış</button>
-          )}
-        </header>
+      <header className="top">
+        <div className="brand" onClick={() => router.push("/")}>🛠️ Admin · Üreten Eller</div>
+        {isAdmin ? (
+          <div className="actions">
+            <button className={tab === "pending" ? "tab active" : "tab"} onClick={() => { setTab("pending"); fetchPending(); }}>Bekleyen İlanlar</button>
+            <button className={tab === "users" ? "tab active" : "tab"} onClick={() => { setTab("users"); fetchUsers(); }}>Kullanıcılar</button>
+            <button className="logout" onClick={onLogout}>Çıkış</button>
+          </div>
+        ) : (
+          <div className="actions"><button className="logout" onClick={onLogout}>Ana Sayfa</button></div>
+        )}
+      </header>
 
-        <main className="content">
-          {/* LOGIN GATE */}
-          {loadingAuth ? (
-            <div className="card">Yükleniyor…</div>
-          ) : !authedUser ? (
-            <div className="card login">
-              <h1>Giriş</h1>
-              <form onSubmit={onLogin} className="form">
-                <div className="field">
-                  <label>E-posta</label>
-                  <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="admin@site.com" />
+      <main className="wrap">
+        {!me || !isAdmin ? (
+          <section className="card login">
+            <h1>Admin Giriş</h1>
+            <form onSubmit={onLogin} className="grid">
+              <label>E‑posta</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@mail.com" required />
+              <label>Şifre</label>
+              <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" required />
+              <button type="submit" className="primary">Giriş Yap</button>
+            </form>
+            {loading && <div className="muted">Oturum kontrol ediliyor…</div>}
+            {err && <div className="err">{err}</div>}
+          </section>
+        ) : (
+          <>
+            {msg && <div className="msg">{msg}</div>}
+            {err && <div className="err">{err}</div>}
+
+            {tab === "pending" && (
+              <section className="card">
+                <h2>Bekleyen İlanlar</h2>
+                {!pending.length && <div className="muted">Bekleyen ilan yok.</div>}
+                <div className="table">
+                  <div className="row head">
+                    <div>#</div>
+                    <div>Başlık</div>
+                    <div>Fiyat</div>
+                    <div>Konum</div>
+                    <div>Vitrin</div>
+                    <div>Tarih</div>
+                    <div>İşlem</div>
+                  </div>
+                  {pending.map(it => (
+                    <div className="row" key={it.id}>
+                      <div>#{it.id}</div>
+                      <div className="ell">{it.title}</div>
+                      <div>{it.price ?? "-"} {it.currency}</div>
+                      <div>{it.city}{it.district ? ` / ${it.district}` : ""}</div>
+                      <div>{it.is_showcase ? "Evet" : "Hayır"}</div>
+                      <div>{fmtDate(it.created_at)}</div>
+                      <div className="ops">
+                        <button onClick={() => approveListing(it.id)} className="ok">Onayla</button>
+                        <button onClick={() => rejectListing(it.id)} className="no">Reddet</button>
+                        {it.is_showcase && (
+                          <button onClick={() => clearShowcase(it.id)} className="ghost">Vitrin Kaldır</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="field">
-                  <label>Şifre</label>
-                  <input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="••••••••" />
+              </section>
+            )}
+
+            {tab === "users" && (
+              <section className="card">
+                <h2>Kullanıcılar</h2>
+                <div className="userbar">
+                  <input value={uQuery} onChange={e=>setUQuery(e.target.value)} placeholder="email ara…" />
+                  <button onClick={fetchUsers}>Ara</button>
+                  <select value={grantMonths} onChange={e=>setGrantMonths(Number(e.target.value))}>
+                    <option value={6}>6 ay PRO</option>
+                    <option value={12}>12 ay PRO</option>
+                    <option value={24}>24 ay PRO</option>
+                  </select>
                 </div>
-                {loginErr && <div className="err">{loginErr}</div>}
-                <div className="actions">
-                  <button type="submit" className="btn primary">Giriş Yap</button>
+
+                <div className="table">
+                  <div className="row head">
+                    <div>Email</div>
+                    <div>Ad Soyad</div>
+                    <div>Rol</div>
+                    <div>PRO Bitiş</div>
+                    <div>İşlem</div>
+                  </div>
+                  {users.map(u => (
+                    <div className="row" key={u.auth_user_id}>
+                      <div className="ell">{u.email || "-"}</div>
+                      <div className="ell">{u.full_name || "-"}</div>
+                      <div>{u.role || "-"}</div>
+                      <div>{u.premium_until ? fmtDate(u.premium_until) : "-"}</div>
+                      <div className="ops">
+                        {u.email && <button onClick={() => grantPro(u.email)} className="ok">PRO Ver</button>}
+                        {u.role === "admin" ? (
+                          <button onClick={() => removeAdmin(u.auth_user_id)} className="no">Admin Al</button>
+                        ) : (
+                          <button onClick={() => makeAdmin(u.auth_user_id)} className="ghost">Admin Yap</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </form>
-            </div>
-          ) : !isAdmin ? (
-            <div className="card">
-              <h2>Yetkin yok</h2>
-              <p>Bu alana sadece <b>admin</b> rolü erişebilir.</p>
-              <button className="btn" onClick={onLogout}>Hesaptan çık</button>
-            </div>
-          ) : (
-            <>
-              {/* Sekmeler */}
-              <nav className="tabs">
-                <button className={tab==="pending"?"tab active":"tab"} onClick={()=>setTab("pending")}>Bekleyen İlanlar</button>
-                <button className={tab==="search"?"tab active":"tab"} onClick={()=>setTab("search")}>İlan Ara</button>
-                <button className={tab==="users"?"tab active":"tab"} onClick={()=>setTab("users")}>Kullanıcılar</button>
-                <button className={tab==="pro"?"tab active":"tab"} onClick={()=>setTab("pro")}>PRO İşlemleri</button>
-              </nav>
-
-              {/* PENDING */}
-              {tab==="pending" && (
-                <section className="card">
-                  <div className="head">
-                    <h2>Onay Bekleyen İlanlar</h2>
-                    <button className="btn" onClick={loadPending}>Yenile</button>
-                  </div>
-                  {loadingPending ? (
-                    <div>Yükleniyor…</div>
-                  ) : !pending.length ? (
-                    <div>Bekleyen ilan yok.</div>
-                  ) : (
-                    <div className="list">
-                      {pending.map((it)=>(
-                        <div className="item" key={it.id}>
-                          <div className="flex">
-                            <div className="grow">
-                              <div className="ttl">{it.title}</div>
-                              <div className="meta">
-                                <Badge color="yellow">pending</Badge>
-                                {!!it.is_showcase && <span style={{marginLeft:8}}><Badge color="purple">vitrin</Badge></span>}
-                                <span style={{marginLeft:12, opacity:.8}}>{new Date(it.created_at).toLocaleString()}</span>
-                              </div>
-                              <div className="dim">{it.city}{it.district ? ` / ${it.district}`:""} — {it.price ? `${it.price} ${it.currency}` : "-"}</div>
-                            </div>
-                            <div className="actions">
-                              <button className="btn success" onClick={()=>approveListing(it.id)}>Onayla</button>
-                              <button className="btn warn" onClick={()=>rejectListing(it.id)}>Reddet</button>
-                              <button className="btn" onClick={()=>toggleShowcase(it.id, it.is_showcase)}>
-                                {it.is_showcase ? "Vitrinden Kaldır" : "Vitrine Al"}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </section>
-              )}
-
-              {/* SEARCH LISTINGS */}
-              {tab==="search" && (
-                <section className="card">
-                  <h2>İlan Arama</h2>
-                  <div className="grid2">
-                    <div className="field">
-                      <label>Başlık</label>
-                      <input value={qTitle} onChange={(e)=>setQTitle(e.target.value)} placeholder="başlıkta ara" />
-                    </div>
-                    <div className="field">
-                      <label>İl</label>
-                      <input value={qCity} onChange={(e)=>setQCity(e.target.value)} placeholder="İstanbul" />
-                    </div>
-                    <div className="field">
-                      <label>Durum</label>
-                      <select value={qStatus} onChange={(e)=>setQStatus(e.target.value)}>
-                        <option value="all">Hepsi</option>
-                        <option value="pending">pending</option>
-                        <option value="active">active</option>
-                        <option value="rejected">rejected</option>
-                        <option value="expired">expired</option>
-                      </select>
-                    </div>
-                    <div className="field" style={{alignSelf:"end"}}>
-                      <button className="btn primary" onClick={doSearch}>Ara</button>
-                    </div>
-                  </div>
-
-                  {loadingSearch ? (
-                    <div>Aranıyor…</div>
-                  ) : (
-                    <div className="list">
-                      {searchRes.map((it)=>(
-                        <div className="item" key={it.id}>
-                          <div className="flex">
-                            <div className="grow">
-                              <div className="ttl">{it.title}</div>
-                              <div className="meta">
-                                <Badge color={
-                                  it.status==="active" ? "green" :
-                                  it.status==="pending" ? "yellow" :
-                                  it.status==="rejected" ? "red" : "gray"
-                                }>{it.status}</Badge>
-                                {!!it.is_showcase && <span style={{marginLeft:8}}><Badge color="purple">vitrin</Badge></span>}
-                                <span style={{marginLeft:12, opacity:.8}}>{new Date(it.created_at).toLocaleString()}</span>
-                              </div>
-                              <div className="dim">{it.city || "-"} — {it.price ? `${it.price} ${it.currency}` : "-"}</div>
-                            </div>
-                            <div className="actions">
-                              {it.status!=="active" && <button className="btn success" onClick={()=>supUpdateListing(supa, it.id, {status:"active"}, doSearch)}>Onayla</button>}
-                              {it.status!=="rejected" && <button className="btn warn" onClick={()=>supUpdateListing(supa, it.id, {status:"rejected"}, doSearch)}>Reddet</button>}
-                              <button className="btn" onClick={()=>supUpdateListing(supa, it.id, {is_showcase: !it.is_showcase}, doSearch)}>
-                                {it.is_showcase ? "Vitrinden Kaldır" : "Vitrine Al"}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {!searchRes.length && <div>Sonuç yok.</div>}
-                    </div>
-                  )}
-                </section>
-              )}
-
-              {/* USERS */}
-              {tab==="users" && (
-                <section className="card">
-                  <h2>Kullanıcılar</h2>
-                  <div className="grid2">
-                    <div className="field">
-                      <label>E-posta / İsim ara</label>
-                      <input value={uQuery} onChange={(e)=>setUQuery(e.target.value)} placeholder="ornekkisi@mail.com" />
-                    </div>
-                    <div className="field" style={{alignSelf:"end"}}>
-                      <button className="btn primary" onClick={searchUsers}>Ara</button>
-                    </div>
-                  </div>
-                  {loadingUsers ? (
-                    <div>Yükleniyor…</div>
-                  ) : (
-                    <div className="list">
-                      {uRes.map((u)=>(
-                        <div className="item" key={u.id}>
-                          <div className="flex">
-                            <div className="grow">
-                              <div className="ttl">{u.full_name || u.email || u.auth_user_id}</div>
-                              <div className="meta">
-                                <Badge color={u.role==="admin" ? "red" : u.role==="moderator" ? "blue" : "gray"}>{u.role || "user"}</Badge>
-                                {u.premium_until && <span style={{marginLeft:8}}><Badge color="yellow">PRO</Badge></span>}
-                                <span style={{marginLeft:12, opacity:.8}}>{u.email || "-"}</span>
-                              </div>
-                              {u.premium_until && <div className="dim">PRO bitiş: {new Date(u.premium_until).toLocaleDateString()}</div>}
-                            </div>
-                            <div className="actions">
-                              <button className="btn" onClick={()=>setRole(u.auth_user_id, "user")}>User</button>
-                              <button className="btn" onClick={()=>setRole(u.auth_user_id, "moderator")}>Moderatör yap</button>
-                              <button className="btn warn" onClick={()=>setRole(u.auth_user_id, "admin")}>Admin yap</button>
-                              {u.premium_until && <button className="btn" onClick={()=>clearPro(u.auth_user_id)}>PRO kaldır</button>}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {!uRes.length && <div>Sonuç yok.</div>}
-                    </div>
-                  )}
-                </section>
-              )}
-
-              {/* PRO */}
-              {tab==="pro" && (
-                <section className="card">
-                  <h2>PRO Üyelik İşlemleri</h2>
-                  <div className="grid3">
-                    <div className="field">
-                      <label>E-posta</label>
-                      <input value={proEmail} onChange={(e)=>setProEmail(e.target.value)} placeholder="kisi@mail.com" />
-                    </div>
-                    <div className="field">
-                      <label>Süre (ay)</label>
-                      <input type="number" min={1} max={60} value={proMonths} onChange={(e)=>setProMonths(e.target.value)} />
-                    </div>
-                    <div className="field" style={{alignSelf:"end"}}>
-                      <button className="btn primary" onClick={grantPro}>PRO Ver</button>
-                    </div>
-                  </div>
-                  {proMsg && <div className="ok">{proMsg}</div>}
-                  {proErr && <div className="err">{proErr}</div>}
-                  <div className="mini">Not: Bu işlem sadece <b>admin</b> tarafından çalışır; RLS bunu zaten zorlar.</div>
-                </section>
-              )}
-            </>
-          )}
-        </main>
-
-        <footer className="foot">
-          © {new Date().getFullYear()} Admin
-        </footer>
-      </div>
+              </section>
+            )}
+          </>
+        )}
+      </main>
 
       <style jsx>{`
-        :root{ --bg:#0b0b0b; --ink:#f8fafc; --muted:#cbd5e1; --line:rgba(255,255,255,.12); }
-        html,body,#__next{height:100%}
-        body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+        :root{ --ink:#0f172a; --line:rgba(0,0,0,.1); }
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Arial,sans-serif}
+        .top{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);
+          background:linear-gradient(90deg,#0b0b0b,#1f2937);color:#fff}
+        .brand{font-weight:900;cursor:pointer}
+        .actions{display:flex;gap:8px;align-items:center}
+        .tab{border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;border-radius:10px;padding:8px 10px;cursor:pointer}
+        .tab.active{background:#111827;border-color:#111827}
+        .logout{border:1px solid #ef4444;background:#ef4444;color:#fff;border-radius:10px;padding:8px 10px;cursor:pointer}
 
-        .layout{min-height:100vh;display:grid;grid-template-rows:auto 1fr auto}
-        .topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:#0f0f10;position:sticky;top:0;z-index:50}
-        .brand{font-weight:900}
-        .spacer{flex:1}
+        .wrap{min-height:100vh;padding:16px;background:
+          radial-gradient(1000px 500px at 10% -10%, #ffe4e6, transparent),
+          radial-gradient(700px 400px at 90% -10%, #e0e7ff, transparent),
+          linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);}
 
-        .content{max-width:1100px;margin:0 auto;padding:16px}
-        .foot{padding:12px 16px;border-top:1px solid var(--line);color:var(--muted);text-align:center}
+        .card{max-width:1200px;margin:12px auto;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.15);padding:14px}
+        .card.login{max-width:420px}
+        h1,h2{margin:6px 0 12px}
+        .grid{display:grid;gap:10px}
+        input,select{border:1px solid #e5e7eb;border-radius:10px;padding:10px}
+        .primary{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:10px;cursor:pointer;font-weight:800}
+        .muted{color:#475569;margin-top:8px}
+        .err{background:#fee2e2;border:1px solid #fecaca;padding:10px;border-radius:10px;color:#991b1b;margin:10px auto}
+        .msg{background:#dcfce7;border:1px solid #bbf7d0;padding:10px;border-radius:10px;color:#065f46;margin:10px auto}
 
-        .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-        .tab{border:1px solid var(--line);background:#151515;color:var(--ink);padding:8px 12px;border-radius:10px;font-weight:800;cursor:pointer}
-        .tab.active{background:#111827}
+        .table{display:grid;gap:6px}
+        .row{display:grid;grid-template-columns:70px 1.6fr .7fr 1fr .7fr 1fr 1fr;gap:8px;align-items:center;padding:8px;border:1px solid #e5e7eb;border-radius:10px}
+        .row.head{background:#f8fafc;font-weight:800}
+        .ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .ops{display:flex;gap:6px;flex-wrap:wrap}
+        .ok{border:1px solid #16a34a;background:#16a34a;color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer}
+        .no{border:1px solid #ef4444;background:#ef4444;color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer}
+        .ghost{border:1px solid #111827;background:transparent;color:#111827;border-radius:10px;padding:6px 10px;cursor:pointer}
 
-        .card{background:#111317;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 18px 50px rgba(0,0,0,.35)}
-        .login{max-width:420px;margin:0 auto}
-        .head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
-
-        .grid2{display:grid;gap:12px;grid-template-columns:repeat(2,1fr)}
-        .grid3{display:grid;gap:12px;grid-template-columns:repeat(3,1fr)}
-        @media (max-width:800px){ .grid2,.grid3{grid-template-columns:1fr} }
-
-        .form{display:grid;gap:12px}
-        .field{display:grid;gap:6px}
-        .field label{font-weight:700;color:var(--muted)}
-        .field input, .field select, .field textarea{
-          background:#0d0f14;border:1px solid var(--line);color:var(--ink);
-          border-radius:10px;padding:10px;outline:none;
-        }
-
-        .row{display:grid;grid-template-columns:140px 1fr;gap:10px;margin:6px 0}
-        .lab{color:var(--muted)}
-        .val{color:var(--ink)}
-
-        .list{display:grid;gap:10px}
-        .item{padding:10px;border:1px solid var(--line);border-radius:12px;background:#0d0f14}
-        .flex{display:flex;gap:10px}
-        .grow{flex:1}
-        .ttl{font-weight:900}
-        .meta{display:flex;align-items:center;gap:6px;margin-top:2px}
-        .dim{color:var(--muted);margin-top:2px}
-
-        .btn{border:1px solid var(--line);background:#1f2937;color:#fff;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:800}
-        .btn.primary{background:#1d4ed8}
-        .btn.success{background:#059669}
-        .btn.warn{background:#b45309}
-        .btn.danger{background:#ef4444}
-
-        .actions{display:flex;gap:8px;flex-wrap:wrap}
-        .ok{margin-top:10px;padding:10px;border:1px solid #14532d;background:#064e3b;color:#dcfce7;border-radius:10px}
-        .err{margin-top:10px;padding:10px;border:1px solid #7f1d1d;background:#450a0a;color:#fecaca;border-radius:10px}
-        .mini{margin-top:6px;color:var(--muted);font-size:12px}
+        .userbar{display:flex;gap:8px;align-items:center;margin-bottom:10px}
       `}</style>
     </>
   );
-}
-
-/* ---- küçük yardımcı (ilan güncelle ve listeyi tazele) ---- */
-async function supUpdateListing(supa, id, patch, after) {
-  await supa.from("listings").update(patch).eq("id", id);
-  if (typeof after === "function") await after();
 }
