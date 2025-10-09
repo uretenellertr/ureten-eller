@@ -1,103 +1,46 @@
 "use client";
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { createClient } from "@supabase/supabase-js";
 
-/**
- * FILE: /pages/portal/seller/post.jsx
- * Amaç: İlan Ver (PRO/Standart kuralları, 81 il, ilçe manuel, teslim süresi gün, max 5 foto)
- * Özellikler:
- *  - Tüm UI metinleri 4 dilde (tr, en, ar, de). Arapça RTL.
- *  - Favicon yolları public/ altındaki dosyalarla eşleşiyor.
- *  - Supabase + Cloudinary .env üzerinden. Eksikse kırmadan uyarı verir.
- *  - Kategori/alt kategori çok dilli. (Liste sabit; arama/filtre ileride)
- *  - Metin filtresi (check_listing_text) varsa çağırır; yoksa uyarıyla devam eder.
- *  - PRO → vitrin anahtarı ve kota kontrolü. Standart → 30 günde 1 ilan.
- */
-
-/* ---------------------------- Supabase & Cloudinary ---------------------------- */
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = typeof window !== "undefined" && SUPABASE_URL && SUPABASE_KEY
-  ? createClient(SUPABASE_URL, SUPABASE_KEY)
-  : null;
-
-const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-async function uploadToCloudinary(file) {
-  if (!CLOUD_NAME || !UPLOAD_PRESET) throw new Error("CLOUDINARY_MISSING");
-  const fd = new FormData();
-  fd.append("file", file);
-  fd.append("upload_preset", UPLOAD_PRESET);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: fd });
-  if (!res.ok) throw new Error("CLOUDINARY_FAIL");
-  const json = await res.json();
-  return json.secure_url;
+/* ---------------------------- ENV / SUPABASE ---------------------------- */
+let _sb = null;
+function getSupabase() {
+  if (_sb) return _sb;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || (typeof window !== "undefined" ? window.__SUPABASE_URL__ : "");
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || (typeof window !== "undefined" ? window.__SUPABASE_ANON__ : "");
+  if (!url || !key) return null;
+  _sb = createClient(url, key);
+  return _sb;
 }
+
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || (typeof window !== "undefined" ? window.__CLOUD_NAME__ : "");
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || (typeof window !== "undefined" ? window.__CLOUD_PRESET__ : "");
 
 /* ---------------------------- DİL / ÇEVİRİLER ---------------------------- */
 const SUPPORTED = ["tr", "en", "ar", "de"]; // RTL: ar
 const LBL = {
   tr: {
     brand: "Üreten Eller",
-    page: {
-      title: "İlan Ver",
-      subtitle: "Premium: 15 ilan + 1 vitrin. Standart: 30 günde 1 ilan. Her ilan 30 gün yayında.",
-      back: "Geri",
-      sending: "Gönderiliyor...",
-      draftSaved: "Taslak kaydedildi.",
-      mustLogin: "Bu işlem için giriş yapmalısınız.",
-      sbMissing: "Veri ayarları eksik (Supabase)",
-      cdnMissing: "Görsel ayarları eksik (Cloudinary)",
-      cdnError: "Görsel yükleme başarısız. Lütfen tekrar deneyin.",
-      textBlocked: "İlan metni kurallara uymuyor: ",
-      okSubmitted: "İlan onaya gönderildi. Admin onaylayınca yayında olacak.",
-      stdQuota: "Standart üyelik: son 30 günde 1 ilan hakkınız dolu.",
-      showcaseUsed: "Vitrin hakkınız zaten kullanıldı.",
-    },
-    fields: {
-      title: "Başlık",
+    page: { title: "İlan Ver", submit: "Onaya Gönder", draft: "Taslak Kaydet", success: "İlan gönderildi. Onay bekliyor." },
+    top: { profile: "Profil", logout: "Çıkış", back: "Geri" },
+    form: {
+      title: "İlan Başlığı",
       desc: "Açıklama",
-      cat: "Ana Kategori",
-      sub: "Alt Kategori",
-      price: "Fiyat (₺)",
+      category: "Kategori",
+      subcategory: "Alt Kategori",
+      price: "Fiyat",
       currency: "Para Birimi",
       city: "İl",
-      district: "İlçe",
-      ship: "Tahmini Teslim Süresi (gün)",
-      showcase: "Vitrin (PRO)",
+      district: "İlçe (yazınız)",
+      shipDays: "Tahmini Teslim (gün)",
       photos: "Fotoğraflar (en fazla 5)",
-      photosHelp: "Görsel eklemek için tıklayın veya dosya bırakın",
+      showcase: "Vitrin (PRO)",
+      choose: "— Seçin —",
+      pickFiles: "Dosya seçin veya tıklayın"
     },
-    ui: {
-      required: "Zorunlu",
-      optional: "opsiyonel",
-      select: "Seçiniz...",
-      chooseCat: "Önce kategori seçiniz",
-      invalid: "Geçersiz",
-      saveDraft: "Taslak Kaydet",
-      submit: "Onaya Gönder",
-      premiumNeeded: "Premium gerekli",
-      oneRight: "1 hak",
-    },
-    panels: {
-      rules: "Yayın Kuralları",
-      tips: "Öneriler",
-      rulesList: [
-        "İlanlar 30 gün yayında kalır. Süre dolunca 'Süre uzat' ile +30 gün.",
-        "Premium: aynı anda 15 ilan + 1 vitrin.",
-        "Standart: 30 günde 1 ilan.",
-        "Küfür/hakaret ve iletişim bilgisi (tel/e‑posta/WhatsApp) yasaktır.",
-        "Tüm ilanlar önce admin onayına gelir.",
-      ],
-      tipsList: [
-        "Kapakta 4:3 oranlı net bir fotoğraf kullanın.",
-        "Fiyat, ölçü ve teslim süresini açık yazın.",
-        "Alt kategori seçmek aramalarda görünürlüğü artırır.",
-      ],
-    },
+    tips: { filterWarn: "Telefon / e‑posta / WhatsApp paylaşımı yasaktır.", showcaseNeedPro: "Vitrin için Premium gerekir." },
     legalBar: "Kurumsal",
     legal: {
       corporate: "Kurumsal",
@@ -112,66 +55,38 @@ const LBL = {
       rules: "Topluluk Kuralları",
       banned: "Yasaklı Ürünler",
       all: "Tüm Legal",
+      home: "Ana Sayfa",
+    },
+    errors: {
+      needLogin: "Devam etmek için giriş yap.",
+      needTitle: "Başlık zorunlu.",
+      needCategory: "Kategori seçin.",
+      needCity: "İl seçin.",
+      badFilter: "Metin uygun değil: ",
+      uploadFail: "Fotoğraf yüklenemedi.",
+      saveFail: "İlan kaydedilemedi.",
     },
   },
   en: {
     brand: "Ureten Eller",
-    page: {
-      title: "Post Listing",
-      subtitle: "Premium: 15 listings + 1 showcase. Standard: 1 per 30 days. Each listing stays live 30 days.",
-      back: "Back",
-      sending: "Submitting...",
-      draftSaved: "Draft saved.",
-      mustLogin: "Please sign in to continue.",
-      sbMissing: "Data settings missing (Supabase)",
-      cdnMissing: "Image settings missing (Cloudinary)",
-      cdnError: "Image upload failed. Please try again.",
-      textBlocked: "Listing text blocked: ",
-      okSubmitted: "Listing submitted for review. It will go live after admin approval.",
-      stdQuota: "Standard plan: your 1-per-30-days slot is already used.",
-      showcaseUsed: "Your showcase slot is already used.",
-    },
-    fields: {
+    page: { title: "Post Listing", submit: "Submit for Review", draft: "Save Draft", success: "Listing submitted. Awaiting approval." },
+    top: { profile: "Profile", logout: "Logout", back: "Back" },
+    form: {
       title: "Title",
       desc: "Description",
-      cat: "Category",
-      sub: "Subcategory",
-      price: "Price (₺)",
+      category: "Category",
+      subcategory: "Subcategory",
+      price: "Price",
       currency: "Currency",
       city: "City",
-      district: "District",
-      ship: "Estimated Lead Time (days)",
-      showcase: "Showcase (PRO)",
+      district: "District (type)",
+      shipDays: "Estimated Delivery (days)",
       photos: "Photos (max 5)",
-      photosHelp: "Click or drop images to upload",
+      showcase: "Showcase (PRO)",
+      choose: "— Select —",
+      pickFiles: "Pick files or click"
     },
-    ui: {
-      required: "Required",
-      optional: "optional",
-      select: "Select...",
-      chooseCat: "Choose category first",
-      invalid: "Invalid",
-      saveDraft: "Save Draft",
-      submit: "Submit for Review",
-      premiumNeeded: "Premium required",
-      oneRight: "1 slot",
-    },
-    panels: {
-      rules: "Publishing Rules",
-      tips: "Tips",
-      rulesList: [
-        "Listings stay live 30 days; extend +30 with 'Extend'.",
-        "Premium: up to 15 listings + 1 showcase.",
-        "Standard: 1 per 30 days.",
-        "Profanity/contact info (phone/email/WhatsApp) is forbidden.",
-        "All listings are reviewed by admin first.",
-      ],
-      tipsList: [
-        "Use a clear 4:3 cover image.",
-        "State price, size and lead time clearly.",
-        "Picking a subcategory helps search.",
-      ],
-    },
+    tips: { filterWarn: "No phone / email / WhatsApp in text.", showcaseNeedPro: "Showcase requires Premium." },
     legalBar: "Corporate",
     legal: {
       corporate: "Corporate",
@@ -186,66 +101,38 @@ const LBL = {
       rules: "Community Rules",
       banned: "Prohibited Products",
       all: "All Legal",
+      home: "Home",
+    },
+    errors: {
+      needLogin: "Please sign in to continue.",
+      needTitle: "Title is required.",
+      needCategory: "Select a category.",
+      needCity: "Select a city.",
+      badFilter: "Text blocked: ",
+      uploadFail: "Upload failed.",
+      saveFail: "Save failed.",
     },
   },
   ar: {
     brand: "أُنتِج بالأيادي",
-    page: {
-      title: "إنشاء إعلان",
-      subtitle: "المحترف: 15 إعلانًا + واجهة. العادي: إعلان كل 30 يومًا. مدة الإعلان 30 يومًا.",
-      back: "رجوع",
-      sending: "جارٍ الإرسال...",
-      draftSaved: "تم حفظ المسودة.",
-      mustLogin: "فضلاً سجّل الدخول للمتابعة.",
-      sbMissing: "إعدادات البيانات غير مكتملة (Supabase)",
-      cdnMissing: "إعدادات الصور غير مكتملة (Cloudinary)",
-      cdnError: "فشل رفع الصورة. حاول مجددًا.",
-      textBlocked: "تم حظر نص الإعلان: ",
-      okSubmitted: "تم إرسال الإعلان للمراجعة وسيُنشر بعد الموافقة.",
-      stdQuota: "الخطة العادية: استخدمت حق إعلان واحد خلال 30 يومًا.",
-      showcaseUsed: "لقد استخدمت حق الواجهة بالفعل.",
-    },
-    fields: {
+    page: { title: "إنشاء إعلان", submit: "إرسال للمراجعة", draft: "حفظ مسودة", success: "تم الإرسال بانتظار الموافقة." },
+    top: { profile: "الملف", logout: "خروج", back: "رجوع" },
+    form: {
       title: "العنوان",
       desc: "الوصف",
-      cat: "التصنيف",
-      sub: "التصنيف الفرعي",
-      price: "السعر (₺)",
+      category: "التصنيف",
+      subcategory: "التصنيف الفرعي",
+      price: "السعر",
       currency: "العملة",
-      city: "المدينة",
-      district: "الحي / المنطقة",
-      ship: "المدة التقديرية للتسليم (أيام)",
-      showcase: "واجهة (محترف)",
-      photos: "صور (حتى 5)",
-      photosHelp: "انقر أو أسقط الصور للرفع",
+      city: "الولاية",
+      district: "الحي (أدخل)",
+      shipDays: "التسليم المتوقع (أيام)",
+      photos: "صور (بحد أقصى 5)",
+      showcase: "الواجهة (PRO)",
+      choose: "— اختر —",
+      pickFiles: "اختر ملفات أو اضغط"
     },
-    ui: {
-      required: "إلزامي",
-      optional: "اختياري",
-      select: "اختر...",
-      chooseCat: "اختر التصنيف أولاً",
-      invalid: "غير صالح",
-      saveDraft: "حفظ المسودة",
-      submit: "إرسال للمراجعة",
-      premiumNeeded: "يتطلب محترف",
-      oneRight: "حق واحد",
-    },
-    panels: {
-      rules: "قواعد النشر",
-      tips: "نصائح",
-      rulesList: [
-        "مدة الإعلان 30 يومًا، ويمكن التمديد 30 يومًا.",
-        "المحترف: 15 إعلانًا + واجهة واحدة.",
-        "العادي: إعلان واحد كل 30 يومًا.",
-        "يُمنع الألفاظ النابية ومشاركة وسائل التواصل (هاتف/إيميل/واتساب).",
-        "كل الإعلانات تُراجع قبل النشر.",
-      ],
-      tipsList: [
-        "استخدم صورة غلاف واضحة بنسبة 4:3.",
-        "اذكر السعر والمقاس ومدة التنفيذ بوضوح.",
-        "اختيار تصنيف فرعي يحسن الظهور في البحث.",
-      ],
-    },
+    tips: { filterWarn: "ممنوع مشاركة الهاتف/الإيميل/واتساب.", showcaseNeedPro: "الواجهة تحتاج اشتراك بريميوم." },
     legalBar: "المعلومات المؤسسية",
     legal: {
       corporate: "المؤسسة",
@@ -259,85 +146,84 @@ const LBL = {
       cookies: "سياسة الكوكيز",
       rules: "قواعد المجتمع",
       banned: "منتجات محظورة",
-      all: "كافة السياسات",
+      all: "كل السياسات",
+      home: "الرئيسية",
+    },
+    errors: {
+      needLogin: "الرجاء تسجيل الدخول.",
+      needTitle: "العنوان مطلوب.",
+      needCategory: "اختر تصنيفًا.",
+      needCity: "اختر ولاية.",
+      badFilter: "تم الحظر: ",
+      uploadFail: "فشل الرفع.",
+      saveFail: "فشل الحفظ.",
     },
   },
   de: {
     brand: "Ureten Eller",
-    page: {
-      title: "Inserat einstellen",
-      subtitle: "Premium: 15 Inserate + 1 Vitrine. Standard: 1 alle 30 Tage. Laufzeit je 30 Tage.",
-      back: "Zurück",
-      sending: "Wird gesendet...",
-      draftSaved: "Entwurf gespeichert.",
-      mustLogin: "Bitte anmelden.",
-      sbMissing: "Daten-Einstellungen fehlen (Supabase)",
-      cdnMissing: "Bildeinstellungen fehlen (Cloudinary)",
-      cdnError: "Bildupload fehlgeschlagen. Bitte erneut versuchen.",
-      textBlocked: "Inseratstext blockiert: ",
-      okSubmitted: "Inserat zur Prüfung gesendet. Veröffentlichung nach Freigabe.",
-      stdQuota: "Standard: Dein 1/30‑Tage‑Kontingent ist verbraucht.",
-      showcaseUsed: "Dein Vitrinen‑Kontingent ist bereits genutzt.",
-    },
-    fields: {
+    page: { title: "Inserat einstellen", submit: "Zur Prüfung senden", draft: "Entwurf speichern", success: "Inserat gesendet. Wartet auf Freigabe." },
+    top: { profile: "Profil", logout: "Abmelden", back: "Zurück" },
+    form: {
       title: "Titel",
       desc: "Beschreibung",
-      cat: "Kategorie",
-      sub: "Unterkategorie",
-      price: "Preis (₺)",
+      category: "Kategorie",
+      subcategory: "Unterkategorie",
+      price: "Preis",
       currency: "Währung",
       city: "Stadt",
-      district: "Bezirk",
-      ship: "Voraussichtliche Lieferzeit (Tage)",
-      showcase: "Vitrine (PRO)",
+      district: "Bezirk (eingeben)",
+      shipDays: "Lieferzeit (Tage)",
       photos: "Fotos (max. 5)",
-      photosHelp: "Zum Hochladen klicken oder Dateien ablegen",
+      showcase: "Vitrine (PRO)",
+      choose: "— Wählen —",
+      pickFiles: "Dateien wählen oder klicken"
     },
-    ui: {
-      required: "Pflicht",
-      optional: "optional",
-      select: "Bitte wählen...",
-      chooseCat: "Erst Kategorie wählen",
-      invalid: "Ungültig",
-      saveDraft: "Entwurf speichern",
-      submit: "Zur Prüfung senden",
-      premiumNeeded: "Premium erforderlich",
-      oneRight: "1 Slot",
-    },
-    panels: {
-      rules: "Publikationsregeln",
-      tips: "Tipps",
-      rulesList: [
-        "Inserate 30 Tage online; mit 'Verlängern' +30.",
-        "Premium: bis 15 Inserate + 1 Vitrine.",
-        "Standard: 1 pro 30 Tage.",
-        "Vulgärsprache/Kontaktdaten (Telefon/E‑Mail/WhatsApp) verboten.",
-        "Alle Inserate werden zuerst geprüft.",
-      ],
-      tipsList: [
-        "Klares 4:3‑Titelbild verwenden.",
-        "Preis, Maße und Lieferzeit klar angeben.",
-        "Unterkategorie verbessert die Suche.",
-      ],
-    },
+    tips: { filterWarn: "Keine Telefon/Email/WhatsApp im Text.", showcaseNeedPro: "Vitrine erfordert Premium." },
     legalBar: "Unternehmen",
     legal: {
       corporate: "Unternehmen",
       about: "Über uns",
       contact: "Kontakt",
       privacy: "Datenschutz",
-      kvkk: "KVKK‑Hinweis",
+      kvkk: "KVKK-Hinweis",
       terms: "Nutzungsbedingungen",
       distance: "Fernabsatz",
       shippingReturn: "Lieferung & Rückgabe",
-      cookies: "Cookie‑Richtlinie",
-      rules: "Community‑Regeln",
+      cookies: "Cookie-Richtlinie",
+      rules: "Community-Regeln",
       banned: "Verbotene Produkte",
       all: "Alle Rechtliches",
+      home: "Startseite",
+    },
+    errors: {
+      needLogin: "Bitte anmelden.",
+      needTitle: "Titel erforderlich.",
+      needCategory: "Kategorie wählen.",
+      needCity: "Stadt wählen.",
+      badFilter: "Blockiert: ",
+      uploadFail: "Upload fehlgeschlagen.",
+      saveFail: "Speichern fehlgeschlagen.",
     },
   },
 };
 
+function useLang() {
+  const [lang, setLang] = useState("tr");
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("lang") : null;
+    if (saved && SUPPORTED.includes(saved)) setLang(saved);
+  }, []);
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    }
+  }, [lang]);
+  const t = useMemo(() => LBL[lang] || LBL.tr, [lang]);
+  return { lang, setLang, t };
+}
+
+/* ---------------------------- KATEGORİLER + 81 İL ---------------------------- */
 const CATS = {
   tr: [
     { icon: "🍲", title: "Yemekler", subs: ["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"] },
@@ -401,189 +287,159 @@ const CATS = {
     { icon: "🏠", title: "Wohndeko & Accessoires", subs: ["Filzarbeiten","Kissen","Türkranz","Tablettdeko","Rahmen","Traumfänger","Bild"] },
     { icon: "🕯️", title: "Kerzen & Düfte", subs: ["Soja/Bienenwachs","Duftstein","Raumspray","Weihrauch","Gelkerze","Geschenksets"] },
     { icon: "🧼", title: "Naturseife & Kosmetik", subs: ["Olivenölseife","Kräuterseifen","Festes Shampoo","Lippenbalsam","Creme/Salbe","Badesalz","Lavendelsäckchen"] },
-    { icon: "🧸", title: "Amigurumi & Spielzeug (Deko)", subs: ["Schlüsselanh.","Magnet","Sammelfigur","Deko‑Puppe","Amigurumi mit Name"] },
+    { icon: "🧸", title: "Amigurumi & Spielzeug (Deko)", subs: ["Schlüsselanh.","Magnet","Sammelfigur","Deko-Puppe","Amigurumi mit Name"] },
   ],
 };
 
-const TR_CITIES = [
-  "Adana","Adıyaman","Afyonkarahisar","Ağrı","Amasya","Ankara","Antalya","Artvin","Aydın","Balıkesir","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Bursa","Çanakkale","Çankırı","Çorum","Denizli","Diyarbakır","Edirne","Elazığ","Erzincan","Erzurum","Eskişehir","Gaziantep","Giresun","Gümüşhane","Hakkari","Hatay","Isparta","Mersin","İstanbul","İzmir","Kars","Kastamonu","Kayseri","Kırklareli","Kırşehir","Kocaeli","Konya","Kütahya","Malatya","Manisa","Kahramanmaraş","Mardin","Muğla","Muş","Nevşehir","Niğde","Ordu","Rize","Sakarya","Samsun","Siirt","Sinop","Sivas","Tekirdağ","Tokat","Trabzon","Tunceli","Şanlıurfa","Uşak","Van","Yozgat","Zonguldak","Aksaray","Bayburt","Karaman","Kırıkkale","Batman","Şırnak","Bartın","Ardahan","Iğdır","Yalova","Karabük","Kilis","Osmaniye","Düzce"
+const PROVINCES_TR = [
+  "Adana","Adıyaman","Afyonkarahisar","Ağrı","Amasya","Ankara","Antalya","Artvin","Aydın","Balıkesir","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Bursa","Çanakkale","Çankırı","Çorum","Denizli","Diyarbakır","Edirne","Elazığ","Erzincan","Erzurum","Eskişehir","Gaziantep","Giresun","Gümüşhane","Hakkâri","Hatay","Isparta","Mersin","İstanbul","İzmir","Kars","Kastamonu","Kayseri","Kırklareli","Kırşehir","Kocaeli","Konya","Kütahya","Malatya","Manisa","Kahramanmaraş","Mardin","Muğla","Muş","Nevşehir","Niğde","Ordu","Rize","Sakarya","Samsun","Siirt","Sinop","Sivas","Tekirdağ","Tokat","Trabzon","Tunceli","Şanlıurfa","Uşak","Van","Yozgat","Zonguldak","Aksaray","Bayburt","Karaman","Kırıkkale","Batman","Şırnak","Bartın","Ardahan","Iğdır","Yalova","Karabük","Kilis","Osmaniye","Düzce"
 ];
 
-function useLang() {
-  const [lang, setLang] = useState("tr");
-  useEffect(() => {
-    try { const saved = localStorage.getItem("lang"); if (saved && SUPPORTED.includes(saved)) setLang(saved); } catch {}
-  }, []);
-  useEffect(() => {
-    document.documentElement.lang = lang;
-    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
-  }, [lang]);
-  const t = useMemo(() => LBL[lang] || LBL.tr, [lang]);
-  const cats = useMemo(() => (CATS[lang] || CATS.tr), [lang]);
-  return { lang, t, cats };
-}
-
-export default function SellerPostPage() {
+/* ---------------------------- COMPONENT ---------------------------- */
+export default function SellerPost() {
   const router = useRouter();
-  const { t, cats } = useLang();
+  const { lang, setLang, t } = useLang();
 
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    category: "",
-    subcategory: "",
-    price: "",
-    currency: "TRY",
-    city: "",
-    district: "",
-    shipDays: "",
-    isShowcase: false,
-    images: [],
-  });
-  const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
+  const supa = getSupabase();
+  const [user, setUser] = useState(null);
   const [isPro, setIsPro] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
 
-  // Alt kategori listesi (seçilen kategoriye göre)
-  const subs = useMemo(() => {
-    const c = cats.find((x) => x.title === form.category);
-    return c ? (c.subs || []) : [];
-  }, [form.category, cats]);
+  // Form state
+  const catList = CATS[lang] || CATS.tr;
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+  const [cat, setCat] = useState("");
+  const [subcat, setSubcat] = useState("");
+  const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("TRY");
+  const [city, setCity] = useState("");
+  const [district, setDistrict] = useState("");
+  const [shipDays, setShipDays] = useState(5);
+  const [showcase, setShowcase] = useState(false);
+  const [files, setFiles] = useState([]); // File[]
 
-  // Taslak geri yükle
+  const fileInputRef = useRef(null);
+
+  // Init: user + pro status
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("sellerPostDraft");
-      if (raw) setForm((f) => ({ ...f, ...JSON.parse(raw) }));
-    } catch {}
-  }, []);
-
-  // PRO durumunu çek (varsa)
-  useEffect(() => {
+    let mounted = true;
     (async () => {
-      if (!supabase) return;
       try {
-        const { data: sess } = await supabase.auth.getSession();
-        const uid = sess?.session?.user?.id; if (!uid) return;
-        const { data: me } = await supabase
-          .from("users").select("premium_until").eq("auth_user_id", uid).maybeSingle();
-        setIsPro(!!(me?.premium_until && new Date(me.premium_until) > new Date()));
-      } catch {}
-    })();
-  }, []);
-
-  // Görsel seçimi
-  const onPickImages = (e) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    const remain = Math.max(0, 5 - form.images.length);
-    const slice = files.slice(0, remain);
-    const mapped = slice.map((file) => ({ file, url: URL.createObjectURL(file) }));
-    setForm((f) => ({ ...f, images: [...f.images, ...mapped] }));
-    e.target.value = "";
-  };
-  const removeImg = (idx) => setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
-
-  // Basit doğrulama
-  const validate = useCallback(() => {
-    const err = {};
-    if (!form.title.trim()) err.title = t.ui.required;
-    if (!form.description.trim()) err.description = t.ui.required;
-    if (!form.category) err.category = t.ui.select;
-    if (subs.length && !form.subcategory) err.subcategory = t.ui.select;
-    if (!form.price || Number(form.price) <= 0) err.price = t.ui.invalid;
-    if (!form.city) err.city = t.ui.select;
-    if (!form.district.trim()) err.district = t.ui.required;
-    if (!form.shipDays || Number(form.shipDays) <= 0) err.shipDays = t.ui.invalid;
-    if (!form.images.length) err.images = t.ui.required;
-    setErrors(err);
-    return Object.keys(err).length === 0;
-  }, [form, subs.length, t]);
-
-  const saveDraft = () => {
-    try { localStorage.setItem("sellerPostDraft", JSON.stringify({ ...form, images: [] })); alert(t.page.draftSaved); } catch {}
-  };
-
-  const submitForApproval = async () => {
-    if (!validate()) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-    if (!supabase) { alert(t.page.sbMissing); return; }
-
-    setSubmitting(true);
-    try {
-      const { data: sess, error: sErr } = await supabase.auth.getSession();
-      if (sErr) throw sErr;
-      const uid = sess?.session?.user?.id; if (!uid) throw new Error(t.page.mustLogin);
-
-      // Kota kontrolleri (yumuşak)
-      try {
-        if (!isPro) {
-          const since = new Date(Date.now() - 30*24*60*60*1000).toISOString();
-          const { count } = await supabase
-            .from("listings").select("id", { head:true, count:"exact" })
-            .eq("seller_auth_id", uid).gte("created_at", since);
-          if ((count || 0) >= 1) { alert(t.page.stdQuota); setSubmitting(false); return; }
-        } else if (form.isShowcase) {
-          const { count: vit } = await supabase
-            .from("listings").select("id", { head:true, count:"exact" })
-            .eq("seller_auth_id", uid).in("status", ["pending","active"]).eq("is_showcase", true);
-          if ((vit || 0) >= 1) { alert(t.page.showcaseUsed); setSubmitting(false); return; }
+        if (!supa) return;
+        const { data: { user } } = await supa.auth.getUser();
+        if (!mounted) return;
+        if (!user) {
+          setErr(t.errors.needLogin);
+          setLoading(false);
+          setTimeout(() => router.push("/login"), 1200);
+          return;
         }
-      } catch (e) { /* kota hatası UI'ı kırmasın */ }
-
-      // Metin filtresi (varsa)
-      try {
-        const { error: txtErr } = await supabase.rpc("check_listing_text", { p_title: form.title, p_desc: form.description });
-        if (txtErr) throw txtErr;
+        setUser(user);
+        // PRO sorgu
+        const { data: prof } = await supa
+          .from("users")
+          .select("premium_until")
+          .eq("auth_user_id", user.id)
+          .single();
+        const pu = prof?.premium_until ? new Date(prof.premium_until) : null;
+        setIsPro(!!pu && pu > new Date());
       } catch (e) {
-        if (e?.message && !/function check_listing_text/i.test(e.message)) { // fonksiyon yoksa devam
-          alert(t.page.textBlocked + e.message);
-          setSubmitting(false); return;
-        }
+        // sessiz: PRO false
+      } finally {
+        if (mounted) setLoading(false);
       }
+    })();
+    return () => { mounted = false; };
+  }, [supa, t.errors.needLogin, router]);
 
-      // Kayıt
-      const payload = {
-        seller_auth_id: uid,
-        title: form.title.trim(), description: form.description.trim(),
-        category: form.category || null, subcategory: form.subcategory || null,
-        price: Number(form.price), currency: form.currency || "TRY",
-        city: form.city, district: form.district.trim(), ship_days: Number(form.shipDays),
-        is_showcase: !!(isPro && form.isShowcase), status: "pending",
-      };
-      const { data: ins, error: insErr } = await supabase
-        .from("listings").insert([payload]).select("id").single();
-      if (insErr) throw insErr; const listingId = ins.id;
-
-      // Fotoğraflar
-      const rows = [];
-      for (let i=0; i<form.images.length; i++) {
-        try {
-          const url = await uploadToCloudinary(form.images[i].file);
-          rows.push({ listing_id: listingId, url, order: i+1 });
-        } catch (e) {
-          if (e?.message === "CLOUDINARY_MISSING") { alert(t.page.cdnMissing); setSubmitting(false); return; }
-          alert(t.page.cdnError); setSubmitting(false); return;
-        }
-      }
-      if (rows.length) {
-        const { error: phErr } = await supabase.from("listing_photos").insert(rows);
-        if (phErr) throw phErr;
-      }
-
-      alert(t.page.okSubmitted);
-      router.push("/portal/seller");
-    } catch (e) {
-      alert(e?.message || "Unexpected error");
-    } finally {
-      setSubmitting(false);
-    }
+  const onPickFiles = (e) => {
+    const list = Array.from(e.target.files || []);
+    const all = [...files, ...list].slice(0, 5);
+    setFiles(all);
   };
+  const removeFile = (i) => { setFiles((arr) => arr.filter((_, idx) => idx !== i)); };
 
-  /* ---------------------------- UI ---------------------------- */
+  const onSubmit = useCallback(async (mode = "submit") => {
+    setMsg(""); setErr("");
+    if (!user) { setErr(t.errors.needLogin); return; }
+    if (!title.trim()) { setErr(t.errors.needTitle); return; }
+    if (!cat) { setErr(t.errors.needCategory); return; }
+    if (!city) { setErr(t.errors.needCity); return; }
+
+    try {
+      setSaving(true);
+      // 1) Metin filtresi (DB fonksiyonu varsa)
+      try {
+        await supa.rpc("check_listing_text", { p_title: title, p_desc: desc });
+      } catch (e) {
+        if (e?.message && !/function .* does not exist/i.test(e.message)) {
+          throw new Error(t.errors.badFilter + e.message);
+        }
+      }
+
+      // 2) İlan kaydı → pending
+      const payload = {
+        seller_auth_id: user.id,
+        title: title.trim(),
+        description: desc?.trim() || null,
+        category: cat || null,
+        subcategory: subcat || null,
+        price: price ? Number(price) : null,
+        currency,
+        city,
+        district: district?.trim() || null,
+        ship_days: shipDays ? Number(shipDays) : null,
+        is_showcase: isPro ? !!showcase : false,
+        status: "pending",
+      };
+
+      const { data: ins, error: insErr } = await supa
+        .from("listings")
+        .insert([payload])
+        .select("id")
+        .single();
+      if (insErr) throw insErr;
+      const listingId = ins?.id;
+
+      // 3) Fotoğraflar → Cloudinary → listing_photos
+      if (files.length && CLOUD_NAME && UPLOAD_PRESET) {
+        let order = 0;
+        for (const f of files) {
+          const form = new FormData();
+          form.append("file", f);
+          form.append("upload_preset", UPLOAD_PRESET);
+          const up = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: "POST", body: form });
+          if (!up.ok) throw new Error(t.errors.uploadFail);
+          const json = await up.json();
+          const url = json.secure_url || json.url;
+          if (url) {
+            await supa.from("listing_photos").insert([{ listing_id: listingId, url, order: order++ }]);
+          }
+        }
+      }
+
+      setMsg(t.page.success);
+      setTimeout(() => router.push("/portal/seller"), 900);
+    } catch (e) {
+      setErr(e?.message || t.errors.saveFail);
+    } finally {
+      setSaving(false);
+    }
+  }, [user, title, cat, city, desc, price, currency, district, shipDays, showcase, isPro, files, supa, t, router]);
+
+  const subs = useMemo(() => {
+    const c = catList.find((x) => x.title === cat);
+    return c?.subs || [];
+  }, [catList, cat]);
+
   return (
     <>
       <Head>
-        <title>{t.brand} – {t.page.title}</title>
+        <title>{LBL.tr.brand} – {t.page.title}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* FAVICONS → public/ */}
         <link rel="icon" type="image/png" href="/favicon.png" />
@@ -595,138 +451,130 @@ export default function SellerPostPage() {
         <meta name="theme-color" content="#0b0b0b" />
       </Head>
 
-      {/* TOPBAR */}
+      {/* ÜST BAR */}
       <header className="topbar">
-        <div className="brand" onClick={() => router.push("/portal/seller")}>
-          <img src="/logo.png" width="34" height="34" alt="logo" />
-          <span>{t.brand}</span>
-        </div>
+        <div className="brand" onClick={() => router.push("/")}> <img src="/logo.png" width="32" height="32" alt="logo" /> <span>{t.brand}</span> </div>
         <div className="actions">
-          <button className="ghost" onClick={() => router.back()}>{t.page.back}</button>
+          <select aria-label="Language" value={lang} onChange={(e)=>{ localStorage.setItem('lang', e.target.value); setLang(e.target.value); }}>
+            {SUPPORTED.map((k)=>(<option key={k} value={k}>{k.toUpperCase()}</option>))}
+          </select>
+          <button className="ghost" onClick={()=>router.push("/profile")}>{t.top.profile}</button>
+          <button className="danger" onClick={()=>{ try{ getSupabase()?.auth.signOut(); }catch{}; router.push("/"); }}>{t.top.logout}</button>
         </div>
       </header>
 
-      {/* HERO */}
-      <section className="hero">
-        <h1 className="heroTitle">{t.page.title}</h1>
-        <p className="subtitle">{t.page.subtitle}</p>
-      </section>
-
-      {/* FORM CARD */}
       <main className="wrap">
+        <h1 className="title">{t.page.title}</h1>
+
         <div className="card colored">
-          <div className="grid">
-            {/* LEFT: FORM */}
-            <div className="col">
-              <div className="field">
-                <label>{t.fields.title} <span>*</span></label>
-                <input type="text" value={form.title} onChange={(e)=>setForm({...form,title:e.target.value})} placeholder="Örn: El yapımı makrome duvar süsü" />
-                {errors.title && <div className="err">{errors.title}</div>}
-              </div>
-
-              <div className="field">
-                <label>{t.fields.desc} <span>*</span></label>
-                <textarea rows={6} value={form.description} onChange={(e)=>setForm({...form,description:e.target.value})} placeholder="Ürün detayları, ölçüler, malzeme, bakım..." />
-                {errors.description && <div className="err">{errors.description}</div>}
-              </div>
-
-              <div className="row2">
+          {loading ? (
+            <div className="loading">…</div>
+          ) : (
+            <form onSubmit={(e)=>{ e.preventDefault(); onSubmit("submit"); }}>
+              {/* Üst bilgiler */}
+              <div className="flex2">
                 <div className="field">
-                  <label>{t.fields.cat} <span>*</span></label>
-                  <select value={form.category} onChange={(e)=>setForm({...form,category:e.target.value,subcategory:""})}>
-                    <option value="">{t.ui.select}</option>
-                    {cats.map((c,i)=>(<option key={i} value={c.title}>{c.icon} {c.title}</option>))}
-                  </select>
-                  {errors.category && <div className="err">{errors.category}</div>}
+                  <label>{t.form.title}</label>
+                  <input type="text" value={title} onChange={(e)=>setTitle(e.target.value)} maxLength={120} placeholder="Örn: El emeği makrome duvar süsü" />
                 </div>
                 <div className="field">
-                  <label>{t.fields.sub} {subs.length ? <span>*</span> : <em className="soft">({t.ui.optional})</em>}</label>
-                  <select value={form.subcategory} onChange={(e)=>setForm({...form,subcategory:e.target.value})} disabled={!subs.length}>
-                    <option value="">{subs.length ? t.ui.select : t.ui.chooseCat}</option>
+                  <label>{t.form.price}</label>
+                  <div className="row">
+                    <input type="number" min="0" step="0.01" value={price} onChange={(e)=>setPrice(e.target.value)} placeholder="0" />
+                    <select value={currency} onChange={(e)=>setCurrency(e.target.value)}>
+                      <option value="TRY">TRY</option>
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="field">
+                <label>{t.form.desc}</label>
+                <textarea value={desc} onChange={(e)=>setDesc(e.target.value)} rows={5} placeholder="Ürünün hammaddesi, ölçüleri, kişiye özel mi vb." />
+                <div className="mini">{t.tips.filterWarn}</div>
+              </div>
+
+              <div className="flex2">
+                <div className="field">
+                  <label>{t.form.category}</label>
+                  <select value={cat} onChange={(e)=>{ setCat(e.target.value); setSubcat(""); }}>
+                    <option value="" disabled>{t.form.choose}</option>
+                    {catList.map((c,i)=>(<option key={i} value={c.title}>{c.icon} {c.title}</option>))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label>{t.form.subcategory}</label>
+                  <select value={subcat} onChange={(e)=>setSubcat(e.target.value)} disabled={!subs.length}>
+                    <option value="" disabled>{t.form.choose}</option>
                     {subs.map((s,i)=>(<option key={i} value={s}>{s}</option>))}
                   </select>
-                  {errors.subcategory && <div className="err">{errors.subcategory}</div>}
                 </div>
               </div>
 
-              <div className="row3">
+              <div className="flex2">
                 <div className="field">
-                  <label>{t.fields.price} <span>*</span></label>
-                  <input type="number" min="0" step="0.01" value={form.price} onChange={(e)=>setForm({...form,price:e.target.value})} placeholder="Örn: 249.90" />
-                  {errors.price && <div className="err">{errors.price}</div>}
-                </div>
-                <div className="field">
-                  <label>{t.fields.city} <span>*</span></label>
-                  <select value={form.city} onChange={(e)=>setForm({...form,city:e.target.value})}>
-                    <option value="">{t.ui.select}</option>
-                    {TR_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  <label>{t.form.city}</label>
+                  <select value={city} onChange={(e)=>setCity(e.target.value)}>
+                    <option value="" disabled>{t.form.choose}</option>
+                    {PROVINCES_TR.map((p)=>(<option key={p} value={p}>{p}</option>))}
                   </select>
-                  {errors.city && <div className="err">{errors.city}</div>}
                 </div>
                 <div className="field">
-                  <label>{t.fields.district} <span>*</span></label>
-                  <input type="text" value={form.district} onChange={(e)=>setForm({...form,district:e.target.value})} placeholder="Örn: Kadıköy" />
-                  {errors.district && <div className="err">{errors.district}</div>}
+                  <label>{t.form.district}</label>
+                  <input type="text" value={district} onChange={(e)=>setDistrict(e.target.value)} placeholder="Örn: Kadıköy" />
                 </div>
               </div>
 
-              <div className="row2">
+              <div className="flex2">
                 <div className="field">
-                  <label>{t.fields.ship} <span>*</span></label>
-                  <input type="number" min="1" max="60" value={form.shipDays} onChange={(e)=>setForm({...form,shipDays:e.target.value})} placeholder="Örn: 7" />
-                  {errors.shipDays && <div className="err">{errors.shipDays}</div>}
+                  <label>{t.form.shipDays}</label>
+                  <input type="number" min={1} max={60} value={shipDays} onChange={(e)=>setShipDays(e.target.value)} />
                 </div>
                 <div className="field">
-                  <label>{t.fields.showcase}</label>
-                  <div className="toggleLine">
-                    <input id="vitrin" type="checkbox" checked={form.isShowcase} onChange={(e)=>setForm({...form,isShowcase:e.target.checked})} disabled={!isPro} />
-                    <label htmlFor="vitrin" className="soft">{isPro ? t.ui.oneRight : t.ui.premiumNeeded}</label>
+                  <label>{t.form.showcase}</label>
+                  <div className="row">
+                    <input type="checkbox" checked={isPro && showcase} onChange={(e)=>setShowcase(e.target.checked)} disabled={!isPro} />
+                    {!isPro && <span className="mini">{t.tips.showcaseNeedPro}</span>}
                   </div>
                 </div>
               </div>
 
+              {/* Fotoğraflar */}
               <div className="field">
-                <label>{t.fields.photos} <span>*</span></label>
-                <div className="uploader" onClick={()=>document.getElementById("imgpick")?.click()}>
-                  <input id="imgpick" type="file" accept="image/*" multiple onChange={onPickImages} style={{display:"none"}} />
-                  <div className="drop">{t.fields.photosHelp}</div>
+                <label>{t.form.photos}</label>
+                <div className="drop" onClick={()=>fileInputRef.current?.click()}>
+                  <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onPickFiles} style={{ display: "none" }} />
+                  <div>{t.form.pickFiles}</div>
+                </div>
+                {!!files.length && (
                   <div className="thumbs">
-                    {form.images.map((im, idx) => (
-                      <div className="thumb" key={idx}>
-                        <img src={im.url} alt={`img-${idx}`} />
-                        <button type="button" className="rm" onClick={() => removeImg(idx)} aria-label="Sil">×</button>
+                    {files.map((f,i)=> (
+                      <div key={i} className="thumb">
+                        <img src={URL.createObjectURL(f)} alt={`photo-${i}`} />
+                        <button type="button" onClick={()=>removeFile(i)} aria-label="remove">×</button>
                       </div>
                     ))}
-                    {Array.from({ length: Math.max(0, 5 - form.images.length) }).map((_, i) => (
-                      <div className="ph" key={`ph-${i}`}>+</div>
-                    ))}
                   </div>
-                </div>
-                {errors.images && <div className="err">{errors.images}</div>}
+                )}
               </div>
 
-              <div className="actionsRow">
-                <button className="ghost" type="button" onClick={saveDraft} disabled={submitting}>{t.ui.saveDraft}</button>
-                <button className="primary" type="button" onClick={submitForApproval} disabled={submitting}>{submitting ? t.page.sending : t.ui.submit}</button>
-              </div>
-            </div>
+              {err && <div className="err">{err}</div>}
+              {msg && <div className="msg">{msg}</div>}
 
-            {/* RIGHT: INFO */}
-            <aside className="aside">
-              <div className="mini">
-                <h3>✨ {t.panels.rules}</h3>
-                <ul>{t.panels.rulesList.map((li, i)=>(<li key={i}>{li}</li>))}</ul>
+              <div className="actions">
+                <button type="button" className="ghost" disabled={saving} onClick={()=>onSubmit("draft")}>
+                  {t.page.draft}
+                </button>
+                <button type="submit" className="primary" disabled={saving}>{saving ? "…" : t.page.submit}</button>
               </div>
-              <div className="mini">
-                <h3>💡 {t.panels.tips}</h3>
-                <ul>{t.panels.tipsList.map((li, i)=>(<li key={i}>{li}</li>))}</ul>
-              </div>
-            </aside>
-          </div>
+            </form>
+          )}
         </div>
       </main>
 
-      {/* LEGAL FOOTER (siyah) */}
+      {/* LEGAL FOOTER */}
       <footer className="legal">
         <div className="inner">
           <div className="ttl">{t.legalBar}</div>
@@ -744,91 +592,71 @@ export default function SellerPostPage() {
             <a href="/legal/yasakli-urunler">{t.legal.banned}</a>
             <a href="/legal" className="homeLink">{t.legal.all}</a>
           </nav>
-          <div className="copy">© {new Date().getFullYear()} {LBL.tr.brand}</div>
+          <div className="copy">© {new Date().getFullYear()} {t.brand}</div>
         </div>
       </footer>
 
-      {/* STYLES */}
       <style jsx>{`
-        :root{ --ink:#0f172a; --muted:#475569; --line:rgba(0,0,0,.10); }
-        html,body{height:100%}
-        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--ink);
-          background: radial-gradient(1100px 500px at 12% -10%, #ffe4e6, transparent),
-                      radial-gradient(900px 480px at 88% -10%, #e0e7ff, transparent),
-                      linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
-          background-attachment:fixed;}
-        [dir="rtl"] .heroTitle, [dir="rtl"] .subtitle { text-align:center; }
+        :root{ --ink:#0f172a; --muted:#475569; --line:rgba(0,0,0,.08); }
+        html,body,#__next{height:100%}
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--ink)}
 
-        /* TOPBAR */
-        .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;
-          background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+        /* Full sayfa degrade arka plan */
+        .wrap{min-height:calc(100vh - 120px);padding:20px; background:
+          radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
+          radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
+          linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);}        
+
+        .topbar{position:sticky;top:0;z-index:40;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center; padding:10px 14px; background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
         .brand{display:flex;align-items:center;gap:8px;font-weight:900;cursor:pointer}
-        .actions{display:flex;gap:8px}
-        .ghost{border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer}
-        .primary{border:none;background:linear-gradient(135deg,#111827,#4f46e5,#06b6d4);color:#fff;border-radius:12px;padding:12px 16px;font-weight:900;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.18)}
+        .actions{display:flex;gap:8px;align-items:center}
+        .ghost{border:1px solid #111827;background:transparent;color:#111827;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+        .danger{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
 
-        /* HERO */
-        .hero{max-width:1100px;margin:14px auto 0;padding:0 16px;text-align:center}
-        .heroTitle{margin:6px 0 2px;font-size:40px;letter-spacing:.2px;text-shadow:0 8px 28px rgba(0,0,0,.15)}
-        .subtitle{margin:0;color:#1f2937;font-weight:600}
+        .title{margin:8px 0 12px;font-size:28px;color:#0f172a;text-shadow:0 8px 28px rgba(0,0,0,.15)}
 
-        /* CARD */
-        .wrap{max-width:1100px;margin:14px auto;padding:0 16px 40px}
-        .card{border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,.10);padding:16px}
-        .card.colored{background:linear-gradient(135deg,#ff80ab,#a78bfa,#60a5fa,#34d399);border:none;color:#fff}
-        .card.colored .mini{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.25);color:#fff}
-        .card.colored .field label{color:#fff}
-        .card.colored .drop{color:#e2e8f0}
-        .card.colored .err{color:#fee2e2}
-        .colored{position:relative}
-        .colored:before{display:none}
+        .card{border-radius:20px; padding:18px; box-shadow:0 18px 50px rgba(0,0,0,.18)}
+        .card.colored{color:#fff; background:linear-gradient(135deg,#111827,#3b82f6 35%, #a78bfa 70%, #34d399)}
+        form{display:grid;gap:14px}
+        .flex2{display:grid;gap:14px;grid-template-columns:repeat(2,1fr)}
+        @media (max-width:720px){ .flex2{grid-template-columns:1fr} }
 
-        .grid{display:grid;gap:16px;grid-template-columns:1fr}
-        @media(min-width:980px){ .grid{grid-template-columns:2fr 1fr;} }
-        .col{display:flex;flex-direction:column;gap:12px}
-        .aside{display:flex;flex-direction:column;gap:12px}
-        .mini{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fafafa}
-        .mini h3{margin:0 0 6px}
-        ul{margin:6px 0 0;padding-left:18px}
-        [dir="rtl"] ul{padding-left:0;padding-right:18px}
-        li{margin:4px 0}
+        .field{display:grid;gap:6px}
+        .field label{font-weight:800}
+        .field input[type="text"],
+        .field input[type="number"],
+        .field textarea,
+        .field select{
+          border:1px solid rgba(255,255,255,.25);
+          background:rgba(255,255,255,.12);
+          color:#fff;
+          border-radius:12px; padding:10px; outline:none;
+        }
+        .field textarea{resize:vertical}
+        .row{display:flex;gap:8px;align-items:center}
+        .mini{font-size:12px;opacity:.9}
 
-        /* FIELDS */
-        .field{display:flex;flex-direction:column;gap:6px}
-        .field label{font-weight:900}
-        .field label span{color:#dc2626}
-        .soft{color:#6b7280;font-style:normal;font-weight:600}
-        input[type="text"], input[type="number"], select, textarea{border:1px solid #e5e7eb;border-radius:12px;padding:12px;font-size:14px;outline:none;background:#fff}
-        textarea{resize:vertical}
-        .row2{display:grid;gap:12px;grid-template-columns:1fr}
-        .row3{display:grid;gap:12px;grid-template-columns:1fr}
-        @media(min-width:700px){ .row2{grid-template-columns:1fr 1fr} .row3{grid-template-columns:1fr 1fr 1fr} }
-        .err{color:#dc2626;font-size:12px}
-        .toggleLine{display:flex;align-items:center;gap:8px}
-        [dir="rtl"] .toggleLine{flex-direction:row-reverse}
+        .drop{display:grid;place-items:center;gap:6px;border:1px dashed rgba(255,255,255,.4);border-radius:14px;padding:14px;cursor:pointer;}
+        .thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+        .thumb{position:relative;width:120px;height:90px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.25)}
+        .thumb img{width:100%;height:100%;object-fit:cover}
+        .thumb button{position:absolute;top:4px;right:4px;border:none;background:rgba(0,0,0,.5);color:#fff;border-radius:999px;width:22px;height:22px;cursor:pointer}
 
-        /* UPLOADER */
-        .uploader{border:2px dashed #cbd5e1;border-radius:14px;padding:12px;background:linear-gradient(0deg,#fff, #f8fafc)}
-        .drop{text-align:center;color:#475569;font-size:14px;margin-bottom:8px}
-        .thumbs{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
-        .thumb{position:relative;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#fff}
-        .thumb img{width:100%;height:100px;object-fit:cover;display:block}
-        .thumb .rm{position:absolute;top:4px;right:4px;border:none;background:rgba(0,0,0,.65);color:#fff;border-radius:999px;width:24px;height:24px;cursor:pointer;font-size:16px}
-        .ph{display:grid;place-items:center;border:2px dashed #e5e7eb;border-radius:12px;height:100px;color:#94a3b8;font-weight:900;font-size:22px;background:#fff}
+        .actions{display:flex;gap:8px;justify-content:flex-end}
+        .primary{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}
 
-        .actionsRow{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
-        [dir="rtl"] .actionsRow{flex-direction:row-reverse}
+        .err{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fff;padding:10px;border-radius:12px}
+        .msg{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);color:#fff;padding:10px;border-radius:12px}
 
-        /* FOOTER */
-        .legal{background:#0b0b0b;color:#f8fafc;border-top:1px solid rgba(255,255,255,.12);width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);margin-top:20px}
-        .inner{max-width:1100px;margin:0 auto;padding:14px 16px}
-        .ttl{font-weight:800;margin-bottom:8px}
+        /* LEGAL */
+        .legal{background:#0b0b0b;color:#f8fafc;border-top:1px solid rgba(255,255,255,.12);width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);margin-top:18px}
+        .inner{max-width:1100px;margin:0 auto;padding:12px 16px}
+        .ttl{font-weight:800;margin-bottom:6px}
         .links{display:flex;flex-wrap:wrap;gap:10px}
         .links a{color:#e2e8f0;font-size:13px;padding:6px 8px;border-radius:8px;text-decoration:none}
         .links a:hover{background:rgba(255,255,255,.08);color:#fff}
         .homeLink{margin-left:auto;font-weight:800}
-        [dir="rtl"] .homeLink{margin-left:0;margin-right:auto}
-        .copy{margin-top:8px;font-size:12px;color:#cbd5e1}
+        .copy{margin-top:6px;font-size:12px;color:#cbd5e1}
       `}</style>
     </>
   );
