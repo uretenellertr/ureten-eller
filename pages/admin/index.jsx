@@ -60,6 +60,7 @@ export default function AdminPanel(){
   return (
     <>
       <Head>
+<link rel="stylesheet" href="/admin-dark.css?v=1" />
         <title>Admin – Üreten Eller</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
