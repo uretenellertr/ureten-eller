@@ -333,8 +333,8 @@ function useLang() {
   }, []);
   useEffect(() => {
     localStorage.setItem("lang", lang);
-    document.documentElement.lang = lang;
-    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    /* document.documentElement.lang = lang; */
+    /* document.documentElement.dir = lang === "ar" ? "rtl" : "ltr"; */
   }, [lang]);
   const t = useMemo(() => STR[lang] || STR.tr, [lang]);
   return { lang, setLang, t };

@@ -17,8 +17,8 @@ function useLang() {
   }, []);
   useEffect(() => {
     if (typeof document !== "undefined") {
-      document.documentElement.lang = lang;
-      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+      /* document.documentElement.lang = lang; */
+      /* document.documentElement.dir = lang === "ar" ? "rtl" : "ltr"; */
     }
   }, [lang]);
   return lang;

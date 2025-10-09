@@ -189,8 +189,8 @@ function useLang() {
   }, []);
   useEffect(() => {
     localStorage.setItem("lang", lang);
-    document.documentElement.lang = lang;
-    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    /* document.documentElement.lang = lang; */
+    /* document.documentElement.dir = lang === "ar" ? "rtl" : "ltr"; */
   }, [lang]);
   const t = useMemo(() => T[lang] || T.tr, [lang]);
   return { lang, setLang, t };
