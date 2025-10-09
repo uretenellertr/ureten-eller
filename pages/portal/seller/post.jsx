@@ -583,14 +583,15 @@ export default function SellerPostPage() {
   return (
     <>
       <Head>
-        <title>{LBL.tr.brand} – {t.page.title}</title>
+        <title>{t.brand} – {t.page.title}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {/* FAVICONS → public/ */}
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="shortcut icon" href="/favicon.png" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="icon" type="image/png" href="/favicon.png" />
         <meta name="theme-color" content="#0b0b0b" />
       </Head>
 
@@ -598,7 +599,7 @@ export default function SellerPostPage() {
       <header className="topbar">
         <div className="brand" onClick={() => router.push("/portal/seller")}>
           <img src="/logo.png" width="34" height="34" alt="logo" />
-          <span>{LBL.tr.brand}</span>
+          <span>{t.brand}</span>
         </div>
         <div className="actions">
           <button className="ghost" onClick={() => router.back()}>{t.page.back}</button>
@@ -613,7 +614,7 @@ export default function SellerPostPage() {
 
       {/* FORM CARD */}
       <main className="wrap">
-        <div className="card accent">
+        <div className="card colored">
           <div className="grid">
             {/* LEFT: FORM */}
             <div className="col">
@@ -773,9 +774,14 @@ export default function SellerPostPage() {
 
         /* CARD */
         .wrap{max-width:1100px;margin:14px auto;padding:0 16px 40px}
-        .card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,.10);padding:16px}
-        .accent{position:relative}
-        .accent:before{content:"";position:absolute;inset:-2px;z-index:-1;border-radius:20px;background:linear-gradient(135deg,#ff80ab,#a78bfa,#60a5fa,#34d399)}
+        .card{border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,.10);padding:16px}
+        .card.colored{background:linear-gradient(135deg,#ff80ab,#a78bfa,#60a5fa,#34d399);border:none;color:#fff}
+        .card.colored .mini{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.25);color:#fff}
+        .card.colored .field label{color:#fff}
+        .card.colored .drop{color:#e2e8f0}
+        .card.colored .err{color:#fee2e2}
+        .colored{position:relative}
+        .colored:before{display:none}
 
         .grid{display:grid;gap:16px;grid-template-columns:1fr}
         @media(min-width:980px){ .grid{grid-template-columns:2fr 1fr;} }
