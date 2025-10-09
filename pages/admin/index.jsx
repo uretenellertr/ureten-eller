@@ -1,462 +1,581 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Head from "next/head";
 import { createClient } from "@supabase/supabase-js";
 
-/* ---------------------- Supabase ---------------------- */
-let _sb = null;
-function getSupabase() {
-  if (_sb) return _sb;
+/* ---------------- ENV | SUPABASE ---------------- */
+let _sb=null;
+function sb(){
+  if(_sb) return _sb;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  _sb = createClient(url, key);
+  if(!url||!key) return null;
+  _sb = createClient(url,key);
   return _sb;
 }
 
-/* ---------------------- UI Helpers ---------------------- */
-const fmtDate = (d) => (d ? new Date(d).toLocaleString("tr-TR") : "—");
-const roles = ["user", "moderator", "admin"];
+/* ---------------- UI HELPERS ---------------- */
+const fmtDate = (s)=> s ? new Date(s).toLocaleString() : "";
+const yesNo = (b)=> b ? "Evet" : "Hayır";
 
-/* ---------------------- Component ---------------------- */
-export default function AdminPanel() {
-  const supa = getSupabase();
-  const [me, setMe] = useState(null);         // supabase user
-  const [meRow, setMeRow] = useState(null);   // public.users satırı
-  const [tab, setTab] = useState("approve");  // approve | showcase | users
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [err, setErr] = useState("");
+/* ---------------- ADMIN PAGE ---------------- */
+export default function AdminPanel(){
+  const supa = sb();
+  const [me,setMe]=useState(null);
+  const [role,setRole]=useState(null);
+  const [loading,setLoading]=useState(true);
+  const [active,setActive]=useState("inbox"); // inbox | pending | showcase | users | complaints | broadcast
+  const [err,setErr]=useState("");
+  const audioRef = useRef(null);
 
-  // Giriş formu
-  const [email, setEmail] = useState("");
-  const [pass, setPass] = useState("");
+  // polling sayaçları (yeni içerikte ses çal)
+  const [counts,setCounts]=useState({pending:0, inbox:0, complaints:0});
+  const lastCounts = useRef(counts);
 
-  // Veriler
-  const [pending, setPending] = useState([]);
-  const [active, setActive] = useState([]);
-  const [uList, setUList] = useState([]);
-
-  // oturum + admin kontrol
-  useEffect(() => {
-    let on = true;
-    (async () => {
-      if (!supa) return;
-      const { data: { user } } = await supa.auth.getUser();
-      if (!on) return;
-      if (user) {
+  // giriş kontrol
+  useEffect(()=>{
+    let alive=true;
+    (async()=>{
+      try{
+        if(!supa) { setErr("Supabase yapılandırması eksik."); setLoading(false); return; }
+        const { data:{ user } } = await supa.auth.getUser();
+        if(!alive) return;
+        if(!user){ setErr("Önce giriş yapın."); setLoading(false); return; }
         setMe(user);
-        // admin mi?
-        const { data: row } = await supa
-          .from("users")
-          .select("auth_user_id, role, premium_until, email, full_name")
-          .eq("auth_user_id", user.id)
-          .single();
-        setMeRow(row || null);
+        // rol çek
+        const { data, error } = await supa.from("users").select("role").eq("auth_user_id", user.id).single();
+        if(error){ setErr("Kullanıcı rolü okunamadı."); setLoading(false); return; }
+        setRole(data?.role||null);
+      }catch(e){
+        setErr(e?.message||"Hata");
+      }finally{
+        if(alive) setLoading(false);
       }
     })();
-    return () => (on = false);
-  }, [supa]);
+    return ()=>{alive=false};
+  },[supa]);
 
-  const isAdmin = useMemo(() => meRow?.role === "admin", [meRow]);
+  // yetkisizse
+  const noAdmin = !loading && role!=="admin";
 
-  // veri çek
-  useEffect(() => {
-    let on = true;
-    (async () => {
-      if (!supa || !isAdmin) return;
-      // pending ilanlar
-      const { data: p } = await supa
-        .from("listings")
-        .select("id, title, seller_auth_id, created_at, city, price, currency, status, is_showcase, category, subcategory, ship_days")
-        .eq("status", "pending")
-        .order("created_at", { ascending: true });
-      if (on) setPending(p || []);
-
-      // aktif ilanlar (vitrin/PRO sekmesi için)
-      const { data: a } = await supa
-        .from("listings")
-        .select("id, title, seller_auth_id, created_at, city, price, currency, status, is_showcase, category, subcategory, ship_days")
-        .eq("status", "active")
-        .order("created_at", { ascending: false });
-      if (on) setActive(a || []);
-
-      // kullanıcılar
-      const { data: u } = await supa
-        .from("users")
-        .select("auth_user_id, email, full_name, role, premium_until")
-        .order("created_at", { ascending: false });
-      if (on) setUList(u || []);
-    })();
-    return () => (on = false);
-  }, [supa, isAdmin, tab]); // sekme değişince tazelemek hoş
-
-  async function handleLogin(e) {
-    e.preventDefault();
-    setErr(""); setMsg(""); setBusy(true);
-    try {
-      const { data, error } = await supa.auth.signInWithPassword({ email, password: pass });
-      if (error) throw error;
-      // kullanıcı satırı
-      const { data: row } = await supa
-        .from("users")
-        .select("auth_user_id, role, premium_until, email, full_name")
-        .eq("auth_user_id", data.user.id)
-        .single();
-      setMe(data.user);
-      setMeRow(row || null);
-      setMsg("Giriş başarılı.");
-    } catch (e) {
-      setErr(e?.message || "Giriş başarısız.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function signOut() {
-    supa?.auth.signOut().finally(() => {
-      setMe(null); setMeRow(null);
-    });
-  }
-
-  // ---- İLAN İŞLEMLERİ ----
-  async function approveListing(id) {
-    setErr(""); setMsg(""); setBusy(true);
-    try {
-      const { error } = await supa.from("listings").update({ status: "active" }).eq("id", id);
-      if (error) throw error;
-      setMsg(`İlan #${id} onaylandı.`);
-      setPending((x) => x.filter((i) => i.id !== id));
-    } catch (e) { setErr(e.message); }
-    finally { setBusy(false); }
-  }
-
-  async function rejectListing(id) {
-    setErr(""); setMsg(""); setBusy(true);
-    try {
-      const { error } = await supa.from("listings").update({ status: "rejected" }).eq("id", id);
-      if (error) throw error;
-      setMsg(`İlan #${id} reddedildi.`);
-      setPending((x) => x.filter((i) => i.id !== id));
-    } catch (e) { setErr(e.message); }
-    finally { setBusy(false); }
-  }
-
-  async function toggleShowcase(id, current) {
-    setErr(""); setMsg(""); setBusy(true);
-    try {
-      const { error } = await supa.from("listings").update({ is_showcase: !current }).eq("id", id);
-      if (error) throw error;
-      setActive((arr) => arr.map(it => it.id === id ? { ...it, is_showcase: !current } : it));
-      setMsg(`İlan #${id} vitrin ${current ? "çıkarıldı" : "eklendi"}.`);
-    } catch (e) { setErr(e.message); }
-    finally { setBusy(false); }
-  }
-
-  // ---- KULLANICI İŞLEMLERİ ----
-  async function setRole(uid, role) {
-    setErr(""); setMsg(""); setBusy(true);
-    try {
-      const { error } = await supa.from("users").update({ role }).eq("auth_user_id", uid);
-      if (error) throw error;
-      setUList((arr)=> arr.map(u => u.auth_user_id===uid ? { ...u, role } : u));
-      setMsg("Rol güncellendi.");
-    } catch (e) { setErr(e.message); }
-    finally { setBusy(false); }
-  }
-
-  async function grantPro(uid, months) {
-    setErr(""); setMsg(""); setBusy(true);
-    try {
-      // premium_until = now() + X ay
-      const { error } = await supa.rpc("admin_grant_pro", { p_user_id: uid, p_months: months });
-      if (error) throw error;
-      // ekrandaki tarihi tazele
-      const { data } = await supa
-        .from("users")
-        .select("auth_user_id, premium_until, role, email, full_name")
-        .eq("auth_user_id", uid)
-        .single();
-      setUList((arr)=> arr.map(u => u.auth_user_id===uid ? { ...u, premium_until: data?.premium_until } : u));
-      setMsg(`${months} ay PRO verildi.`);
-    } catch (e) { setErr(e.message || "PRO verilemedi."); }
-    finally { setBusy(false); }
-  }
-
-  // ---- UI Kısımları ----
-  if (!supa) {
-    return (
-      <>
-        <Head><title>Admin • Üreten Eller</title></Head>
-        <div className="screen center"><div className="card">
-          <h1>Admin</h1>
-          <div className="err">Supabase anahtarları bulunamadı (ENV).</div>
-        </div></div>
-        <style jsx>{baseCss}</style>
-      </>
-    );
-  }
-
-  if (!me || !isAdmin) {
-    return (
-      <>
-        <Head>
-          <title>Admin Giriş • Üreten Eller</title>
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          {/* Global faviconlar (_document.jsx varsa oradan da gelir) */}
-          <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=8" />
-          <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=8" />
-          <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=8" />
-          <link rel="icon" href="/favicon.png?v=8" />
-        </Head>
-        <div className="screen center">
-          <form className="card form" onSubmit={handleLogin}>
-            <h1 className="ttl">Admin Panel</h1>
-            <div className="field">
-              <label>E-posta</label>
-              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="admin@mail.com" required />
-            </div>
-            <div className="field">
-              <label>Şifre</label>
-              <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" required />
-            </div>
-            {err && <div className="err">{err}</div>}
-            {msg && <div className="msg">{msg}</div>}
-            <button type="submit" className="btn primary" disabled={busy}>{busy ? "…" : "Giriş Yap"}</button>
-            <div className="mini">Not: Girişten sonra hesabınızın <b>public.users.role = 'admin'</b> olması gerekir.</div>
-          </form>
-        </div>
-        <style jsx>{baseCss}</style>
-      </>
-    );
-  }
-
+  // sayfa başı veri işçileri
   return (
     <>
       <Head>
-        <title>Admin • Üreten Eller</title>
+        <title>Admin – Üreten Eller</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=8" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=8" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=8" />
-        <link rel="icon" href="/favicon.png?v=8" />
+        {/* Faviconlar global _document.jsx ile */}
       </Head>
 
-      {/* HEADER */}
-      <header className="top">
-        <div className="brand" onClick={()=>setTab("approve")}>
-          <img src="/logo.png" width="28" height="28" alt="logo" />
-          <span>Üreten Eller • Admin</span>
-        </div>
-        <div className="me">
-          <div className="who">
-            <b>{meRow?.full_name || meRow?.email || "Yönetici"}</b>
-            <span>rol: {meRow?.role}</span>
+      <audio ref={audioRef} src="/notify.wav" preload="auto" />
+
+      <div className="admin">
+        <aside className="side">
+          <div className="brand">
+            <img src="/logo.png" width="28" height="28" alt="logo" />
+            <b>Yönetim</b>
           </div>
-          <button className="btn outline" onClick={signOut}>Çıkış</button>
-        </div>
-      </header>
 
-      {/* TABS */}
-      <nav className="tabs">
-        <button onClick={()=>setTab("approve")} className={tab==="approve"?"tab active":"tab"}>İlan Onayı</button>
-        <button onClick={()=>setTab("showcase")} className={tab==="showcase"?"tab active":"tab"}>Vitrin / PRO</button>
-        <button onClick={()=>setTab("users")} className={tab==="users"?"tab active":"tab"}>Kullanıcılar</button>
-      </nav>
+          <nav className="menu">
+            <button className={active==="inbox"?"on":""} onClick={()=>setActive("inbox")}>💬 Mesajlar</button>
+            <button className={active==="pending"?"on":""} onClick={()=>setActive("pending")}>📝 İlan Onayı</button>
+            <button className={active==="showcase"?"on":""} onClick={()=>setActive("showcase")}>✨ Vitrin / PRO</button>
+            <button className={active==="users"?"on":""} onClick={()=>setActive("users")}>👥 Kullanıcılar</button>
+            <button className={active==="complaints"?"on":""} onClick={()=>setActive("complaints")}>🚩 Şikayetler</button>
+            <button className={active==="broadcast"?"on":""} onClick={()=>setActive("broadcast")}>📣 Bildiri Gönder</button>
+          </nav>
 
-      {err && <div className="feedback err">{err}</div>}
-      {msg && <div className="feedback msg">{msg}</div>}
+          <div className="foot">
+            {me ? <small>{me.email}</small> : null}
+            <button className="logout" onClick={async()=>{ try{ await supa.auth.signOut(); }catch{}; window.location.href="/login"; }}>Çıkış</button>
+          </div>
+        </aside>
 
-      {/* CONTENT */}
-      <main className="wrap">
-        {tab === "approve" && (
-          <section className="card">
-            <h2>Bekleyen İlanlar</h2>
-            {!pending.length ? <div className="empty">Bekleyen ilan yok.</div> : (
-              <div className="tableWrap">
-                <table className="tbl">
-                  <thead>
-                    <tr>
-                      <th>ID</th><th>Başlık</th><th>Satıcı</th><th>Şehir</th><th>Fiyat</th><th>Tarih</th><th>İşlem</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pending.map((r)=>(
-                      <tr key={r.id}>
-                        <td>#{r.id}</td>
-                        <td>{r.title}</td>
-                        <td><code className="code">{r.seller_auth_id?.slice(0,8)}…</code></td>
-                        <td>{r.city || "—"}</td>
-                        <td>{r.price != null ? `${r.price} ${r.currency||"TRY"}` : "—"}</td>
-                        <td>{fmtDate(r.created_at)}</td>
-                        <td className="actionsRow">
-                          <button className="btn success" onClick={()=>approveListing(r.id)} disabled={busy}>Onayla</button>
-                          <button className="btn danger" onClick={()=>rejectListing(r.id)} disabled={busy}>Reddet</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        )}
+        <main className="main">
+          {loading && <div className="card"><div className="muted">Yükleniyor…</div></div>}
+          {noAdmin && <div className="card err">Bu sayfayı sadece admin görebilir.</div>}
+          {!!err && !loading && !noAdmin && <div className="card err">{err}</div>}
 
-        {tab === "showcase" && (
-          <section className="card">
-            <h2>Aktif İlanlar (Vitrin / PRO)</h2>
-            {!active.length ? <div className="empty">Aktif ilan yok.</div> : (
-              <div className="tableWrap">
-                <table className="tbl">
-                  <thead>
-                    <tr>
-                      <th>ID</th><th>Başlık</th><th>Şehir</th><th>Fiyat</th><th>Vitrin</th><th>İşlem</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {active.map((r)=>(
-                      <tr key={r.id}>
-                        <td>#{r.id}</td>
-                        <td>{r.title}</td>
-                        <td>{r.city || "—"}</td>
-                        <td>{r.price != null ? `${r.price} ${r.currency||"TRY"}` : "—"}</td>
-                        <td>{r.is_showcase ? "Evet" : "Hayır"}</td>
-                        <td className="actionsRow">
-                          <button className="btn outline" onClick={()=>toggleShowcase(r.id, r.is_showcase)} disabled={busy}>
-                            {r.is_showcase ? "Vitrinden Çıkar" : "Vitrine Ekle"}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        )}
+          {!loading && role==="admin" && (
+            <>
+              {active==="inbox" && <Inbox supa={supa} audioRef={audioRef} counts={counts} setCounts={setCounts} lastCounts={lastCounts} />}
+              {active==="pending" && <Pending supa={supa} audioRef={audioRef} counts={counts} setCounts={setCounts} lastCounts={lastCounts} />}
+              {active==="showcase" && <ShowcasePro supa={supa} />}
+              {active==="users" && <Users supa={supa} />}
+              {active==="complaints" && <Complaints supa={supa} audioRef={audioRef} counts={counts} setCounts={setCounts} lastCounts={lastCounts} />}
+              {active==="broadcast" && <Broadcast supa={supa} />}
+            </>
+          )}
+        </main>
+      </div>
 
-        {tab === "users" && (
-          <section className="card">
-            <h2>Kullanıcılar</h2>
-            {!uList.length ? <div className="empty">Kayıt yok.</div> : (
-              <div className="tableWrap">
-                <table className="tbl">
-                  <thead>
-                    <tr>
-                      <th>Kullanıcı</th><th>Rol</th><th>PRO Bitiş</th><th>Rol İşlem</th><th>PRO Ver</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {uList.map((u)=>(
-                      <tr key={u.auth_user_id}>
-                        <td>
-                          <div className="uCell">
-                            <div className="name">{u.full_name || "—"}</div>
-                            <div className="muted">{u.email || "—"}</div>
-                            <code className="code">{u.auth_user_id?.slice(0,8)}…</code>
-                          </div>
-                        </td>
-                        <td>{u.role || "user"}</td>
-                        <td>{fmtDate(u.premium_until)}</td>
-                        <td className="actionsRow">
-                          <select
-                            value={u.role || "user"}
-                            onChange={(e)=>setRole(u.auth_user_id, e.target.value)}
-                            className="sel"
-                            disabled={busy}
-                          >
-                            {roles.map(r => <option key={r} value={r}>{r}</option>)}
-                          </select>
-                        </td>
-                        <td className="actionsRow">
-                          <div className="proGrant">
-                            <input type="number" min={1} max={36} defaultValue={12} className="months" id={`m-${u.auth_user_id}`} />
-                            <button className="btn primary" disabled={busy}
-                              onClick={()=>{
-                                const m = Number(document.getElementById(`m-${u.auth_user_id}`).value || 12);
-                                grantPro(u.auth_user_id, m);
-                              }}>
-                              PRO Ver
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        )}
-      </main>
-
-      <footer className="foot">
-        <div>© {new Date().getFullYear()} Üreten Eller • Admin</div>
-      </footer>
-
-      <style jsx>{baseCss}</style>
+      <style jsx>{`
+        :root{ --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb; --card:#ffffff; --bg:#f8fafc; --asbg:#111827; --asfg:#e5e7eb; --accent:#0ea5e9; }
+        html,body,#__next{height:100%}
+        body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+        .admin{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+        .side{background:var(--asbg);color:var(--asfg);display:flex;flex-direction:column;padding:14px;gap:14px}
+        .brand{display:flex;align-items:center;gap:10px;font-size:18px}
+        .menu{display:flex;flex-direction:column;gap:6px}
+        .menu button{all:unset;display:flex;gap:8px;align-items:center;padding:10px 12px;border-radius:10px;cursor:pointer;color:#e6eef3;border:1px solid rgba(255,255,255,.06)}
+        .menu button.on{background:#0b1220}
+        .menu button:hover{background:#0f172a}
+        .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:8px}
+        .logout{all:unset;border:1px solid #334155;background:#1f2937;color:#fff;padding:8px 12px;border-radius:10px;cursor:pointer}
+        .main{padding:16px;display:grid;gap:16px;align-content:start}
+        .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.06)}
+        .muted{color:var(--muted)}
+        .err{background:#fff0f0;border-color:#fecaca;color:#991b1b}
+        .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+        .table{width:100%;border-collapse:collapse}
+        .table th,.table td{padding:10px;border-bottom:1px solid #eef2f7;text-align:left;font-size:14px}
+        .table th{font-weight:800;color:#374151}
+        .bad{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;padding:6px 8px}
+        .good{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;border-radius:10px;padding:6px 8px}
+        .btn{all:unset;border:1px solid #111827;background:#111827;color:#fff;padding:6px 10px;border-radius:10px;cursor:pointer}
+        .ghost{all:unset;border:1px solid #d1d5db;background:#fff;color:#111827;padding:6px 10px;border-radius:10px;cursor:pointer}
+        .input{border:1px solid #e5e7eb;background:#fff;border-radius:10px;padding:8px}
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+        @media (max-width:980px){ .admin{grid-template-columns:1fr} .side{position:sticky;top:0;z-index:40} .main{padding:10px} .grid2{grid-template-columns:1fr} }
+      `}</style>
     </>
   );
 }
 
-/* ---------------------- CSS (okunaklı tema) ---------------------- */
-const baseCss = `
-:root{
-  --ink:#0f172a; --muted:#6b7280; --line:#e5e7eb; --bg:#f8fafc;
-  --brand:#111827; --ok:#10b981; --bad:#ef4444; --pri:#111827;
+/* ---------------- INBOX (Messages) ---------------- */
+function Inbox({supa,audioRef,counts,setCounts,lastCounts}){
+  const [convs,setConvs]=useState([]);
+  const [sel,setSel]=useState(null);
+  const [msgs,setMsgs]=useState([]);
+  const [text,setText]=useState("");
+  const [error,setError]=useState("");
+
+  const load = useCallback(async(play=false)=>{
+    try{
+      // son konuşmalar
+      const { data:c } = await supa
+        .from("conversations")
+        .select("id,buyer_auth_id,seller_auth_id,created_at")
+        .order("id",{ascending:false})
+        .limit(50);
+      setConvs(c||[]);
+      // sayaç & ses
+      const newCount = { ...counts, inbox: (c||[]).length };
+      setCounts(newCount);
+      if(play && audioRef.current && newCount.inbox> (lastCounts.current.inbox||0)){
+        audioRef.current.currentTime=0; audioRef.current.play().catch(()=>{});
+      }
+      lastCounts.current = newCount;
+    }catch(e){ /* sessiz */ }
+  },[supa,counts,setCounts,audioRef]);
+
+  const loadMsgs = useCallback(async(id)=>{
+    setSel(id);
+    const { data:m } = await supa
+      .from("messages")
+      .select("id,conv_id,sender_auth_id,receiver_auth_id,body,created_at")
+      .eq("conv_id", id)
+      .order("created_at",{ascending:true})
+      .limit(200);
+    setMsgs(m||[]);
+  },[supa]);
+
+  useEffect(()=>{ load(false); },[load]);
+
+  // 10 sn’de bir kontrol
+  useEffect(()=>{
+    const t = setInterval(()=> load(true), 10000);
+    return ()=> clearInterval(t);
+  },[load]);
+
+  async function send(){
+    setError("");
+    const body = text.trim();
+    if(!sel || !body) return;
+    try{
+      // admin kendi adına mesaj atar → receiver, son mesajdaki karşı taraf varsayımı:
+      const last = msgs[msgs.length-1];
+      let receiver = last ? (last.sender_auth_id) : null;
+      if(!receiver){ setError("Alıcı belirlenemedi."); return; }
+      const { data:{ user } } = await supa.auth.getUser();
+      const payload = {
+        conv_id: sel,
+        sender_auth_id: user.id,
+        receiver_auth_id: receiver,
+        body
+      };
+      const { error } = await supa.from("messages").insert(payload);
+      if(error) throw error;
+      setText("");
+      await loadMsgs(sel);
+    }catch(e){
+      setError(e?.message||"Gönderilemedi");
+    }
+  }
+
+  async function delHard(id){
+    setError("");
+    try{
+      const { error } = await supa.rpc("admin_message_delete_hard", { p_msg_id:id });
+      if(error) throw error;
+      setMsgs((arr)=>arr.filter(x=>x.id!==id));
+    }catch(e){ setError(e?.message||"Silinemedi"); }
+  }
+
+  return (
+    <div className="card">
+      <div className="row" style={{justifyContent:"space-between"}}>
+        <h3>💬 Mesajlar</h3>
+        <button className="ghost" onClick={()=>load(true)}>Yenile</button>
+      </div>
+
+      <div className="grid2">
+        <div>
+          <table className="table">
+            <thead><tr><th>ID</th><th>Alıcı/Satıcı</th><th>Oluşturulma</th><th></th></tr></thead>
+            <tbody>
+              {(convs||[]).map(c=>(
+                <tr key={c.id}>
+                  <td>#{c.id}</td>
+                  <td style={{fontSize:12}}>
+                    <div al="buyer">buyer: <code>{c.buyer_auth_id}</code></div>
+                    <div al="seller">seller: <code>{c.seller_auth_id}</code></div>
+                  </td>
+                  <td>{fmtDate(c.created_at)}</td>
+                  <td><button className="btn" onClick={()=>loadMsgs(c.id)}>Aç</button></td>
+                </tr>
+              ))}
+              {!convs?.length && <tr><td colSpan={4} className="muted">Konuşma yok.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <div className="row" style={{justifyContent:"space-between"}}>
+            <h4>Konuşma #{sel||"-"}</h4>
+            <span className="muted">{msgs.length} mesaj</span>
+          </div>
+          <div style={{maxHeight:360,overflow:"auto",border:"1px solid #eef2f7",borderRadius:10,padding:10}}>
+            {msgs.map(m=>(
+              <div key={m.id} style={{borderBottom:"1px dashed #eef2f7",padding:"6px 0"}}>
+                <div style={{fontSize:12,color:"#6b7280"}}>
+                  #{m.id} • {fmtDate(m.created_at)}
+                </div>
+                <div style={{fontSize:12,margin:"4px 0"}}>
+                  <b>from</b> <code>{m.sender_auth_id}</code> → <b>to</b> <code>{m.receiver_auth_id}</code>
+                </div>
+                <div>{m.body}</div>
+                <div className="row" style={{marginTop:6}}>
+                  <button className="ghost" onClick={()=>delHard(m.id)}>Kalıcı Sil</button>
+                </div>
+              </div>
+            ))}
+            {!msgs.length && <div className="muted">Mesaj yok.</div>}
+          </div>
+
+          <div className="row" style={{marginTop:10}}>
+            <input className="input" style={{flex:1}} placeholder="Yanıt yaz…" value={text} onChange={e=>setText(e.target.value)} />
+            <button className="btn" onClick={send}>Gönder</button>
+          </div>
+          {error && <div className="bad" style={{marginTop:8}}>{error}</div>}
+        </div>
+      </div>
+    </div>
+  );
 }
-html,body,#__next{height:100%}
-body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);
-  background:
-    radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
-    radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
-    linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
-  background-attachment: fixed;
+
+/* ---------------- PENDING (Listings approval) ---------------- */
+function Pending({supa,audioRef,counts,setCounts,lastCounts}){
+  const [items,setItems]=useState([]);
+
+  const load = useCallback(async(play=false)=>{
+    const { data } = await supa
+      .from("listings")
+      .select("id,title,created_at,city,district,price,currency,status,expires_at,is_showcase")
+      .in("status", ["pending"])
+      .order("created_at",{ascending:false})
+      .limit(100);
+    setItems(data||[]);
+    const newCount = { ...counts, pending: (data||[]).length };
+    setCounts(newCount);
+    if(play && audioRef.current && newCount.pending > (lastCounts.current.pending||0)){
+      audioRef.current.currentTime=0; audioRef.current.play().catch(()=>{});
+    }
+    lastCounts.current=newCount;
+  },[supa,counts,setCounts,audioRef]);
+
+  useEffect(()=>{ load(false); },[load]);
+  useEffect(()=>{ const t=setInterval(()=>load(true),10000); return ()=>clearInterval(t); },[load]);
+
+  async function approve(id){
+    const { error } = await supa.from("listings").update({status:"active"}).eq("id",id);
+    if(!error) setItems(arr=>arr.filter(x=>x.id!==id));
+  }
+  async function reject(id){
+    const { error } = await supa.from("listings").update({status:"rejected"}).eq("id",id);
+    if(!error) setItems(arr=>arr.filter(x=>x.id!==id));
+  }
+
+  return (
+    <div className="card">
+      <div className="row" style={{justifyContent:"space-between"}}>
+        <h3>📝 Onay Bekleyen İlanlar</h3>
+        <button className="ghost" onClick={()=>load(true)}>Yenile</button>
+      </div>
+
+      <table className="table">
+        <thead>
+          <tr><th>ID</th><th>Başlık</th><th>Konum</th><th>Fiyat</th><th>Durum</th><th>İşlem</th></tr>
+        </thead>
+        <tbody>
+          {(items||[]).map(it=>(
+            <tr key={it.id}>
+              <td>#{it.id}</td>
+              <td>{it.title}</td>
+              <td>{it.city} {it.district?`/ ${it.district}`:""}</td>
+              <td>{it.price?`${it.price} ${it.currency||"TRY"}`:"-"}</td>
+              <td><span className="bad">pending</span></td>
+              <td className="row">
+                <button className="btn" onClick={()=>approve(it.id)}>Onayla</button>
+                <button className="ghost" onClick={()=>reject(it.id)}>Reddet</button>
+              </td>
+            </tr>
+          ))}
+          {!items?.length && <tr><td colSpan={6} className="muted">Bekleyen ilan yok.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
-.screen.center{min-height:100vh; display:grid; place-items:center; padding:18px}
-.card{background:#fff;border:1px solid var(--line);border-radius:16px; padding:16px; box-shadow:0 18px 50px rgba(0,0,0,.08)}
-.card.form{width:min(520px,100%); display:grid; gap:12px}
-.ttl{margin:2px 0 6px}
-.field{display:grid; gap:6px}
-.field label{font-weight:700}
-.field input[type="email"], .field input[type="password"], .field input[type="text"], .field select{
-  border:1px solid var(--line); border-radius:10px; padding:10px; background:#fff; color:#111;
+/* ---------------- SHOWCASE / PRO ---------------- */
+function ShowcasePro({supa}){
+  const [actives,setActives]=useState([]);
+  const [info,setInfo]=useState("");
+
+  const load = useCallback(async()=>{
+    const { data } = await supa
+      .from("listings")
+      .select("id,title,is_showcase,created_at,price,currency,city,status")
+      .eq("status","active")
+      .order("created_at",{ascending:false})
+      .limit(100);
+    setActives(data||[]);
+  },[supa]);
+
+  useEffect(()=>{ load(); },[load]);
+
+  async function toggleShowcase(it){
+    setInfo("");
+    const { error } = await supa
+      .from("listings")
+      .update({ is_showcase: !it.is_showcase })
+      .eq("id", it.id);
+    if(error){ setInfo(error.message); }
+    else load();
+  }
+
+  return (
+    <div className="card">
+      <div className="row" style={{justifyContent:"space-between"}}>
+        <h3>✨ Vitrin / PRO</h3>
+        <button className="ghost" onClick={()=>load()}>Yenile</button>
+      </div>
+      {info && <div className="bad" style={{marginBottom:8}}>{info}</div>}
+
+      <table className="table">
+        <thead><tr><th>ID</th><th>Başlık</th><th>Fiyat</th><th>Konum</th><th>Vitrin</th><th></th></tr></thead>
+        <tbody>
+          {(actives||[]).map(it=>(
+            <tr key={it.id}>
+              <td>#{it.id}</td>
+              <td>{it.title}</td>
+              <td>{it.price?`${it.price} ${it.currency||"TRY"}`:"-"}</td>
+              <td>{it.city||"-"}</td>
+              <td>{yesNo(it.is_showcase)}</td>
+              <td><button className="btn" onClick={()=>toggleShowcase(it)}>{it.is_showcase?"Vitrinden Çıkar":"Vitrine Ekle"}</button></td>
+            </tr>
+          ))}
+          {!actives?.length && <tr><td colSpan={6} className="muted">Aktif ilan yok.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
 }
-.btn{border:1px solid transparent; border-radius:10px; padding:10px 12px; cursor:pointer; font-weight:800}
-.btn.primary{background:var(--pri); color:#fff; border-color:var(--pri)}
-.btn.outline{background:#fff; color:var(--pri); border-color:var(--pri)}
-.btn.success{background:var(--ok); color:#fff; border-color:var(--ok)}
-.btn.danger{background:var(--bad); color:#fff; border-color:var(--bad)}
-.mini{color:var(--muted); font-size:12px}
 
-.err{background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.35); color:#991b1b; padding:10px; border-radius:10px}
-.msg{background:rgba(16,185,129,.08); border:1px solid rgba(16,185,129,.35); color:#065f46; padding:10px; border-radius:10px}
-.feedback{max-width:1200px; margin:12px auto 0; padding:0 12px}
+/* ---------------- USERS (roles & PRO) ---------------- */
+function Users({supa}){
+  const [rows,setRows]=useState([]);
+  const [months,setMonths]=useState(12);
+  const [info,setInfo]=useState("");
 
-.top{position:sticky; top:0; z-index:10; display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center;
-  padding:10px 14px; background:rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom:1px solid var(--line)}
-.brand{display:flex; gap:8px; align-items:center; font-weight:900; cursor:pointer}
-.me{display:flex; gap:10px; align-items:center}
-.who{display:flex; flex-direction:column; line-height:1.1}
+  const load = useCallback(async()=>{
+    const { data } = await supa
+      .from("users")
+      .select("auth_user_id, email, full_name, role, premium_until, created_at")
+      .order("created_at",{ascending:false})
+      .limit(200);
+    setRows(data||[]);
+  },[supa]);
 
-.tabs{max-width:1200px; margin:14px auto 0; padding:0 12px; display:flex; gap:8px; flex-wrap:wrap}
-.tab{border:1px solid var(--line); background:#fff; color:#111; border-radius:999px; padding:8px 12px; cursor:pointer; font-weight:800}
-.tab.active{background:var(--pri); color:#fff; border-color:var(--pri)}
+  useEffect(()=>{ load(); },[load]);
 
-.wrap{max-width:1200px; margin:12px auto; padding:0 12px; display:grid; gap:14px}
-.tableWrap{overflow:auto; border:1px solid var(--line); border-radius:14px}
-.tbl{width:100%; border-collapse:separate; border-spacing:0}
-.tbl thead th{position:sticky; top:0; background:#f1f5f9; text-align:left; padding:10px; font-weight:800; border-bottom:1px solid var(--line)}
-.tbl tbody td{padding:10px; border-bottom:1px solid #f1f5f9; vertical-align:middle; color:#111}
-.tbl tbody tr:nth-child(even){background:#fafafa}
-.actionsRow{display:flex; gap:8px; align-items:center}
-.code{background:#f1f5f9; padding:2px 6px; border-radius:8px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
-.empty{padding:14px; border:1px dashed var(--line); border-radius:12px; background:#fff; color:#555}
+  async function setRole(uid, newRole){
+    setInfo("");
+    const { error } = await supa
+      .from("users")
+      .update({ role:newRole })
+      .eq("auth_user_id", uid);
+    if(error) setInfo(error.message); else load();
+  }
 
-.proGrant{display:flex; gap:8px; align-items:center}
-.months{width:80px; border:1px solid var(--line); border-radius:8px; padding:8px; background:#fff; color:#111}
-.sel{border:1px solid var(--line); border-radius:8px; padding:8px; background:#fff; color:#111}
+  async function grantPro(uid){
+    setInfo("");
+    const m = Number(months)||12;
+    // Önce RPC dener, yoksa direct update
+    const tryRpc = await supa.rpc("admin_grant_pro", { p_user_id: uid, p_months:m });
+    if(tryRpc.error){
+      // fallback: premium_until ileri al
+      const { data:cur } = await supa.from("users").select("premium_until").eq("auth_user_id",uid).single();
+      const now = new Date();
+      const base = cur?.premium_until ? new Date(cur.premium_until) : now;
+      const next = new Date(base>now?base:now); next.setMonth(next.getMonth()+m);
+      const iso = next.toISOString();
+      const { error } = await supa.from("users").update({ premium_until: iso }).eq("auth_user_id", uid);
+      if(error){ setInfo(error.message); return; }
+    }
+    load();
+  }
 
-.foot{padding:16px; text-align:center; color:#0b0b0b; font-weight:700}
-`;
+  return (
+    <div className="card">
+      <div className="row" style={{justifyContent:"space-between"}}>
+        <h3>👥 Kullanıcılar</h3>
+        <button className="ghost" onClick={()=>load()}>Yenile</button>
+      </div>
+      {info && <div className="bad" style={{marginBottom:8}}>{info}</div>}
+
+      <div className="row" style={{marginBottom:8}}>
+        <label>PRO ay (varsayılan 12):</label>
+        <input className="input" style={{width:90}} type="number" min="1" max="36" value={months} onChange={e=>setMonths(e.target.value)} />
+      </div>
+
+      <table className="table">
+        <thead><tr><th>E-posta</th><th>Ad</th><th>Rol</th><th>PRO Bitiş</th><th>Kayıt</th><th>İşlem</th></tr></thead>
+        <tbody>
+          {(rows||[]).map(u=>(
+            <tr key={u.auth_user_id}>
+              <td>{u.email||"-"}</td>
+              <td>{u.full_name||"-"}</td>
+              <td><b>{u.role||"user"}</b></td>
+              <td>{u.premium_until?fmtDate(u.premium_until):"—"}</td>
+              <td>{fmtDate(u.created_at)}</td>
+              <td className="row">
+                <button className="ghost" onClick={()=>setRole(u.auth_user_id,"user")}>user</button>
+                <button className="ghost" onClick={()=>setRole(u.auth_user_id,"moderator")}>moderator</button>
+                <button className="ghost" onClick={()=>setRole(u.auth_user_id,"admin")}>admin</button>
+                <button className="btn" onClick={()=>grantPro(u.auth_user_id)}>PRO Ver (+{months} ay)</button>
+              </td>
+            </tr>
+          ))}
+          {!rows?.length && <tr><td colSpan={6} className="muted">Kayıt yok.</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ---------------- COMPLAINTS (optional table: reports) ---------------- */
+function Complaints({supa,audioRef,counts,setCounts,lastCounts}){
+  const [rows,setRows]=useState([]);
+  const [info,setInfo]=useState("");
+
+  const load = useCallback(async(play=false)=>{
+    try{
+      const { data, error } = await supa
+        .from("reports") // yoksa boş dönsün
+        .select("id, created_at, type, ref_id, reporter_auth_id, note, status");
+      if(error){ setRows([]); return; }
+      setRows(data||[]);
+      const newCount = { ...counts, complaints: (data||[]).length };
+      setCounts(newCount);
+      if(play && audioRef.current && newCount.complaints>(lastCounts.current.complaints||0)){
+        audioRef.current.currentTime=0; audioRef.current.play().catch(()=>{});
+      }
+      lastCounts.current=newCount;
+    }catch{ setRows([]); }
+  },[supa,counts,setCounts,audioRef]);
+
+  useEffect(()=>{ load(false); },[load]);
+  useEffect(()=>{ const t=setInterval(()=>load(true),15000); return ()=>clearInterval(t); },[load]);
+
+  async function mark(id, st){
+    setInfo("");
+    const { error } = await supa.from("reports").update({ status: st }).eq("id", id);
+    if(error) setInfo(error.message); else load(false);
+  }
+
+  return (
+    <div className="card">
+      <div className="row" style={{justifyContent:"space-between"}}>
+        <h3>🚩 Şikayetler</h3>
+        <button className="ghost" onClick={()=>load(true)}>Yenile</button>
+      </div>
+      {info && <div className="bad" style={{marginBottom:8}}>{info}</div>}
+
+      <table className="table">
+        <thead><tr><th>ID</th><th>Tür</th><th>Referans</th><th>Rapor Eden</th><th>Not</th><th>Durum</th><th></th></tr></thead>
+        <tbody>
+          {(rows||[]).map(r=>(
+            <tr key={r.id}>
+              <td>#{r.id}</td>
+              <td>{r.type||"-"}</td>
+              <td>{r.ref_id||"-"}</td>
+              <td><code>{r.reporter_auth_id}</code></td>
+              <td>{r.note||"-"}</td>
+              <td>{r.status||"open"}</td>
+              <td className="row">
+                <button className="ghost" onClick={()=>mark(r.id,"in_review")}>İncele</button>
+                <button className="btn" onClick={()=>mark(r.id,"closed")}>Kapattım</button>
+              </td>
+            </tr>
+          ))}
+          {!rows?.length && <tr><td colSpan={7} className="muted">Şikayet yok (veya tablo yok).</td></tr>}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/* ---------------- BROADCAST (push-like simple) ---------------- */
+function Broadcast({supa}){
+  const [title,setTitle]=useState("");
+  const [body,setBody]=useState("");
+  const [info,setInfo]=useState("");
+
+  async function send(){
+    setInfo("");
+    if(!title.trim()||!body.trim()){ setInfo("Başlık ve mesaj zorunlu."); return; }
+    // “broadcasts” tablosu varsa yaz, yoksa messages’a admin → her user kısa not bırak (isteğe göre)
+    // Burada en güvenlisi küçük bir broadcast tablosu varsayalım:
+    const { error } = await supa.from("broadcasts").insert({ title, body });
+    if(error){ setInfo("Broadcast tablosu yoksa: admin kullanıcılarına e-posta veya push entegre edin."); return; }
+    setTitle(""); setBody(""); setInfo("Gönderildi.");
+  }
+
+  return (
+    <div className="card">
+      <h3>📣 Bildiri Gönder</h3>
+      <div className="row" style={{marginTop:8}}>
+        <input className="input" style={{flex:1}} placeholder="Başlık" value={title} onChange={e=>setTitle(e.target.value)} />
+      </div>
+      <div className="row" style={{marginTop:8}}>
+        <textarea className="input" rows={5} style={{width:"100%"}} placeholder="Mesaj içeriği" value={body} onChange={e=>setBody(e.target.value)} />
+      </div>
+      <div className="row" style={{marginTop:8}}>
+        <button className="btn" onClick={send}>Gönder</button>
+        {info && <div className="muted">{info}</div>}
+      </div>
+    </div>
+  );
+}
