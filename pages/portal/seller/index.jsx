@@ -184,7 +184,7 @@ const PHRASES_TR = [
   { text: "Uygun fiyat, güvenli süreç, mutlu son.", color: "#ec4899" },
 ];
 
-/* ---------------------------- KATEGORİLER (renkli) ---------------------------- */
+/* ---------------------------- KATEGORİLER ---------------------------- */
 const CATS = {
   tr: [
     { icon: "🍲", title: "Yemekler", subs: ["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"] },
@@ -194,7 +194,7 @@ const CATS = {
     { icon: "🥗", title: "Diyet / Vegan / Glutensiz", subs: ["Fit tabaklar","Vegan yemekler","GF unlu mamuller","Şekersiz tatlı","Keto ürün","Protein atıştırmalık"] },
     { icon: "💍", title: "Takı", subs: ["Bileklik","Kolye","Küpe","Yüzük","Halhal","Broş","Setler","İsimli/kişiye özel","Makrome","Doğal taş","Reçine","Tel sarma"] },
     { icon: "👶", title: "Bebek & Çocuk", subs: ["Hayvan/bebek figürleri","Çıngırak","Diş kaşıyıcı örgü","Bez oyuncak/kitap","Montessori oyuncak","Setler","Örgü patik-bere","Bebek battaniyesi","Önlük-ağız bezi","Lohusa seti","Saç aksesuarı","El emeği kıyafet"] },
-    /* Önemli ekleme: 'Lif takımı' */
+    /* Örgü / Triko → Lif takımı eklendi */
     { icon: "🧶", title: "Örgü / Triko", subs: ["Hırka","Kazak","Atkı-bere","Panço","Şal","Çorap","Bebek takımı","Yelek","Kırlent-örtü","Lif takımı"] },
     { icon: "✂️", title: "Dikiş / Terzilik", subs: ["Paça/onarım","Fermuar değişimi","Perde dikişi","Nevresim-yastık","Masa örtüsü","Özel dikim","Kostüm"] },
     { icon: "🧵", title: "Makrome & Dekor", subs: ["Duvar süsü","Saksı askısı","Anahtarlık","Avize","Amerikan servis/runner","Sepet","Raf/duvar dekoru"] },
@@ -261,8 +261,6 @@ function useLang() {
   }, []);
   useEffect(() => {
     localStorage.setItem("lang", lang);
-    /* document.documentElement.lang = lang; */
-    /* document.documentElement.dir = lang === "ar" ? "rtl" : "ltr"; */
   }, [lang]);
   const t = useMemo(() => LBL[lang] || LBL.tr, [lang]);
   return { lang, setLang, t };
@@ -355,13 +353,13 @@ export default function SellerHome() {
         </div>
 
         <div className="actions">
-          {/* Kullanıcı grubu — MOBİLDE ÜSTE */}
+          {/* Kullanıcı grubu */}
           <div className="userGroup">
             <button className="ghost" onClick={() => go("/profile")}>{t.profile}</button>
             <button className="danger" onClick={onLogout}>{t.logout}</button>
           </div>
 
-          {/* İşlem grubu — MOBİLDE ALTA */}
+          {/* İşlem grubu */}
           <div className="actionGroup">
             <button className="ghost" onClick={() => go("/search")}>{t.findListing}</button>
             <button className="primary" onClick={() => go("/portal/seller/post")}>{t.addListing}</button>
@@ -373,7 +371,7 @@ export default function SellerHome() {
         </div>
       </header>
 
-      {/* HERO — ortalanmış başlık */}
+      {/* HERO */}
       <section className="hero">
         <h1 className="heroTitle">{t.heroWelcome}</h1>
         <p key={pi} className="phrase" style={{ color: phrases[pi].color }}>{phrases[pi].text}</p>
@@ -436,7 +434,7 @@ export default function SellerHome() {
         </div>
       </section>
 
-      {/* ALT GEZİNME ÇUBUĞU */}
+      {/* ALT GEZİNME */}
       <nav className="bottombar" aria-label="Bottom Navigation">
         <button className={tab === "home" ? "tab active" : "tab"} onClick={() => go("/portal/seller")}>
           <span className="tIc">🏠</span><span>{t.dashboard}</span>
@@ -449,8 +447,8 @@ export default function SellerHome() {
         </button>
       </nav>
 
-      {/* CANLI DESTEK BALONU */}
-      <ChatBubble greet={t.chat_greet} lang={lang} />
+      {/* CANLI DESTEK */}
+      <ChatBubble greet={t.chat_greet} />
 
       {/* LEGAL FOOTER */}
       <footer className="legal">
@@ -484,7 +482,6 @@ export default function SellerHome() {
                       linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
           background-attachment:fixed;}
 
-        /* TOPBAR */
         .topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;
           padding:10px 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
         .brand{display:flex;align-items:center;gap:8px;font-weight:900;cursor:pointer}
@@ -492,20 +489,15 @@ export default function SellerHome() {
         .userGroup{display:flex;gap:8px;order:1}
         .actionGroup{display:flex;gap:8px;order:2}
         .ghost{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
-        .primary{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
-        .danger{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
+        .primary,.danger{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
         .actions select{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:#fff}
-
-        /* MOBİLDE 'İlan Ara' + 'İlan Ver' ALTA insin */
         @media (min-width:640px){ .actionGroup{order:1} .actions{flex-wrap:nowrap} }
 
-        /* HERO */
         .hero{display:grid;place-items:center;text-align:center;gap:8px;max-width:1100px;margin:12px auto 0;padding:12px 16px}
         .heroTitle{margin:0;font-size:42px;line-height:1.15;letter-spacing:.2px;text-shadow:0 8px 28px rgba(0,0,0,.15)}
         .phrase{margin:4px 0 0;font-weight:700}
         @media (max-width:520px){ .heroTitle{font-size:34px} }
 
-        /* SECTIONS */
         .section{max-width:1100px;margin:12px auto;padding:0 16px}
         .sectionHead{display:flex;align-items:center;justify-content:space-between;margin:8px 0}
         .grid.ads{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
@@ -526,14 +518,12 @@ export default function SellerHome() {
         .subs{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:8px}
         .chip{display:block;text-align:center;padding:8px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;font-size:12px}
 
-        /* BOTTOM BAR */
         .bottombar{position:sticky;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px;
           background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
         .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:700}
         .tab.active{border-color:#111827;background:#111827;color:#fff}
         .tIc{font-size:16px}
 
-        /* CHAT */
         .chatBtn{position:fixed;right:16px;bottom:76px;z-index:60;background:#111827;color:#fff;border:none;border-radius:999px;
           width:54px;height:54px;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.18);font-size:20px}
         .chatWin{position:fixed;right:16px;bottom:140px;z-index:60;width:320px;max-width:calc(100vw - 32px);
@@ -547,7 +537,6 @@ export default function SellerHome() {
         .chatFt input[type="text"]{flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:8px}
         .send{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
 
-        /* LEGAL */
         .legal{background:#0b0b0b;color:#f8fafc;border-top:1px solid rgba(255,255,255,.12);width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);margin-top:14px}
         .inner{max-width:1100px;margin:0 auto;padding:12px 16px}
         .ttl{font-weight:800;margin-bottom:6px}
@@ -561,7 +550,7 @@ export default function SellerHome() {
   );
 }
 
-/* ---------------------------- Chat Bubble Component ---------------------------- */
+/* ---------------------------- Chat Bubble ---------------------------- */
 function ChatBubble({ greet }) {
   const [open, setOpen] = useState(false);
   const [list, setList] = useState([{ who: "you", text: greet }]);
@@ -572,7 +561,6 @@ function ChatBubble({ greet }) {
     if (!t) return;
     setList((l) => [...l, { who: "me", text: t }]);
     setText("");
-    // burada admin entegrasyonu için API çağrısı eklenebilir
   }
 
   return (
