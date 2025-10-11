@@ -30,7 +30,6 @@ const LBL = {
     notifications: "Bildirimler",
     profile: "Profil",
     logout: "Çıkış",
-    addListing: "İlan Ver",
     findListing: "İlan Ara",
     showcase: "Vitrin",
     standard: "Standart İlanlar",
@@ -63,7 +62,6 @@ const LBL = {
     notifications: "Notifications",
     profile: "Profile",
     logout: "Logout",
-    addListing: "Post Listing",
     findListing: "Find Listing",
     showcase: "Showcase",
     standard: "Standard Listings",
@@ -96,7 +94,6 @@ const LBL = {
     notifications: "الإشعارات",
     profile: "الملف الشخصي",
     logout: "تسجيل الخروج",
-    addListing: "أنشئ إعلانًا",
     findListing: "ابحث عن إعلان",
     showcase: "الواجهة (Vitrin)",
     standard: "إعلانات عادية",
@@ -129,7 +126,6 @@ const LBL = {
     notifications: "Mitteilungen",
     profile: "Profil",
     logout: "Abmelden",
-    addListing: "Inserat einstellen",
     findListing: "Inserat suchen",
     showcase: "Vitrin",
     standard: "Standard-Inserate",
@@ -156,7 +152,7 @@ const LBL = {
   },
 };
 
-/* ---------------------------- ROTASYON SÖZLERİ ---------------------------- */
+/* ---------------------------- ROTASYON SÖZLERİ (TR) ---------------------------- */
 const PHRASES_TR = [
   { text: "Amacımız: ev hanımlarına bütçe katkısı sağlamak.", color: "#e11d48" },
   { text: "Kadın emeği değer bulsun.", color: "#c026d3" },
@@ -267,11 +263,11 @@ function useLang() {
 }
 
 /* ---------------------------- BİLEŞEN ---------------------------- */
-export default function SellerHome() {
+export default function CustomerHome() {
   const router = useRouter();
   const { lang, setLang, t } = useLang();
 
-  // auth
+  // auth (Firebase ile)
   const [authed, setAuthed] = useState(true);
   useEffect(() => {
     setAuthed(localStorage.getItem("authed") === "1");
@@ -295,17 +291,14 @@ export default function SellerHome() {
           const all = await res.json();
           const pros = (all || []).filter((x) => x?.isPro).slice(0, 50);
           const std = (all || []).filter((x) => !x?.isPro).slice(0, 20);
-          if (alive) {
-            setProAds(pros);
-            setStdAds(std);
-          }
+          if (alive) { setProAds(pros); setStdAds(std); }
         }
       } catch {}
     })();
     return () => { alive = false; };
   }, []);
 
-  // hero sözleri
+  // sözler
   const phrases = PHRASES_TR;
   const [pi, setPi] = useState(0);
   useEffect(() => {
@@ -320,10 +313,7 @@ export default function SellerHome() {
     window.location.href = "/";
   };
 
-  // alt bar aktif
   const tab = "home";
-
-  // kategori renkleri
   const GRADS = [
     "linear-gradient(135deg,#ff80ab,#ffd166)",
     "linear-gradient(135deg,#a78bfa,#60a5fa)",
@@ -353,16 +343,13 @@ export default function SellerHome() {
         </div>
 
         <div className="actions">
-          {/* Kullanıcı grubu */}
           <div className="userGroup">
             <button className="ghost" onClick={() => go("/profile")}>{t.profile}</button>
             <button className="danger" onClick={onLogout}>{t.logout}</button>
           </div>
 
-          {/* İşlem grubu */}
           <div className="actionGroup">
-            <button className="ghost" onClick={() => go("/search")}>{t.findListing}</button>
-            <button className="primary" onClick={() => go("/portal/seller/post")}>{t.addListing}</button>
+            <button className="primary" onClick={() => go("/search")}>{t.findListing}</button>
           </div>
 
           <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
@@ -436,7 +423,7 @@ export default function SellerHome() {
 
       {/* ALT GEZİNME */}
       <nav className="bottombar" aria-label="Bottom Navigation">
-        <button className={tab === "home" ? "tab active" : "tab"} onClick={() => go("/portal/seller")}>
+        <button className={tab === "home" ? "tab active" : "tab"} onClick={() => go("/portal/customer")}>
           <span className="tIc">🏠</span><span>{t.dashboard}</span>
         </button>
         <button className="tab" onClick={() => go("/messages")}>
