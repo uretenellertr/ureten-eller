@@ -1,46 +1,45 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { createClient } from "@supabase/supabase-js";
 
-/* ---------------------------- ENV / SUPABASE ---------------------------- */
-let _sb = null;
-function getSupabase() {
-  if (_sb) return _sb;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || (typeof window !== "undefined" ? window.__SUPABASE_URL__ : "");
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || (typeof window !== "undefined" ? window.__SUPABASE_ANON__ : "");
-  if (!url || !key) return null;
-  _sb = createClient(url, key);
-  return _sb;
-}
+/* ---------------------------- FIREBASE ---------------------------- */
+import { initializeApp, getApps } from "firebase/app";
+import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
 
-const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || (typeof window !== "undefined" ? window.__CLOUD_NAME__ : "");
-const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || (typeof window !== "undefined" ? window.__CLOUD_PRESET__ : "");
+const firebaseConfig = {
+  apiKey: "AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ",
+  authDomain: "ureteneller-ecaac.firebaseapp.com",
+  projectId: "ureteneller-ecaac",
+  // Not: Firebase Storage varsayılan bucket formatı genelde *.appspot.com olur.
+  // Projenizde farklı ise geri değiştirin.
+  storageBucket: "ureteneller-ecaac.appspot.com",
+  messagingSenderId: "368042877151",
+  appId: "1:368042877151:web:ee0879fc4717928079c96a",
+  measurementId: "G-BJHKN8V4RQ",
+};
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 /* ---------------------------- DİL / ÇEVİRİLER ---------------------------- */
 const SUPPORTED = ["tr", "en", "ar", "de"]; // RTL: ar
 const LBL = {
   tr: {
     brand: "Üreten Eller",
-    page: { title: "İlan Ver", submit: "Onaya Gönder", draft: "Taslak Kaydet", success: "İlan gönderildi. Onay bekliyor." },
-    top: { profile: "Profil", logout: "Çıkış", back: "Geri" },
-    form: {
-      title: "İlan Başlığı",
-      desc: "Açıklama",
-      category: "Kategori",
-      subcategory: "Alt Kategori",
-      price: "Fiyat",
-      currency: "Para Birimi",
-      city: "İl",
-      district: "İlçe (yazınız)",
-      shipDays: "Tahmini Teslim (gün)",
-      photos: "Fotoğraflar (en fazla 5)",
-      showcase: "Vitrin (PRO)",
-      choose: "— Seçin —",
-      pickFiles: "Dosya seçin veya tıklayın"
-    },
-    tips: { filterWarn: "Telefon / e‑posta / WhatsApp paylaşımı yasaktır.", showcaseNeedPro: "Vitrin için Premium gerekir." },
+    heroWelcome: "Üreten Ellere Hoş Geldiniz",
+    dashboard: "Ana Sayfa",
+    messages: "Mesajlar",
+    notifications: "Bildirimler",
+    profile: "Profil",
+    logout: "Çıkış",
+    addListing: "İlan Ver",
+    findListing: "İlan Ara",
+    showcase: "Vitrin",
+    standard: "Standart İlanlar",
+    categories: "Kategorilerimiz",
+    proBadge: "PRO",
+    empty: "Henüz ilan yok.",
+    chat_greet: "Merhaba! Size nasıl yardımcı olabilirim?",
     legalBar: "Kurumsal",
     legal: {
       corporate: "Kurumsal",
@@ -57,36 +56,23 @@ const LBL = {
       all: "Tüm Legal",
       home: "Ana Sayfa",
     },
-    errors: {
-      needLogin: "Devam etmek için giriş yap.",
-      needTitle: "Başlık zorunlu.",
-      needCategory: "Kategori seçin.",
-      needCity: "İl seçin.",
-      badFilter: "Metin uygun değil: ",
-      uploadFail: "Fotoğraf yüklenemedi.",
-      saveFail: "İlan kaydedilemedi.",
-    },
   },
   en: {
     brand: "Ureten Eller",
-    page: { title: "Post Listing", submit: "Submit for Review", draft: "Save Draft", success: "Listing submitted. Awaiting approval." },
-    top: { profile: "Profile", logout: "Logout", back: "Back" },
-    form: {
-      title: "Title",
-      desc: "Description",
-      category: "Category",
-      subcategory: "Subcategory",
-      price: "Price",
-      currency: "Currency",
-      city: "City",
-      district: "District (type)",
-      shipDays: "Estimated Delivery (days)",
-      photos: "Photos (max 5)",
-      showcase: "Showcase (PRO)",
-      choose: "— Select —",
-      pickFiles: "Pick files or click"
-    },
-    tips: { filterWarn: "No phone / email / WhatsApp in text.", showcaseNeedPro: "Showcase requires Premium." },
+    heroWelcome: "Welcome to Ureten Eller",
+    dashboard: "Home",
+    messages: "Messages",
+    notifications: "Notifications",
+    profile: "Profile",
+    logout: "Logout",
+    addListing: "Post Listing",
+    findListing: "Find Listing",
+    showcase: "Showcase",
+    standard: "Standard Listings",
+    categories: "Categories",
+    proBadge: "PRO",
+    empty: "No listings yet.",
+    chat_greet: "Hello! How can I help you?",
     legalBar: "Corporate",
     legal: {
       corporate: "Corporate",
@@ -103,36 +89,23 @@ const LBL = {
       all: "All Legal",
       home: "Home",
     },
-    errors: {
-      needLogin: "Please sign in to continue.",
-      needTitle: "Title is required.",
-      needCategory: "Select a category.",
-      needCity: "Select a city.",
-      badFilter: "Text blocked: ",
-      uploadFail: "Upload failed.",
-      saveFail: "Save failed.",
-    },
   },
   ar: {
     brand: "أُنتِج بالأيادي",
-    page: { title: "إنشاء إعلان", submit: "إرسال للمراجعة", draft: "حفظ مسودة", success: "تم الإرسال بانتظار الموافقة." },
-    top: { profile: "الملف", logout: "خروج", back: "رجوع" },
-    form: {
-      title: "العنوان",
-      desc: "الوصف",
-      category: "التصنيف",
-      subcategory: "التصنيف الفرعي",
-      price: "السعر",
-      currency: "العملة",
-      city: "الولاية",
-      district: "الحي (أدخل)",
-      shipDays: "التسليم المتوقع (أيام)",
-      photos: "صور (بحد أقصى 5)",
-      showcase: "الواجهة (PRO)",
-      choose: "— اختر —",
-      pickFiles: "اختر ملفات أو اضغط"
-    },
-    tips: { filterWarn: "ممنوع مشاركة الهاتف/الإيميل/واتساب.", showcaseNeedPro: "الواجهة تحتاج اشتراك بريميوم." },
+    heroWelcome: "مرحبًا بكم في منصتنا",
+    dashboard: "الرئيسية",
+    messages: "الرسائل",
+    notifications: "الإشعارات",
+    profile: "الملف الشخصي",
+    logout: "تسجيل الخروج",
+    addListing: "أنشئ إعلانًا",
+    findListing: "ابحث عن إعلان",
+    showcase: "الواجهة (Vitrin)",
+    standard: "إعلانات عادية",
+    categories: "التصنيفات",
+    proBadge: "محترف",
+    empty: "لا توجد إعلانات بعد.",
+    chat_greet: "مرحبًا! كيف أستطيع مساعدتك؟",
     legalBar: "المعلومات المؤسسية",
     legal: {
       corporate: "المؤسسة",
@@ -149,36 +122,23 @@ const LBL = {
       all: "كل السياسات",
       home: "الرئيسية",
     },
-    errors: {
-      needLogin: "الرجاء تسجيل الدخول.",
-      needTitle: "العنوان مطلوب.",
-      needCategory: "اختر تصنيفًا.",
-      needCity: "اختر ولاية.",
-      badFilter: "تم الحظر: ",
-      uploadFail: "فشل الرفع.",
-      saveFail: "فشل الحفظ.",
-    },
   },
   de: {
     brand: "Ureten Eller",
-    page: { title: "Inserat einstellen", submit: "Zur Prüfung senden", draft: "Entwurf speichern", success: "Inserat gesendet. Wartet auf Freigabe." },
-    top: { profile: "Profil", logout: "Abmelden", back: "Zurück" },
-    form: {
-      title: "Titel",
-      desc: "Beschreibung",
-      category: "Kategorie",
-      subcategory: "Unterkategorie",
-      price: "Preis",
-      currency: "Währung",
-      city: "Stadt",
-      district: "Bezirk (eingeben)",
-      shipDays: "Lieferzeit (Tage)",
-      photos: "Fotos (max. 5)",
-      showcase: "Vitrine (PRO)",
-      choose: "— Wählen —",
-      pickFiles: "Dateien wählen oder klicken"
-    },
-    tips: { filterWarn: "Keine Telefon/Email/WhatsApp im Text.", showcaseNeedPro: "Vitrine erfordert Premium." },
+    heroWelcome: "Willkommen bei Ureten Eller",
+    dashboard: "Start",
+    messages: "Nachrichten",
+    notifications: "Mitteilungen",
+    profile: "Profil",
+    logout: "Abmelden",
+    addListing: "Inserat einstellen",
+    findListing: "Inserat suchen",
+    showcase: "Vitrin",
+    standard: "Standard-Inserate",
+    categories: "Kategorien",
+    proBadge: "PRO",
+    empty: "Noch keine Inserate.",
+    chat_greet: "Hallo! Wie kann ich helfen?",
     legalBar: "Unternehmen",
     legal: {
       corporate: "Unternehmen",
@@ -195,35 +155,38 @@ const LBL = {
       all: "Alle Rechtliches",
       home: "Startseite",
     },
-    errors: {
-      needLogin: "Bitte anmelden.",
-      needTitle: "Titel erforderlich.",
-      needCategory: "Kategorie wählen.",
-      needCity: "Stadt wählen.",
-      badFilter: "Blockiert: ",
-      uploadFail: "Upload fehlgeschlagen.",
-      saveFail: "Speichern fehlgeschlagen.",
-    },
   },
 };
 
-function useLang() {
-  const [lang, setLang] = useState("tr");
-  useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("lang") : null;
-    if (saved && SUPPORTED.includes(saved)) setLang(saved);
-  }, []);
-  useEffect(() => {
-    if (typeof document !== "undefined") {
-      /* document.documentElement.lang = lang; */
-      /* document.documentElement.dir = lang === "ar" ? "rtl" : "ltr"; */
-    }
-  }, [lang]);
-  const t = useMemo(() => LBL[lang] || LBL.tr, [lang]);
-  return { lang, setLang, t };
-}
+/* ---------------------------- ROTASYON SÖZLERİ ---------------------------- */
+const PHRASES_TR = [
+  { text: "Amacımız: ev hanımlarına bütçe katkısı sağlamak.", color: "#e11d48" },
+  { text: "Kadın emeği değer bulsun.", color: "#c026d3" },
+  { text: "El emeği ürünler adil fiyata.", color: "#7c3aed" },
+  { text: "Mahalle lezzetleri kapınıza gelsin.", color: "#2563eb" },
+  { text: "Usta ellerden taze üretim.", color: "#0ea5e9" },
+  { text: "Her siparişte platform güvencesi.", color: "#14b8a6" },
+  { text: "Küçük üreticiye büyük destek.", color: "#059669" },
+  { text: "Şeffaf fiyat, net teslimat.", color: "#16a34a" },
+  { text: "Güvenli ödeme, kolay iade.", color: "#65a30d" },
+  { text: "Yerelden al, ekonomiye can ver.", color: "#ca8a04" },
+  { text: "Emeğin karşılığı, müşteriye kazanç.", color: "#d97706" },
+  { text: "Ev yapımı tatlar, el işi güzellikler.", color: "#ea580c" },
+  { text: "Her kategoride özenli üretim.", color: "#f97316" },
+  { text: "Siparişten teslimata kesintisiz takip.", color: "#f59e0b" },
+  { text: "Güvenilir satıcı rozetleri.", color: "#eab308" },
+  { text: "Topluluğumuzla daha güçlüyüz.", color: "#84cc16" },
+  { text: "Sürdürülebilir üretime destek.", color: "#22c55e" },
+  { text: "Adil ticaret, mutlu müşteri.", color: "#10b981" },
+  { text: "El emeğine saygı, bütçeye dost fiyat.", color: "#06b6d4" },
+  { text: "Kadınların emeğiyle büyüyoruz.", color: "#3b82f6" },
+  { text: "Şehrinden taze üretim, güvenle alışveriş.", color: "#6366f1" },
+  { text: "Kalite, özen ve şeffaflık.", color: "#8b5cf6" },
+  { text: "İhtiyacın olan el emeği burada.", color: "#d946ef" },
+  { text: "Uygun fiyat, güvenli süreç, mutlu son.", color: "#ec4899" },
+];
 
-/* ---------------------------- KATEGORİLER + 81 İL ---------------------------- */
+/* ---------------------------- KATEGORİLER (renkli) ---------------------------- */
 const CATS = {
   tr: [
     { icon: "🍲", title: "Yemekler", subs: ["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"] },
@@ -233,7 +196,7 @@ const CATS = {
     { icon: "🥗", title: "Diyet / Vegan / Glutensiz", subs: ["Fit tabaklar","Vegan yemekler","GF unlu mamuller","Şekersiz tatlı","Keto ürün","Protein atıştırmalık"] },
     { icon: "💍", title: "Takı", subs: ["Bileklik","Kolye","Küpe","Yüzük","Halhal","Broş","Setler","İsimli/kişiye özel","Makrome","Doğal taş","Reçine","Tel sarma"] },
     { icon: "👶", title: "Bebek & Çocuk", subs: ["Hayvan/bebek figürleri","Çıngırak","Diş kaşıyıcı örgü","Bez oyuncak/kitap","Montessori oyuncak","Setler","Örgü patik-bere","Bebek battaniyesi","Önlük-ağız bezi","Lohusa seti","Saç aksesuarı","El emeği kıyafet"] },
-    { icon: "🧶", title: "Örgü / Triko", subs: ["Hırka","Kazak","Atkı-bere","Panço","Şal","Çorap","Bebek takımı","Yelek","Kırlent-örtü"] },
+    { icon: "🧶", title: "Örgü / Triko", subs: ["Hırka","Kazak","Atkı-bere","Panço","Şal","Çorap","Bebek takımı","Yelek","Kırlent-örtü","Lif takımı"] },
     { icon: "✂️", title: "Dikiş / Terzilik", subs: ["Paça/onarım","Fermuar değişimi","Perde dikişi","Nevresim-yastık","Masa örtüsü","Özel dikim","Kostüm"] },
     { icon: "🧵", title: "Makrome & Dekor", subs: ["Duvar süsü","Saksı askısı","Anahtarlık","Avize","Amerikan servis/runner","Sepet","Raf/duvar dekoru"] },
     { icon: "🏠", title: "Ev Dekor & Aksesuar", subs: ["Keçe işleri","Kırlent","Kapı süsü","Tepsi süsleme","Çerçeve","Rüya kapanı","Tablo"] },
@@ -291,289 +254,212 @@ const CATS = {
   ],
 };
 
-const PROVINCES_TR = [
-  "Adana","Adıyaman","Afyonkarahisar","Ağrı","Amasya","Ankara","Antalya","Artvin","Aydın","Balıkesir","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Bursa","Çanakkale","Çankırı","Çorum","Denizli","Diyarbakır","Edirne","Elazığ","Erzincan","Erzurum","Eskişehir","Gaziantep","Giresun","Gümüşhane","Hakkâri","Hatay","Isparta","Mersin","İstanbul","İzmir","Kars","Kastamonu","Kayseri","Kırklareli","Kırşehir","Kocaeli","Konya","Kütahya","Malatya","Manisa","Kahramanmaraş","Mardin","Muğla","Muş","Nevşehir","Niğde","Ordu","Rize","Sakarya","Samsun","Siirt","Sinop","Sivas","Tekirdağ","Tokat","Trabzon","Tunceli","Şanlıurfa","Uşak","Van","Yozgat","Zonguldak","Aksaray","Bayburt","Karaman","Kırıkkale","Batman","Şırnak","Bartın","Ardahan","Iğdır","Yalova","Karabük","Kilis","Osmaniye","Düzce"
-];
+function useLang() {
+  const [lang, setLang] = useState("tr");
+  useEffect(() => {
+    const saved = localStorage.getItem("lang");
+    if (saved && SUPPORTED.includes(saved)) setLang(saved);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem("lang", lang);
+    /* document.documentElement.lang = lang; */
+    /* document.documentElement.dir = lang === "ar" ? "rtl" : "ltr"; */
+  }, [lang]);
+  const t = useMemo(() => LBL[lang] || LBL.tr, [lang]);
+  return { lang, setLang, t };
+}
 
-/* ---------------------------- COMPONENT ---------------------------- */
-export default function SellerPost() {
+/* ---------------------------- BİLEŞEN ---------------------------- */
+export default function SellerHome() {
   const router = useRouter();
   const { lang, setLang, t } = useLang();
 
-  const supa = getSupabase();
-  const [user, setUser] = useState(null);
-  const [isPro, setIsPro] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [err, setErr] = useState("");
-
-  // Form state
-  const catList = CATS[lang] || CATS.tr;
-  const [title, setTitle] = useState("");
-  const [desc, setDesc] = useState("");
-  const [cat, setCat] = useState("");
-  const [subcat, setSubcat] = useState("");
-  const [price, setPrice] = useState("");
-  const [currency, setCurrency] = useState("TRY");
-  const [city, setCity] = useState("");
-  const [district, setDistrict] = useState("");
-  const [shipDays, setShipDays] = useState(5);
-  const [showcase, setShowcase] = useState(false);
-  const [files, setFiles] = useState([]); // File[]
-
-  const fileInputRef = useRef(null);
-
-  // Init: user + pro status
+  // auth
+  const [authed, setAuthed] = useState(false);
+  const [ready, setReady] = useState(false);
   useEffect(() => {
-    let mounted = true;
+    const unsub = onAuthStateChanged(auth, (u) => {
+      const ok = !!u;
+      setAuthed(ok);
+      if (ok) localStorage.setItem("authed", "1");
+      else localStorage.removeItem("authed");
+      setReady(true);
+    });
+    return () => unsub();
+  }, []);
+  // Oturum yoksa login'e yönlendir
+  useEffect(() => {
+    if (ready && !authed) {
+      router.push("/login?next=/portal/seller");
+    }
+  }, [ready, authed, router]);
+
+  // ilanlar
+  const [proAds, setProAds] = useState([]);
+  const [stdAds, setStdAds] = useState([]);
+  useEffect(() => {
+    let alive = true;
     (async () => {
       try {
-        if (!supa) return;
-        const { data: { user } } = await supa.auth.getUser();
-        if (!mounted) return;
-        if (!user) {
-          setErr(t.errors.needLogin);
-          setLoading(false);
-          setTimeout(() => router.push("/login"), 1200);
-          return;
-        }
-        setUser(user);
-        // PRO sorgu
-        const { data: prof } = await supa
-          .from("users")
-          .select("premium_until")
-          .eq("auth_user_id", user.id)
-          .single();
-        const pu = prof?.premium_until ? new Date(prof.premium_until) : null;
-        setIsPro(!!pu && pu > new Date());
-      } catch (e) {
-        // sessiz: PRO false
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
-  }, [supa, t.errors.needLogin, router]);
-
-  const onPickFiles = (e) => {
-    const list = Array.from(e.target.files || []);
-    const all = [...files, ...list].slice(0, 5);
-    setFiles(all);
-  };
-  const removeFile = (i) => { setFiles((arr) => arr.filter((_, idx) => idx !== i)); };
-
-  const onSubmit = useCallback(async (mode = "submit") => {
-    setMsg(""); setErr("");
-    if (!user) { setErr(t.errors.needLogin); return; }
-    if (!title.trim()) { setErr(t.errors.needTitle); return; }
-    if (!cat) { setErr(t.errors.needCategory); return; }
-    if (!city) { setErr(t.errors.needCity); return; }
-
-    try {
-      setSaving(true);
-      // 1) Metin filtresi (DB fonksiyonu varsa)
-      try {
-        await supa.rpc("check_listing_text", { p_title: title, p_desc: desc });
-      } catch (e) {
-        if (e?.message && !/function .* does not exist/i.test(e.message)) {
-          throw new Error(t.errors.badFilter + e.message);
-        }
-      }
-
-      // 2) İlan kaydı → pending
-      const payload = {
-        seller_auth_id: user.id,
-        title: title.trim(),
-        description: desc?.trim() || null,
-        category: cat || null,
-        subcategory: subcat || null,
-        price: price ? Number(price) : null,
-        currency,
-        city,
-        district: district?.trim() || null,
-        ship_days: shipDays ? Number(shipDays) : null,
-        is_showcase: isPro ? !!showcase : false,
-        status: "pending",
-      };
-
-      const { data: ins, error: insErr } = await supa
-        .from("listings")
-        .insert([payload])
-        .select("id")
-        .single();
-      if (insErr) throw insErr;
-      const listingId = ins?.id;
-
-      // 3) Fotoğraflar → Cloudinary → listing_photos
-      if (files.length && CLOUD_NAME && UPLOAD_PRESET) {
-        let order = 0;
-        for (const f of files) {
-          const form = new FormData();
-          form.append("file", f);
-          form.append("upload_preset", UPLOAD_PRESET);
-          const up = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: "POST", body: form });
-          if (!up.ok) throw new Error(t.errors.uploadFail);
-          const json = await up.json();
-          const url = json.secure_url || json.url;
-          if (url) {
-            await supa.from("listing_photos").insert([{ listing_id: listingId, url, order: order++ }]);
+        const res = await fetch("/ads.json", { cache: "no-store" });
+        if (res.ok) {
+          const all = await res.json();
+          const pros = (all || []).filter((x) => x?.isPro).slice(0, 50);
+          const std = (all || []).filter((x) => !x?.isPro).slice(0, 20);
+          if (alive) {
+            setProAds(pros);
+            setStdAds(std);
           }
         }
-      }
+      } catch {}
+    })();
+    return () => { alive = false; };
+  }, []);
 
-      setMsg(t.page.success);
-      setTimeout(() => router.push("/portal/seller"), 900);
-    } catch (e) {
-      setErr(e?.message || t.errors.saveFail);
-    } finally {
-      setSaving(false);
-    }
-  }, [user, title, cat, city, desc, price, currency, district, shipDays, showcase, isPro, files, supa, t, router]);
+  // hero sözleri
+  const phrases = PHRASES_TR;
+  const [pi, setPi] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setPi((x) => (x + 1) % phrases.length), 4000);
+    return () => clearInterval(id);
+  }, [phrases.length]);
 
-  const subs = useMemo(() => {
-    const c = catList.find((x) => x.title === cat);
-    return c?.subs || [];
-  }, [catList, cat]);
+  const go = useCallback((href) => router.push(href), [router]);
+  const onLogout = async () => {
+    try { await signOut(auth); } catch {}
+    localStorage.removeItem("authed");
+    window.location.href = "/";
+  };
+
+  // alt bar aktif
+  const tab = "home";
+
+  // kategori renkleri
+  const GRADS = [
+    "linear-gradient(135deg,#ff80ab,#ffd166)",
+    "linear-gradient(135deg,#a78bfa,#60a5fa)",
+    "linear-gradient(135deg,#34d399,#a7f3d0)",
+    "linear-gradient(135deg,#f59e0b,#f97316)",
+    "linear-gradient(135deg,#06b6d4,#3b82f6)",
+  ];
+  const cats = CATS[lang] || CATS.tr;
 
   return (
     <>
       <Head>
-        <title>{LBL.tr.brand} – {t.page.title}</title>
+        <title>{t.brand} – {t.dashboard}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* FAVICONS → public/ */}
-        <link rel="icon" type="image/png" href="/favicon.png?v=6" />
-        <link rel="shortcut icon" href="/favicon.png?v=6" />
-        <link rel="icon" href="/favicon.ico?v=6" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=6" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=6" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=5" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=5" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=5" />
+        <link rel="icon" href="/favicon.png?v=5" />
         <meta name="theme-color" content="#0b0b0b" />
-    <link rel="stylesheet" href="/post-overrides.css?v=1" />
       </Head>
 
       {/* ÜST BAR */}
       <header className="topbar">
-        <div className="brand" onClick={() => router.push("/")}> <img src="/logo.png" width="32" height="32" alt="logo" /> <span>{t.brand}</span> </div>
+        <div className="brand" onClick={() => go("/")}>
+          <img src="/logo.png" width="36" height="36" alt="logo" />
+          <span>{t.brand}</span>
+        </div>
+
         <div className="actions">
-          <select aria-label="Language" value={lang} onChange={(e)=>{ localStorage.setItem('lang', e.target.value); setLang(e.target.value); }}>
-            {SUPPORTED.map((k)=>(<option key={k} value={k}>{k.toUpperCase()}</option>))}
+          {/* Kullanıcı grubu — MOBİLDE ÜSTE */}
+          <div className="userGroup">
+            <button className="ghost" onClick={() => go("/profile")}>{t.profile}</button>
+            <button className="danger" onClick={onLogout}>{t.logout}</button>
+          </div>
+
+          {/* İşlem grubu — MOBİLDE ALTA */}
+          <div className="actionGroup">
+            <button className="ghost" onClick={() => go("/search")}>{t.findListing}</button>
+            <button className="primary" onClick={() => go("/portal/seller/post")}>{t.addListing}</button>
+          </div>
+
+          <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
+            {SUPPORTED.map((k) => (<option key={k} value={k}>{k.toUpperCase()}</option>))}
           </select>
-          <button className="ghost" onClick={()=>router.push("/profile")}>{t.top.profile}</button>
-          <button className="danger" onClick={()=>{ try{ getSupabase()?.auth.signOut(); }catch{}; router.push("/"); }}>{t.top.logout}</button>
         </div>
       </header>
 
-      <main className="wrap">
-        <h1 className="title">{t.page.title}</h1>
+      {/* HERO — ortalanmış başlık */}
+      <section className="hero">
+        <h1 className="heroTitle">{t.heroWelcome}</h1>
+        <p key={pi} className="phrase" style={{ color: phrases[pi].color }}>{phrases[pi].text}</p>
+      </section>
 
-        <div className="card colored">
-          {loading ? (
-            <div className="loading">…</div>
-          ) : (
-            <form onSubmit={(e)=>{ e.preventDefault(); onSubmit("submit"); }}>
-              {/* Üst bilgiler */}
-              <div className="flex2">
-                <div className="field">
-                  <label>{t.form.title}</label>
-                  <input type="text" value={title} onChange={(e)=>setTitle(e.target.value)} maxLength={120} placeholder="Örn: El emeği makrome duvar süsü" />
-                </div>
-                <div className="field">
-                  <label>{t.form.price}</label>
-                  <div className="row">
-                    <input type="number" min="0" step="0.01" value={price} onChange={(e)=>setPrice(e.target.value)} placeholder="0" />
-                    <select value={currency} onChange={(e)=>setCurrency(e.target.value)}>
-                      <option value="TRY">TRY</option>
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                    </select>
-                  </div>
+      {/* VİTRİN */}
+      <section className="section">
+        <div className="sectionHead"><h2>✨ {t.showcase}</h2></div>
+        <div className="grid ads">
+          {proAds.length ? proAds.map((a, i) => (
+            <article key={i} className="ad">
+              <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }}>
+                <span className="badge">{t.proBadge}</span>
+              </div>
+              <div className="body">
+                <div className="title">{a?.title || "İlan"}</div>
+                <div className="meta">
+                  <span>{a?.cat || a?.category || ""}</span>
+                  <b>{a?.price || ""}</b>
                 </div>
               </div>
-
-              <div className="field">
-                <label>{t.form.desc}</label>
-                <textarea value={desc} onChange={(e)=>setDesc(e.target.value)} rows={5} placeholder="Ürünün hammaddesi, ölçüleri, kişiye özel mi vb." />
-                <div className="mini">{t.tips.filterWarn}</div>
-              </div>
-
-              <div className="flex2">
-                <div className="field">
-                  <label>{t.form.category}</label>
-                  <select value={cat} onChange={(e)=>{ setCat(e.target.value); setSubcat(""); }}>
-                    <option value="" disabled>{t.form.choose}</option>
-                    {catList.map((c,i)=>(<option key={i} value={c.title}>{c.icon} {c.title}</option>))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>{t.form.subcategory}</label>
-                  <select value={subcat} onChange={(e)=>setSubcat(e.target.value)} disabled={!subs.length}>
-                    <option value="" disabled>{t.form.choose}</option>
-                    {subs.map((s,i)=>(<option key={i} value={s}>{s}</option>))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex2">
-                <div className="field">
-                  <label>{t.form.city}</label>
-                  <select value={city} onChange={(e)=>setCity(e.target.value)}>
-                    <option value="" disabled>{t.form.choose}</option>
-                    {PROVINCES_TR.map((p)=>(<option key={p} value={p}>{p}</option>))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>{t.form.district}</label>
-                  <input type="text" value={district} onChange={(e)=>setDistrict(e.target.value)} placeholder="Örn: Kadıköy" />
-                </div>
-              </div>
-
-              <div className="flex2">
-                <div className="field">
-                  <label>{t.form.shipDays}</label>
-                  <input type="number" min={1} max={60} value={shipDays} onChange={(e)=>setShipDays(e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>{t.form.showcase}</label>
-                  <div className="row">
-                    <input type="checkbox" checked={isPro && showcase} onChange={(e)=>setShowcase(e.target.checked)} disabled={!isPro} />
-                    {!isPro && <span className="mini">{t.tips.showcaseNeedPro}</span>}
-                  </div>
-                </div>
-              </div>
-
-              {/* Fotoğraflar */}
-              <div className="field">
-                <label>{t.form.photos}</label>
-                <div className="drop" onClick={()=>fileInputRef.current?.click()}>
-                  <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={onPickFiles} style={{ display: "none" }} />
-                  <div>{t.form.pickFiles}</div>
-                </div>
-                {!!files.length && (
-                  <div className="thumbs">
-                    {files.map((f,i)=> (
-                      <div key={i} className="thumb">
-                        <img src={URL.createObjectURL(f)} alt={`photo-${i}`} />
-                        <button type="button" onClick={()=>removeFile(i)} aria-label="remove">×</button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {err && <div className="err">{err}</div>}
-              {msg && <div className="msg">{msg}</div>}
-
-              <div className="actions">
-                <button type="button" className="ghost" disabled={saving} onClick={()=>onSubmit("draft")}>
-                  {t.page.draft}
-                </button>
-                <button type="submit" className="primary" disabled={saving}>{saving ? "…" : t.page.submit}</button>
-              </div>
-            </form>
-          )}
+              <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>İncele</button>
+            </article>
+          )) : <div className="empty">{t.empty}</div>}
         </div>
-      </main>
+      </section>
+
+      {/* STANDART */}
+      <section className="section">
+        <div className="sectionHead"><h2>🧺 {t.standard}</h2></div>
+        <div className="grid ads">
+          {stdAds.length ? stdAds.map((a, i) => (
+            <article key={i} className="ad">
+              <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }} />
+              <div className="body">
+                <div className="title">{a?.title || "İlan"}</div>
+                <div className="meta">
+                  <span>{a?.cat || a?.category || ""}</span>
+                  <b>{a?.price || ""}</b>
+                </div>
+              </div>
+              <button className="view" onClick={() => go(a?.url || `/ads/${a?.slug || a?.id || ""}`)}>İncele</button>
+            </article>
+          )) : <div className="empty">{t.empty}</div>}
+        </div>
+      </section>
+
+      {/* KATEGORİLER */}
+      <section className="section">
+        <div className="sectionHead"><h2>🗂️ {t.categories}</h2></div>
+        <div className="grid cats">
+          {cats.map((c, i) => (
+            <article key={i} className="catCard" style={{ backgroundImage: GRADS[i % GRADS.length] }}>
+              <div className="head"><span className="icn">{c.icon}</span><h3>{c.title}</h3></div>
+              <div className="subs">
+                {(c.subs || []).map((s, k) => <span key={k} className="chip">{s}</span>)}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* ALT GEZİNME ÇUBUĞU */}
+      <nav className="bottombar" aria-label="Bottom Navigation">
+        <button className={tab === "home" ? "tab active" : "tab"} onClick={() => go("/portal/seller")}>
+          <span className="tIc">🏠</span><span>{t.dashboard}</span>
+        </button>
+        <button className="tab" onClick={() => go("/messages")}>
+          <span className="tIc">💬</span><span>{t.messages}</span>
+        </button>
+        <button className="tab" onClick={() => go("/notifications")}>
+          <span className="tIc">🔔</span><span>{t.notifications}</span>
+        </button>
+      </nav>
+
+      {/* CANLI DESTEK BALONU */}
+      <ChatBubble greet={t.chat_greet} lang={lang} />
 
       {/* LEGAL FOOTER */}
       <footer className="legal">
@@ -597,60 +483,81 @@ export default function SellerPost() {
         </div>
       </footer>
 
-      <style jsx>{`
+      {/* STYLES */}
+      <style>{`
         :root{ --ink:#0f172a; --muted:#475569; --line:rgba(0,0,0,.08); }
-        html,body,#__next{height:100%}
-        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--ink)}
+        html,body{height:100%}
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--ink);
+          background: radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
+                      radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
+                      linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
+          background-attachment:fixed;}
 
-        /* Full sayfa degrade arka plan */
-        .wrap{min-height:calc(100vh - 120px);padding:20px; background:
-          radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
-          radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
-          linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);}        
-
-        .topbar{position:sticky;top:0;z-index:40;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center; padding:10px 14px; background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+        /* TOPBAR */
+        .topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;
+          padding:10px 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
         .brand{display:flex;align-items:center;gap:8px;font-weight:900;cursor:pointer}
-        .actions{display:flex;gap:8px;align-items:center}
-        .ghost{border:1px solid #111827;background:transparent;color:#111827;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+        .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+        .userGroup{display:flex;gap:8px;order:1}
+        .actionGroup{display:flex;gap:8px;order:2}
+        .ghost{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+        .primary{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
         .danger{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
+        .actions select{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:#fff}
 
-        .title{margin:8px 0 12px;font-size:28px;color:#0f172a;text-shadow:0 8px 28px rgba(0,0,0,.15)}
+        /* MOBİLDE 'İlan Ara' + 'İlan Ver' ALTA insin */
+        @media (min-width:640px){ .actionGroup{order:1} .actions{flex-wrap:nowrap} }
 
-        .card{border-radius:20px; padding:18px; box-shadow:0 18px 50px rgba(0,0,0,.18)}
-        .card.colored{color:#fff; background:linear-gradient(135deg,#111827,#3b82f6 35%, #a78bfa 70%, #34d399)}
-        form{display:grid;gap:14px}
-        .flex2{display:grid;gap:14px;grid-template-columns:repeat(2,1fr)}
-        @media (max-width:720px){ .flex2{grid-template-columns:1fr} }
+        /* HERO */
+        .hero{display:grid;place-items:center;text-align:center;gap:8px;max-width:1100px;margin:12px auto 0;padding:12px 16px}
+        .heroTitle{margin:0;font-size:42px;line-height:1.15;letter-spacing:.2px;text-shadow:0 8px 28px rgba(0,0,0,.15)}
+        .phrase{margin:4px 0 0;font-weight:700}
+        @media (max-width:520px){ .heroTitle{font-size:34px} }
 
-        .field{display:grid;gap:6px}
-        .field label{font-weight:800}
-        .field input[type="text"],
-        .field input[type="number"],
-        .field textarea,
-        .field select{
-          border:1px solid rgba(255,255,255,.25);
-          background:rgba(255,255,255,.12);
-          color:#fff;
-          border-radius:12px; padding:10px; outline:none;
-        }
-        .field textarea{resize:vertical}
-        .row{display:flex;gap:8px;align-items:center}
-        .mini{font-size:12px;opacity:.9}
+        /* SECTIONS */
+        .section{max-width:1100px;margin:12px auto;padding:0 16px}
+        .sectionHead{display:flex;align-items:center;justify-content:space-between;margin:8px 0}
+        .grid.ads{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+        .ad{border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;background:#fff;display:flex;flex-direction:column;box-shadow:0 8px 22px rgba(0,0,0,.06)}
+        .thumb{aspect-ratio:4/3;background:#f1f5f9;background-size:cover;background-position:center;position:relative}
+        .badge{position:absolute;top:8px;left:8px;background:#111827;color:#fff;font-size:12px;padding:4px 8px;border-radius:999px}
+        .body{padding:10px}
+        .title{font-weight:800;margin:0 0 6px}
+        .meta{display:flex;justify-content:space-between;color:#475569;font-size:13px}
+        .view{margin:0 10px 12px;border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer}
+        .empty{padding:18px;border:1px dashed #e5e7eb;border-radius:14px;text-align:center;color:#475569}
 
-        .drop{display:grid;place-items:center;gap:6px;border:1px dashed rgba(255,255,255,.4);border-radius:14px;padding:14px;cursor:pointer;}
-        .thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-        .thumb{position:relative;width:120px;height:90px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.25)}
-        .thumb img{width:100%;height:100%;object-fit:cover}
-        .thumb button{position:absolute;top:4px;right:4px;border:none;background:rgba(0,0,0,.5);color:#fff;border-radius:999px;width:22px;height:22px;cursor:pointer}
+        .grid.cats{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+        .catCard{border:1px solid #e5e7eb;border-radius:16px;background:rgba(255,255,255,.92);background-size:cover;background-position:center;box-shadow:0 8px 22px rgba(0,0,0,.06);padding:12px}
+        .catCard .head{display:flex;gap:8px;align-items:center}
+        .icn{font-size:22px}
+        .catCard h3{margin:0;font-size:18px}
+        .subs{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:8px}
+        .chip{display:block;text-align:center;padding:8px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;font-size:12px}
 
-        .actions{display:flex;gap:8px;justify-content:flex-end}
-        .primary{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer}
+        /* BOTTOM BAR */
+        .bottombar{position:sticky;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px;
+          background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+        .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:700}
+        .tab.active{border-color:#111827;background:#111827;color:#fff}
+        .tIc{font-size:16px}
 
-        .err{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fff;padding:10px;border-radius:12px}
-        .msg{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);color:#fff;padding:10px;border-radius:12px}
+        /* CHAT */
+        .chatBtn{position:fixed;right:16px;bottom:76px;z-index:60;background:#111827;color:#fff;border:none;border-radius:999px;
+          width:54px;height:54px;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.18);font-size:20px}
+        .chatWin{position:fixed;right:16px;bottom:140px;z-index:60;width:320px;max-width:calc(100vw - 32px);
+          background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.18);overflow:hidden}
+        .chatHd{padding:10px 12px;font-weight:900;border-bottom:1px solid #e5e7eb;background:#111827;color:#fff}
+        .chatBd{max-height:300px;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+        .msg{padding:8px 10px;border-radius:12px;max-width:80%}
+        .msg.me{align-self:flex-end;background:#111827;color:#fff}
+        .msg.you{align-self:flex-start;background:#f1f5f9}
+        .chatFt{display:flex;gap:6px;padding:10px;border-top:1px solid #e5e7eb}
+        .chatFt input[type="text"]{flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:8px}
+        .send{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
 
         /* LEGAL */
-        .legal{background:#0b0b0b;color:#f8fafc;border-top:1px solid rgba(255,255,255,.12);width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);margin-top:18px}
+        .legal{background:#0b0b0b;color:#f8fafc;border-top:1px solid rgba(255,255,255,.12);width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);margin-top:14px}
         .inner{max-width:1100px;margin:0 auto;padding:12px 16px}
         .ttl{font-weight:800;margin-bottom:6px}
         .links{display:flex;flex-wrap:wrap;gap:10px}
@@ -659,6 +566,42 @@ export default function SellerPost() {
         .homeLink{margin-left:auto;font-weight:800}
         .copy{margin-top:6px;font-size:12px;color:#cbd5e1}
       `}</style>
+    </>
+  );
+}
+
+/* ---------------------------- Chat Bubble Component ---------------------------- */
+function ChatBubble({ greet }) {
+  const [open, setOpen] = useState(false);
+  const [list, setList] = useState([{ who: "you", text: greet }]);
+  const [text, setText] = useState("");
+
+  function send() {
+    const t = text.trim();
+    if (!t) return;
+    setList((l) => [...l, { who: "me", text: t }]);
+    setText("");
+    // burada admin entegrasyonu için API çağrısı eklenebilir
+  }
+
+  return (
+    <>
+      {open && (
+        <div className="chatWin" role="dialog" aria-label="Live Chat">
+          <div className="chatHd">Canlı Destek</div>
+          <div className="chatBd">
+            {list.map((m, i) => (
+              <div key={i} className={`msg ${m.who}`}>{m.text}</div>
+            ))}
+          </div>
+          <div className="chatFt">
+            <input type="file" accept="image/*" title="Resim gönder" />
+            <input type="text" value={text} onChange={(e)=>setText(e.target.value)} placeholder="Mesaj yaz..." />
+            <button className="send" onClick={send}>Gönder</button>
+          </div>
+        </div>
+      )}
+      <button className="chatBtn" onClick={() => setOpen((x)=>!x)}>💬</button>
     </>
   );
 }
