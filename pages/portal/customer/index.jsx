@@ -3,6 +3,22 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 
+/* ---------------------------- FIREBASE ---------------------------- */
+import { initializeApp, getApps } from "firebase/app";
+import { getAuth, signOut, onAuthStateChanged } from "firebase/auth";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ",
+  authDomain: "ureteneller-ecaac.firebaseapp.com",
+  projectId: "ureteneller-ecaac",
+  storageBucket: "ureteneller-ecaac.firebasestorage.app",
+  messagingSenderId: "368042877151",
+  appId: "1:368042877151:web:ee0879fc4717928079c96a",
+  measurementId: "G-BJHKN8V4RQ",
+};
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
 /* ---------------------------- DİL / ÇEVİRİLER ---------------------------- */
 const SUPPORTED = ["tr", "en", "ar", "de"]; // RTL: ar
 const LBL = {
@@ -174,7 +190,8 @@ const CATS = {
     { icon: "🥗", title: "Diyet / Vegan / Glutensiz", subs: ["Fit tabaklar","Vegan yemekler","GF unlu mamuller","Şekersiz tatlı","Keto ürün","Protein atıştırmalık"] },
     { icon: "💍", title: "Takı", subs: ["Bileklik","Kolye","Küpe","Yüzük","Halhal","Broş","Setler","İsimli/kişiye özel","Makrome","Doğal taş","Reçine","Tel sarma"] },
     { icon: "👶", title: "Bebek & Çocuk", subs: ["Hayvan/bebek figürleri","Çıngırak","Diş kaşıyıcı örgü","Bez oyuncak/kitap","Montessori oyuncak","Setler","Örgü patik-bere","Bebek battaniyesi","Önlük-ağız bezi","Lohusa seti","Saç aksesuarı","El emeği kıyafet"] },
-    { icon: "🧶", title: "Örgü / Triko", subs: ["Hırka","Kazak","Atkı-bere","Panço","Şal","Çorap","Bebek takımı","Yelek","Kırlent-örtü"] },
+    /* Örgü / Triko → Lif takımı eklendi */
+    { icon: "🧶", title: "Örgü / Triko", subs: ["Hırka","Kazak","Atkı-bere","Panço","Şal","Çorap","Bebek takımı","Yelek","Kırlent-örtü","Lif takımı"] },
     { icon: "✂️", title: "Dikiş / Terzilik", subs: ["Paça/onarım","Fermuar değişimi","Perde dikişi","Nevresim-yastık","Masa örtüsü","Özel dikim","Kostüm"] },
     { icon: "🧵", title: "Makrome & Dekor", subs: ["Duvar süsü","Saksı askısı","Anahtarlık","Avize","Amerikan servis/runner","Sepet","Raf/duvar dekoru"] },
     { icon: "🏠", title: "Ev Dekor & Aksesuar", subs: ["Keçe işleri","Kırlent","Kapı süsü","Tepsi süsleme","Çerçeve","Rüya kapanı","Tablo"] },
@@ -252,9 +269,17 @@ export default function CustomerHome() {
   const router = useRouter();
   const { lang, setLang, t } = useLang();
 
-  // auth (bilgi amaçlı)
+  // auth (Firebase ile)
   const [authed, setAuthed] = useState(true);
-  useEffect(() => { setAuthed(localStorage.getItem("authed") === "1"); }, []);
+  useEffect(() => {
+    setAuthed(localStorage.getItem("authed") === "1");
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setAuthed(!!u);
+      if (u) localStorage.setItem("authed", "1");
+      else localStorage.removeItem("authed");
+    });
+    return () => unsub();
+  }, []);
 
   // ilanlar
   const [proAds, setProAds] = useState([]);
@@ -284,7 +309,11 @@ export default function CustomerHome() {
   }, [phrases.length]);
 
   const go = useCallback((href) => router.push(href), [router]);
-  const onLogout = () => { localStorage.removeItem("authed"); window.location.href = "/"; };
+  const onLogout = async () => {
+    try { await signOut(auth); } catch {}
+    localStorage.removeItem("authed");
+    window.location.href = "/";
+  };
 
   const tab = "home";
   const GRADS = [
