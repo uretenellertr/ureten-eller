@@ -1,6 +1,22 @@
 "use client";
 import React, { useEffect, useMemo, useState, useContext, createContext } from "react";
 
+/* ----------------------------- FIREBASE (Auth eşitleme) ----------------------------- */
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ",
+  authDomain: "ureteneller-ecaac.firebaseapp.com",
+  projectId: "ureteneller-ecaac",
+  storageBucket: "ureteneller-ecaac.firebasestorage.app",
+  messagingSenderId: "368042877151",
+  appId: "1:368042877151:web:ee0879fc4717928079c96a",
+  measurementId: "G-BJHKN8V4RQ",
+};
+const fbApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
+
 /* ----------------------------- AUTH (Canvas-friendly stub) ----------------------------- */
 const AuthCtx = createContext(false);
 function SignedIn({ children }) {
@@ -265,7 +281,8 @@ const CATS = {
     { icon: "🥗", title: "Diyet / Vegan / Glutensiz", subs: ["Fit tabaklar", "Vegan yemekler", "GF unlu mamuller", "Şekersiz tatlı", "Keto ürün", "Protein atıştırmalık"] },
     { icon: "💍", title: "Takı", subs: ["Bileklik", "Kolye", "Küpe", "Yüzük", "Halhal", "Broş", "Setler", "İsimli/kişiye özel", "Makrome", "Doğal taş", "Reçine", "Tel sarma"] },
     { icon: "👶", title: "Bebek & Çocuk", subs: ["Hayvan/bebek figürleri", "Çıngırak", "Diş kaşıyıcı örgü", "Bez oyuncak/kitap", "Montessori oyuncak", "Setler", "Örgü patik-bere", "Bebek battaniyesi", "Önlük-ağız bezi", "Lohusa seti", "Saç aksesuarı", "El emeği kıyafet"] },
-    { icon: "🧶", title: "Örgü / Triko", subs: ["Hırka", "Kazak", "Atkı-bere", "Panço", "Şal", "Çorap", "Bebek takımı", "Yelek", "Kırlent-örtü"] },
+    /* ↓↓↓ Örgü/Triko: 'Lif takımı' eklendi ↓↓↓ */
+    { icon: "🧶", title: "Örgü / Triko", subs: ["Hırka", "Kazak", "Atkı-bere", "Panço", "Şal", "Çorap", "Lif takımı", "Bebek takımı", "Yelek", "Kırlent-örtü"] },
     { icon: "✂️", title: "Dikiş / Terzilik", subs: ["Paça/onarım", "Fermuar değişimi", "Perde dikişi", "Nevresim-yastık", "Masa örtüsü", "Özel dikim", "Kostüm"] },
     { icon: "🧵", title: "Makrome & Dekor", subs: ["Duvar süsü", "Saksı askısı", "Anahtarlık", "Avize", "Amerikan servis/runner", "Sepet", "Raf/duvar dekoru"] },
     { icon: "🏠", title: "Ev Dekor & Aksesuar", subs: ["Keçe işleri", "Kırlent", "Kapı süsü", "Tepsi süsleme", "Çerçeve", "Rüya kapanı", "Tablo"] },
@@ -362,9 +379,17 @@ function useLegal(lang) {
 /* ----------------------------- SAYFA ----------------------------- */
 export default function Home() {
   const { lang, setLang, t } = useLang();
+
+  /* Firebase Auth state → isAuthed ve localStorage eşitleme */
   const [isAuthed, setIsAuthed] = useState(false);
   useEffect(() => {
-    setIsAuthed(localStorage.getItem("authed") === "1");
+    const unsub = onAuthStateChanged(auth, (user) => {
+      const authed = !!user;
+      setIsAuthed(authed);
+      if (authed) localStorage.setItem("authed", "1");
+      else localStorage.removeItem("authed");
+    });
+    return () => unsub();
   }, []);
 
   // Motto metni 5 sn'de bir değişsin
@@ -403,7 +428,9 @@ export default function Home() {
         if (alive) setAds(Array.isArray(local) ? local.slice(0, 20) : []);
       } catch {}
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // Kategoriler
@@ -427,8 +454,12 @@ export default function Home() {
   const LEGAL_LABELS = STR[lang]?.legal || STR.tr.legal;
   useLegal(lang);
 
-  const go = (href) => { window.location.href = href; };
-  const needAuth = (role) => { window.location.href = `/login?role=${role}`; };
+  const go = (href) => {
+    window.location.href = href;
+  };
+  const needAuth = (role) => {
+    window.location.href = `/login?role=${role}`;
+  };
 
   return (
     <AuthCtx.Provider value={isAuthed}>
@@ -437,7 +468,9 @@ export default function Home() {
         <div className="langbox">
           <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
             {SUPPORTED.map((k) => (
-              <option key={k} value={k}>{LOCALE_LABEL[k]}</option>
+              <option key={k} value={k}>
+                {LOCALE_LABEL[k]}
+              </option>
             ))}
           </select>
         </div>
@@ -447,15 +480,25 @@ export default function Home() {
           <img src="/logo.png" alt={t.brand} width="96" height="96" className="logo" />
           <h1 className="title">{t.brand}</h1>
           <h2 className="subtitle">{t.heroTitle}</h2>
-          <p key={i} className="lead phrase">{current.text}</p>
+          <p key={i} className="lead phrase">
+            {current.text}
+          </p>
           <div className="ctaRow">
             <SignedOut>
-              <button className="btnPrimary" onClick={() => needAuth("seller")}>{t.sellerPortal}</button>
-              <button className="btnGhost" onClick={() => needAuth("customer")}>{t.customerPortal}</button>
+              <button className="btnPrimary" onClick={() => needAuth("seller")}>
+                {t.sellerPortal}
+              </button>
+              <button className="btnGhost" onClick={() => needAuth("customer")}>
+                {t.customerPortal}
+              </button>
             </SignedOut>
             <SignedIn>
-              <button className="btnPrimary" onClick={() => go("/portal/seller")}>{t.sellerPortal}</button>
-              <button className="btnGhost" onClick={() => go("/portal/customer")}>{t.customerPortal}</button>
+              <button className="btnPrimary" onClick={() => go("/portal/seller")}>
+                {t.sellerPortal}
+              </button>
+              <button className="btnGhost" onClick={() => go("/portal/customer")}>
+                {t.customerPortal}
+              </button>
             </SignedIn>
           </div>
         </section>
@@ -465,10 +508,14 @@ export default function Home() {
           <h3>{t.listings}</h3>
           <div className="adsGrid">
             {ads.length === 0 ? (
-              <div className="adCard"><div className="adBody empty">{t.noAds}</div></div>
+              <div className="adCard">
+                <div className="adBody empty">{t.noAds}</div>
+              </div>
             ) : (
               ads.map((a, idx) => {
-                const imgStyle = a?.img ? { backgroundImage: `url(${a.img})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined;
+                const imgStyle = a?.img
+                  ? { backgroundImage: `url(${a.img})`, backgroundSize: "cover", backgroundPosition: "center" }
+                  : undefined;
                 const title = a?.title || "İlan";
                 const cat = a?.cat || a?.category || "";
                 const price = a?.price || "";
@@ -485,10 +532,20 @@ export default function Home() {
                     </div>
                     <div className="adActions">
                       <SignedOut>
-                        <button className="viewBtn" onClick={() => { alert(t.loginToView); needAuth("customer"); }}>{t.view}</button>
+                        <button
+                          className="viewBtn"
+                          onClick={() => {
+                            alert(t.loginToView);
+                            needAuth("customer");
+                          }}
+                        >
+                          {t.view}
+                        </button>
                       </SignedOut>
                       <SignedIn>
-                        <button className="viewBtn" onClick={() => go(url)}>{t.view}</button>
+                        <button className="viewBtn" onClick={() => go(url)}>
+                          {t.view}
+                        </button>
                       </SignedIn>
                     </div>
                   </div>
@@ -505,14 +562,18 @@ export default function Home() {
             {cats.map((c, idx) => (
               <article key={idx} className="card" style={{ backgroundImage: catBg }}>
                 <div className="cardHead centered">
-                  <span className="icon" aria-hidden>{c.icon}</span>
+                  <span className="icon" aria-hidden>
+                    {c.icon}
+                  </span>
                   <h4>{c.title}</h4>
                   <span className="count">{c.subs.length}</span>
                 </div>
                 <div className="subsWrap">
                   <div className="subsGrid">
                     {c.subs.map((s, k) => (
-                      <span key={k} className="chip">{s}</span>
+                      <span key={k} className="chip">
+                        {s}
+                      </span>
                     ))}
                   </div>
                 </div>
