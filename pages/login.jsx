@@ -1,31 +1,21 @@
 // pages/login.jsx
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-// Canvas önizlemesi için basit Head; Next.js build'de <head> olmaması sorun değil
-const Head = ({ children }) => <>{children}</>;
+import Head from "next/head";
 
-/* ----------------------------- Firebase init ----------------------------- */
+/* ---------------------------- FIREBASE ---------------------------- */
 import { initializeApp, getApps } from "firebase/app";
 import {
   getAuth,
   onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendEmailVerification,
   sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup,
   updateProfile,
 } from "firebase/auth";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp,
-} from "firebase/firestore";
 
-/* Firebase web config (projeden) */
 const firebaseConfig = {
   apiKey: "AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ",
   authDomain: "ureteneller-ecaac.firebaseapp.com",
@@ -37,7 +27,6 @@ const firebaseConfig = {
 };
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 
 /* ----------------------------- Dil metinleri ----------------------------- */
 const SUPPORTED = ["tr", "en", "ar", "de"];
@@ -80,6 +69,7 @@ const T = {
     roleInfoCustomer: "(İlan açamaz; puan/yorum yapabilir)",
     backHome: "Ana sayfa",
     legalBar: "Legal",
+    noEnv: "",
   },
   en: {
     title: "Sign in / Sign up",
@@ -117,6 +107,7 @@ const T = {
     roleInfoCustomer: "(Cannot post listings; can rate)",
     backHome: "Home",
     legalBar: "Legal",
+    noEnv: "",
   },
   ar: {
     title: "تسجيل الدخول / إنشاء حساب",
@@ -154,6 +145,7 @@ const T = {
     roleInfoCustomer: "(لا تنشر الإعلانات ويمكنها التقييم)",
     backHome: "الرئيسية",
     legalBar: "سياسات",
+    noEnv: "",
   },
   de: {
     title: "Anmelden / Registrieren",
@@ -191,6 +183,7 @@ const T = {
     roleInfoCustomer: "(Kein Inserat; kann bewerten)",
     backHome: "Startseite",
     legalBar: "Rechtliches",
+    noEnv: "",
   },
 };
 
@@ -202,8 +195,6 @@ function useLang() {
   }, []);
   useEffect(() => {
     localStorage.setItem("lang", lang);
-    /* document.documentElement.lang = lang; */
-    /* document.documentElement.dir = lang === "ar" ? "rtl" : "ltr"; */
   }, [lang]);
   const t = useMemo(() => T[lang] || T.tr, [lang]);
   return { lang, setLang, t };
@@ -251,41 +242,22 @@ export default function LoginPage() {
     try {
       setErr(""); setLoading(true);
       const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: "consent", access_type: "offline" });
       await signInWithPopup(auth, provider);
-      // rol oku → yönlendir
-      const u = auth.currentUser;
-      let finalRole = role;
-      if (u) {
-        try {
-          const snap = await getDoc(doc(db, "profiles", u.uid));
-          const r = snap.exists() ? snap.data()?.role : null;
-          if (r === "seller" || r === "customer") finalRole = r;
-          await setDoc(doc(db, "profiles", u.uid), { lastLoginAt: serverTimestamp() }, { merge: true });
-        } catch {}
-      }
-      if (finalRole === "seller") go("/portal/seller"); else go("/portal/customer");
-    } catch (e) {
-      setErr(e?.message || String(e));
-    } finally { setLoading(false); }
+      localStorage.setItem("authed", "1");
+      go(role === "seller" ? "/portal/seller" : "/portal/customer");
+    } catch (e) { setErr(e?.message || String(e)); }
+    finally { setLoading(false); }
   }
 
   async function onSignIn(e) {
     e.preventDefault();
     try {
       setErr(""); setMsg(""); setLoading(true);
-      const { user } = await signInWithEmailAndPassword(auth, email, password);
-      let finalRole = role;
-      try {
-        const snap = await getDoc(doc(db, "profiles", user.uid));
-        const r = snap.exists() ? snap.data()?.role : null;
-        if (r === "seller" || r === "customer") finalRole = r;
-        await setDoc(doc(db, "profiles", user.uid), { lastLoginAt: serverTimestamp() }, { merge: true });
-      } catch {}
-      if (finalRole === "seller") go("/portal/seller"); else go("/portal/customer");
-    } catch (e) {
-      setErr(e?.message || String(e));
-    } finally { setLoading(false); }
+      await signInWithEmailAndPassword(auth, email, password);
+      localStorage.setItem("authed", "1");
+      go(role === "seller" ? "/portal/seller" : "/portal/customer");
+    } catch (e) { setErr(e?.message || String(e)); }
+    finally { setLoading(false); }
   }
 
   async function onSignUp(e) {
@@ -299,44 +271,29 @@ export default function LoginPage() {
       setLoading(true);
 
       const cred = await createUserWithEmailAndPassword(auth, email, password);
-      const u = cred.user;
-      try { await updateProfile(u, { displayName: name }); } catch {}
-      try {
-        await setDoc(doc(db, "profiles", u.uid), {
-          id: u.uid,
-          email,
-          name,
-          username,
-          city,
-          district,
-          role,
-          createdAt: serverTimestamp(),
-        }, { merge: true });
-      } catch {}
-
-      try { await sendEmailVerification(u, { url: `${window.location.origin}/login` }); } catch {}
-      setMsg(t.codeSent); setMode("signin");
-    } catch (e) {
-      setErr(e?.message || String(e));
-    } finally { setLoading(false); }
+      if (cred?.user) {
+        await updateProfile(cred.user, { displayName: name });
+      }
+      setMsg(t.codeSent);
+      setMode("signin");
+    } catch (e) { setErr(e?.message || String(e)); }
+    finally { setLoading(false); }
   }
 
   async function onForgot(e) {
     e.preventDefault();
     try {
       setErr(""); setMsg(""); setLoading(true);
-      await sendPasswordResetEmail(auth, email, { url: `${window.location.origin}/login` });
+      await sendPasswordResetEmail(auth, email);
       setMsg(t.resetSent); setMode("signin");
-    } catch (e) {
-      setErr(e?.message || String(e));
-    } finally { setLoading(false); }
+    } catch (e) { setErr(e?.message || String(e)); }
+    finally { setLoading(false); }
   }
 
   // session işareti
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) localStorage.setItem("authed", "1");
-      else localStorage.removeItem("authed");
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u) localStorage.setItem("authed", "1");
     });
     return () => unsub();
   }, []);
@@ -358,7 +315,6 @@ export default function LoginPage() {
       <Head>
         <title>{title}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* Favicon'lar */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=5" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=5" />
@@ -560,7 +516,6 @@ export default function LoginPage() {
 
         .roles { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
         .role { position:relative; padding:12px 16px; border-radius:999px; border:1px solid #0b1324; background:#0b1324; color:#fff; font-weight:900; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 10px 30px rgba(0,0,0,.18); }
-        .role.ghost { background:#ffffffee; color:#0b1324; border:1px solid var(--line); }
         .role .icn { font-size:18px; }
         .role .tick { position:absolute; top:-6px; right:-6px; background:#10b981; color:#fff; width:20px; height:20px; border-radius:999px; display:grid; place-items:center; font-size:12px; box-shadow:0 6px 16px rgba(0,0,0,.25); }
         .role.active { outline: 2px solid #fff; box-shadow:0 18px 48px rgba(0,0,0,.28); }
@@ -571,7 +526,6 @@ export default function LoginPage() {
         /* panel */
         .panel { display:grid; place-items:center; padding:16px 16px 28px; }
         .card { width:100%; max-width:820px; background:var(--paper); border:1px solid var(--line); border-radius:22px; box-shadow:0 18px 58px rgba(0,0,0,.18); overflow:hidden; position:relative; }
-        /* neon gradient kenar */
         .card.fancy:before { content:""; position:absolute; inset:-2px; z-index:-1; border-radius:24px; background:conic-gradient(from 180deg at 50% 50%, #ff80ab, #60a5fa, #34d399, #f59e0b, #ff80ab); filter:blur(16px); opacity:.6; }
 
         .tabs { display:flex; gap:6px; padding:10px; background:linear-gradient(135deg,#11182710,#11182705); border-bottom:1px solid var(--line); }
