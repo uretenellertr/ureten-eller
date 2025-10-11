@@ -1,26 +1,43 @@
 // pages/login.jsx
 "use client";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-// Canvas önizlemesi için basit Head şimi; Next.js build'de <head> olmaması sorun değil
+// Canvas önizlemesi için basit Head; Next.js build'de <head> olmaması sorun değil
 const Head = ({ children }) => <>{children}</>;
-import { createClient } from "@supabase/supabase-js";
 
-/**
- * .env.local içine ekleyin:
- * NEXT_PUBLIC_SUPABASE_URL=https://krmjbjfwmnhzfhnrswgg.supabase.co
- * NEXT_PUBLIC_SUPABASE_ANON_KEY=...ANON...
- */
+/* ----------------------------- Firebase init ----------------------------- */
+import { initializeApp, getApps } from "firebase/app";
+import {
+  getAuth,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  updateProfile,
+} from "firebase/auth";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
-/* ----------------------------- Supabase init ----------------------------- */
-let _supa = null;
-function getSupabase() {
-  if (_supa) return _supa;
-  const url = (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_SUPABASE_URL) || (typeof window !== 'undefined' ? window.__SUPABASE_URL__ : "");
-  const key = (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) || (typeof window !== 'undefined' ? window.__SUPABASE_ANON__ : "");
-  if (!url || !key) return null;
-  _supa = createClient(url, key);
-  return _supa;
-}
+/* Firebase web config (projeden) */
+const firebaseConfig = {
+  apiKey: "AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ",
+  authDomain: "ureteneller-ecaac.firebaseapp.com",
+  projectId: "ureteneller-ecaac",
+  storageBucket: "ureteneller-ecaac.firebasestorage.app",
+  messagingSenderId: "368042877151",
+  appId: "1:368042877151:web:ee0879fc4717928079c96a",
+  measurementId: "G-BJHKN8V4RQ",
+};
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 /* ----------------------------- Dil metinleri ----------------------------- */
 const SUPPORTED = ["tr", "en", "ar", "de"];
@@ -35,7 +52,7 @@ const T = {
     selected: "Seçili Portal:",
     welcome: "Hoş geldiniz",
     pickRoleTip: "Bir portal seçin, giriş yapın veya kaydolun.",
-    email: "E‑posta",
+    email: "E-posta",
     password: "Şifre",
     passwordAgain: "Şifre (tekrar)",
     name: "Ad Soyad",
@@ -57,13 +74,12 @@ const T = {
     pwdRule: "En az 8 karakter ve 1 büyük harf içermeli.",
     required: "Zorunlu alanları doldurun.",
     mismatch: "Şifreler eşleşmiyor.",
-    codeSent: "Doğrulama e‑postası gönderildi.",
-    resetSent: "Şifre sıfırlama e‑postası gönderildi.",
+    codeSent: "Doğrulama e-postası gönderildi.",
+    resetSent: "Şifre sıfırlama e-postası gönderildi.",
     roleInfoSeller: "(İlan açabilir; puan/yorum yapamaz)",
     roleInfoCustomer: "(İlan açamaz; puan/yorum yapabilir)",
     backHome: "Ana sayfa",
     legalBar: "Legal",
-    noEnv: "Supabase ayarları eksik: .env.local içinde URL ve ANON KEY gerekli.",
   },
   en: {
     title: "Sign in / Sign up",
@@ -101,7 +117,6 @@ const T = {
     roleInfoCustomer: "(Cannot post listings; can rate)",
     backHome: "Home",
     legalBar: "Legal",
-    noEnv: "Supabase env missing. Add URL and ANON KEY to .env.local.",
   },
   ar: {
     title: "تسجيل الدخول / إنشاء حساب",
@@ -139,7 +154,6 @@ const T = {
     roleInfoCustomer: "(لا تنشر الإعلانات ويمكنها التقييم)",
     backHome: "الرئيسية",
     legalBar: "سياسات",
-    noEnv: "إعدادات Supabase مفقودة.",
   },
   de: {
     title: "Anmelden / Registrieren",
@@ -149,7 +163,7 @@ const T = {
     selected: "Gewähltes Portal:",
     welcome: "Willkommen",
     pickRoleTip: "Portal wählen, anmelden oder registrieren.",
-    email: "E‑Mail",
+    email: "E-Mail",
     password: "Passwort",
     passwordAgain: "Passwort (wieder)",
     name: "Voller Name",
@@ -165,19 +179,18 @@ const T = {
     hide: "Verbergen",
     accept: "Gelesen & akzeptiert",
     kvkk: "Datenschutzhinweis",
-    cookies: "Cookie‑Richtlinie",
+    cookies: "Cookie-Richtlinie",
     read: "Lesen",
     policyNote: "Bitte Datenschutz & Cookies akzeptieren.",
     pwdRule: "Mind. 8 Zeichen & 1 Großbuchst.",
     required: "Bitte Pflichtfelder ausfüllen.",
     mismatch: "Passwörter stimmen nicht überein.",
-    codeSent: "Bestätigungs‑E‑Mail gesendet.",
-    resetSent: "Reset‑Link gesendet.",
+    codeSent: "Bestätigungs-E-Mail gesendet.",
+    resetSent: "Reset-Link gesendet.",
     roleInfoSeller: "(Kann inserieren; keine Bewertung)",
     roleInfoCustomer: "(Kein Inserat; kann bewerten)",
     backHome: "Startseite",
     legalBar: "Rechtliches",
-    noEnv: "Supabase‑Umgebung fehlt.",
   },
 };
 
@@ -223,7 +236,6 @@ export default function LoginPage() {
   const [acceptKvkk, setAcceptKvkk] = useState(false);
   const [acceptCookies, setAcceptCookies] = useState(false);
 
-  const supa = getSupabase();
   const formRef = useRef(null);
 
   function choosePortal(r) {
@@ -234,35 +246,46 @@ export default function LoginPage() {
 
   function go(href) { window.location.href = href; }
 
-  /* ----------------------------- Actions ----------------------------- */
+  /* ----------------------------- Actions (Firebase) ----------------------------- */
   async function onGoogle() {
     try {
       setErr(""); setLoading(true);
-      if (!supa) { setErr(t.noEnv); return; }
-      const { error } = await supa.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}/login`, queryParams: { access_type: "offline", prompt: "consent" } },
-      });
-      if (error) throw error;
-    } catch (e) { setErr(e?.message || String(e)); }
-    finally { setLoading(false); }
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "consent", access_type: "offline" });
+      await signInWithPopup(auth, provider);
+      // rol oku → yönlendir
+      const u = auth.currentUser;
+      let finalRole = role;
+      if (u) {
+        try {
+          const snap = await getDoc(doc(db, "profiles", u.uid));
+          const r = snap.exists() ? snap.data()?.role : null;
+          if (r === "seller" || r === "customer") finalRole = r;
+          await setDoc(doc(db, "profiles", u.uid), { lastLoginAt: serverTimestamp() }, { merge: true });
+        } catch {}
+      }
+      if (finalRole === "seller") go("/portal/seller"); else go("/portal/customer");
+    } catch (e) {
+      setErr(e?.message || String(e));
+    } finally { setLoading(false); }
   }
 
   async function onSignIn(e) {
     e.preventDefault();
     try {
       setErr(""); setMsg(""); setLoading(true);
-      if (!supa) { setErr(t.noEnv); return; }
-      const { data, error } = await supa.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
       let finalRole = role;
       try {
-        const { data: prof } = await supa.from("profiles").select("role").eq("id", data.user.id).maybeSingle();
-        if (prof?.role === "seller" || prof?.role === "customer") finalRole = prof.role;
+        const snap = await getDoc(doc(db, "profiles", user.uid));
+        const r = snap.exists() ? snap.data()?.role : null;
+        if (r === "seller" || r === "customer") finalRole = r;
+        await setDoc(doc(db, "profiles", user.uid), { lastLoginAt: serverTimestamp() }, { merge: true });
       } catch {}
       if (finalRole === "seller") go("/portal/seller"); else go("/portal/customer");
-    } catch (e) { setErr(e?.message || String(e)); }
-    finally { setLoading(false); }
+    } catch (e) {
+      setErr(e?.message || String(e));
+    } finally { setLoading(false); }
   }
 
   async function onSignUp(e) {
@@ -274,45 +297,49 @@ export default function LoginPage() {
       if (password !== password2) { setErr(t.mismatch); return; }
       if (!acceptKvkk || !acceptCookies) { setErr(t.policyNote); return; }
       setLoading(true);
-      if (!supa) { setErr(t.noEnv); return; }
 
-      const { data: sign, error } = await supa.auth.signUp({
-        email,
-        password,
-        options: { data: { name, username, city, district, role }, emailRedirectTo: `${window.location.origin}/login` },
-      });
-      if (error) throw error;
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const u = cred.user;
+      try { await updateProfile(u, { displayName: name }); } catch {}
+      try {
+        await setDoc(doc(db, "profiles", u.uid), {
+          id: u.uid,
+          email,
+          name,
+          username,
+          city,
+          district,
+          role,
+          createdAt: serverTimestamp(),
+        }, { merge: true });
+      } catch {}
 
-      if (sign?.user) {
-        try {
-          await supa.from("profiles").upsert({ id: sign.user.id, email, name, username, city, district, role, created_at: new Date().toISOString() });
-        } catch {}
-      }
+      try { await sendEmailVerification(u, { url: `${window.location.origin}/login` }); } catch {}
       setMsg(t.codeSent); setMode("signin");
-    } catch (e) { setErr(e?.message || String(e)); }
-    finally { setLoading(false); }
+    } catch (e) {
+      setErr(e?.message || String(e));
+    } finally { setLoading(false); }
   }
 
   async function onForgot(e) {
     e.preventDefault();
     try {
       setErr(""); setMsg(""); setLoading(true);
-      if (!supa) { setErr(t.noEnv); return; }
-      const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/login` });
-      if (error) throw error;
+      await sendPasswordResetEmail(auth, email, { url: `${window.location.origin}/login` });
       setMsg(t.resetSent); setMode("signin");
-    } catch (e) { setErr(e?.message || String(e)); }
-    finally { setLoading(false); }
+    } catch (e) {
+      setErr(e?.message || String(e));
+    } finally { setLoading(false); }
   }
 
   // session işareti
   useEffect(() => {
-    if (!supa) return;
-    const { data: sub } = supa.auth.onAuthStateChange((_evt, session) => {
-      if (session?.user) localStorage.setItem("authed", "1");
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) localStorage.setItem("authed", "1");
+      else localStorage.removeItem("authed");
     });
-    return () => sub?.subscription?.unsubscribe();
-  }, [supa]);
+    return () => unsub();
+  }, []);
 
   // Arkaplan animasyon degrade
   const BG = [
@@ -331,7 +358,7 @@ export default function LoginPage() {
       <Head>
         <title>{title}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* Favicon'lar (login sekmesinde ikon için) */}
+        {/* Favicon'lar */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=5" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=5" />
@@ -389,8 +416,8 @@ export default function LoginPage() {
               <button className={mode === "forgot" ? "tab active" : "tab"} onClick={() => setMode("forgot")}>{t.forgot}</button>
             </div>
 
-            {(err || msg || !supa) && (
-              <div className={(!supa || err) ? "alert err" : "alert ok"}>{!supa ? t.noEnv : (err || msg)}</div>
+            {(err || msg) && (
+              <div className={err ? "alert err" : "alert ok"}>{err || msg}</div>
             )}
 
             {mode === "signin" && (
@@ -407,11 +434,11 @@ export default function LoginPage() {
                   </div>
                 </label>
                 <div className="actions">
-                  <button type="submit" className="primary" disabled={loading || !supa}>{t.signIn}</button>
+                  <button type="submit" className="primary" disabled={loading}>{t.signIn}</button>
                   <button type="button" className="ghost" onClick={() => setMode("forgot")}>{t.forgot}</button>
                 </div>
                 <div className="divider"><span>{t.or}</span></div>
-                <button type="button" className="google" onClick={onGoogle} disabled={loading || !supa}>{t.google}</button>
+                <button type="button" className="google" onClick={onGoogle} disabled={loading}>{t.google}</button>
               </form>
             )}
 
@@ -469,11 +496,11 @@ export default function LoginPage() {
                 </div>
 
                 <div className="actions">
-                  <button type="submit" className="primary" disabled={loading || !supa}>{t.signUp}</button>
+                  <button type="submit" className="primary" disabled={loading}>{t.signUp}</button>
                   <button type="button" className="ghost" onClick={() => setMode("signin")}>{t.signIn}</button>
                 </div>
                 <div className="divider"><span>{t.or}</span></div>
-                <button type="button" className="google" onClick={onGoogle} disabled={loading || !supa}>{t.google}</button>
+                <button type="button" className="google" onClick={onGoogle} disabled={loading}>{t.google}</button>
               </form>
             )}
 
@@ -484,7 +511,7 @@ export default function LoginPage() {
                   <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
                 </label>
                 <div className="actions">
-                  <button type="submit" className="primary" disabled={loading || !supa}>{t.forgot}</button>
+                  <button type="submit" className="primary" disabled={loading}>{t.forgot}</button>
                   <button type="button" className="ghost" onClick={() => setMode("signin")}>{t.signIn}</button>
                 </div>
               </form>
