@@ -2,7 +2,7 @@
 "use client";
 import React from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import useAdminGuard from "./_guard";
+import useAdminGuard from "@/components/admin/useAdminGuard";
 import { db } from "@/lib/firebase";
 import { collection, getCountFromServer, query, where } from "firebase/firestore";
 

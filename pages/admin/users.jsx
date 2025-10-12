@@ -2,7 +2,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import useAdminGuard from "./_guard";
+import useAdminGuard from "@/components/admin/useAdminGuard";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, setDoc, updateDoc, query, limit } from "firebase/firestore";
 
