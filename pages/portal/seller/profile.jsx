@@ -102,26 +102,23 @@ function useLang() {
   return { lang, setLang, t };
 }
 
-/* ---------------------------- Yardımcılar ---------------------------- */
-const GOLD = "linear-gradient(135deg,#f59e0b,#f97316,#fbbf24)";
+  /* ---------------------------- Yardımcılar ---------------------------- */
+ const GOLD = "linear-gradient(135deg,#f59e0b,#f97316,#fbbf24)";
 
-function loadLocal(key, fallback) {
-  try { const v = JSON.parse(localStorage.getItem(key) || "null"); return v ?? fallback; } catch { return fallback; }
-}
-function saveLocal(key, v) { localStorage.setItem(key, JSON.stringify(v)); }
-
-function decorateAds(raw = []) {
-  // Örnek alanlar eklensin
-  return (raw || []).map((x, i) => ({
-    id: x.id || `ad_${i}_${Date.now()}`,
-    title: x.title || "İlan",
-    img: x.img || "/logo.png",
-    price: x.price || "",
-    cat: x.cat || x.category || "",
-    status: x.status || "published", // pending | published | expired
-    isFeatured: !!x.isFeatured,
-    expiresAt: x.expiresAt || Date.now() + 1000 * 60 * 60 * 24 * 15, // 15 gün
-  }));
+ const isBrowser =
+   typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+ function loadLocal(key, fallback) {
+   if (!isBrowser) return fallback;
+   try {
+     const raw = window.localStorage.getItem(key);
+     return raw === null ? fallback : JSON.parse(raw);
+   } catch {
+     return fallback;
+   }
+ }
+ function saveLocal(key, v) {
+  if (!isBrowser) return;
+  try { window.localStorage.setItem(key, JSON.stringify(v)); } catch {}
 }
 
 /* ---------------------------- Ana Bileşen ---------------------------- */
