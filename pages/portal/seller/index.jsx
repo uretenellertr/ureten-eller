@@ -1,9 +1,4 @@
-// Dosya: pages/portal/seller/index.jsx
-// 4 dil (TR/EN/AR/DE) + tüm buton yönlendirmeleri aktif.
-// "İlan Ver" önce /portal/seller/post'u dener; yoksa /portal/seller/post/post'a yönlendirir (GH Pages fallback).
-
-"use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState, useMemo } from "react";
 
 const SUPPORTED = ["tr", "en", "ar", "de"];
 const LOCALE_LABEL = { tr: "Türkçe", en: "English", ar: "العربية", de: "Deutsch" };
@@ -96,7 +91,7 @@ const STR = {
       { text: "Stronger with our community.", color: "#84cc16" },
       { text: "Support for sustainable production.", color: "#22c55e" },
       { text: "Fair trade, happy customers.", color: "#10b981" },
-      { text: "Respect for craft, budget‑friendly prices.", color: "#06b6d4" },
+      { text: "Respect for craft, budget-friendly prices.", color: "#06b6d4" },
       { text: "We grow with women's labor.", color: "#3b82f6" },
       { text: "Fresh production from your city, shop with confidence.", color: "#6366f1" },
       { text: "Quality, care and transparency.", color: "#8b5cf6" },
@@ -115,20 +110,20 @@ const STR = {
       community: "Community Guidelines", prohibited: "Prohibited Items", all: "All Legal"
     },
     cats: [
-      { key: "food", icon: "🍲", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Food", subs: ["Home‑cooked meals","Börek & pastries","Soup","Olive‑oil dishes","Rice & pasta","Meat & chicken","Breakfast items","Meze","Frozen","Kids' meals","Diet/vegan/GF"] },
-      { key: "cake", icon: "🎂", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Cakes & Desserts", subs: ["Layer cakes","Cakes & cupcakes","Cookies","Syrupy desserts","Milk‑based desserts","Cheesecake","Diet desserts","Chocolate/candy","Birthday sets"] },
+      { key: "food", icon: "🍲", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Food", subs: ["Home-cooked meals","Börek & pastries","Soup","Olive-oil dishes","Rice & pasta","Meat & chicken","Breakfast items","Meze","Frozen","Kids' meals","Diet/vegan/GF"] },
+      { key: "cake", icon: "🎂", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Cakes & Desserts", subs: ["Layer cakes","Cakes & cupcakes","Cookies","Syrupy desserts","Milk-based desserts","Cheesecake","Diet desserts","Chocolate/candy","Birthday sets"] },
       { key: "jam", icon: "🫙", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Jam • Pickle • Sauce", subs: ["Jam & marmalade","Molasses (pekmez)","Pickles","Tomato/pepper sauce","Hot sauce","Tomato paste","Vinegar","Canned goods"] },
       { key: "local", icon: "🌾", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Local / Pantry Staples", subs: ["Homemade noodles (erişte)","Tarhana","Yufka","Mantı","Dried veg/fruit","Tomato paste","Vinegar","Canned"] },
-      { key: "diet", icon: "🥗", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Diet / Vegan / Gluten‑free", subs: ["Fit plates","Vegan meals","GF baked goods","Sugar‑free desserts","Keto products","Protein snacks"] },
+      { key: "diet", icon: "🥗", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Diet / Vegan / Gluten-free", subs: ["Fit plates","Vegan meals","GF baked goods","Sugar-free desserts","Keto products","Protein snacks"] },
       { key: "jewelry", icon: "💍", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Jewelry", subs: ["Bracelet","Necklace","Earrings","Ring","Anklet","Brooch","Sets","Personalized","Macrame","Natural stone","Resin","Wire wrap"] },
-      { key: "kids", icon: "👶", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Baby & Child", subs: ["Animal/baby figures","Rattle","Crochet teether","Cloth toy/book","Montessori toy","Sets","Knitted booties‑hat","Baby blanket","Bib & burp cloth","Maternity set","Hair accessory","Handmade clothing"] },
+      { key: "kids", icon: "👶", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Baby & Child", subs: ["Animal/baby figures","Rattle","Crochet teether","Cloth toy/book","Montessori toy","Sets","Knitted booties-hat","Baby blanket","Bib & burp cloth","Maternity set","Hair accessory","Handmade clothing"] },
       { key: "knit", icon: "🧶", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Knitwear", subs: ["Cardigan","Sweater","Scarf & beanie","Poncho","Shawl","Socks","Baby set","Vest","Cushion/throw","Bath set"] },
       { key: "sew", icon: "✂️", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Sewing / Tailoring", subs: ["Hems/repairs","Zipper replacement","Curtain sewing","Duvet/pillow","Tablecloth","Custom tailoring","Costume"] },
       { key: "macrame", icon: "🧵", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Macrame & Decor", subs: ["Wall hanging","Plant hanger","Keychain","Chandelier","Placemat/runner","Basket","Shelf/wall decor"] },
       { key: "home", icon: "🏠", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Home Decor & Accessories", subs: ["Felt crafts","Cushion","Door wreath","Tray decoration","Frame","Dreamcatcher","Painting"] },
       { key: "candle", icon: "🕯️", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Candles & Fragrances", subs: ["Soy/beeswax candle","Scented stone","Room spray","Incense","Gel candle","Gift set"] },
-      { key: "soap", icon: "🧼", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Natural Soap & Cosmetics", subs: ["Olive‑oil soap","Herbal soaps","Solid shampoo","Lip balm","Cream/ointment","Bath salts","Lavender sachet"] },
-      { key: "amigurumi", icon: "🧸", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Amigurumi & Toys (decorative)", subs: ["Keychain","Magnet","Collector figure","Decor doll/character","Name‑custom amigurumi"] }
+      { key: "soap", icon: "🧼", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Natural Soap & Cosmetics", subs: ["Olive-oil soap","Herbal soaps","Solid shampoo","Lip balm","Cream/ointment","Bath salts","Lavender sachet"] },
+      { key: "amigurumi", icon: "🧸", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Amigurumi & Toys (decorative)", subs: ["Keychain","Magnet","Collector figure","Decor doll/character","Name-custom amigurumi"] }
     ]
   },
   ar: {
@@ -230,93 +225,53 @@ const STR = {
     categories: "Kategorien",
     empty: "Noch keine Anzeigen.",
     tabs: { home: "Startseite", messages: "Nachrichten", notifs: "Benachrichtigungen" },
-    chat: { title: "Live‑Support", helloYou: "Hallo! Wie kann ich helfen?", helloMe: "Hallo 👋", placeholder: "Nachricht schreiben...", send: "Senden" },
+    chat: { title: "Live-Support", helloYou: "Hallo! Wie kann ich helfen?", helloMe: "Hallo 👋", placeholder: "Nachricht schreiben...", send: "Senden" },
     legal: {
-      corporate: "Unternehmen", about: "Über uns", contact: "Kontakt", privacy: "Datenschutz", kvkk: "KVKK‑Hinweis",
-      terms: "Nutzungsbedingungen", distance: "Fernabsatz", delivery: "Lieferung & Rückgabe", cookie: "Cookie‑Richtlinie",
-      community: "Community‑Richtlinien", prohibited: "Verbotene Artikel", all: "Alle Rechtstexte"
+      corporate: "Unternehmen", about: "Über uns", contact: "Kontakt", privacy: "Datenschutz", kvkk: "KVKK-Hinweis",
+      terms: "Nutzungsbedingungen", distance: "Fernabsatz", delivery: "Lieferung & Rückgabe", cookie: "Cookie-Richtlinie",
+      community: "Community-Richtlinien", prohibited: "Verbotene Artikel", all: "Alle Rechtstexte"
     },
     cats: [
       { key: "food", icon: "🍲", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Speisen", subs: ["Hausmannskost","Börek & Gebäck","Suppe","Gerichte mit Olivenöl","Reis & Pasta","Fleisch & Hähnchen","Frühstück","Meze","Tiefgekühlt","Kindergerichte","Diät/vegan/glutenfrei"] },
-      { key: "cake", icon: "🎂", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Kuchen & Süßes", subs: ["Torten","Kuchen & Cupcakes","Kekse","Sirup‑Desserts","Milch‑Desserts","Käsekuchen","Diät‑Desserts","Schokolade/Bonbons","Geburtstags‑Sets"] },
+      { key: "cake", icon: "🎂", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Kuchen & Süßes", subs: ["Torten","Kuchen & Cupcakes","Kekse","Sirup-Desserts","Milch-Desserts","Käsekuchen","Diät-Desserts","Schokolade/Bonbons","Geburtstags-Sets"] },
       { key: "jam", icon: "🫙", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Marmelade • Pickles • Saucen", subs: ["Marmelade","Pekmez (Traubensirup)","Eingelegtes","Tomaten-/Paprikasauce","Scharfe Sauce","Tomatenmark","Essig","Konserven"] },
       { key: "local", icon: "🌾", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Regional / Vorrat", subs: ["Erişte (Hausnudeln)","Tarhana","Yufka","Mantı","Getrocknetes Obst/Gemüse","Tomatenmark","Essig","Konserven"] },
-      { key: "diet", icon: "🥗", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Diät / Vegan / Glutenfrei", subs: ["Fitness‑Teller","Vegane Gerichte","GF Backwaren","Zuckerfreie Desserts","Keto‑Produkte","Protein‑Snacks"] },
+      { key: "diet", icon: "🥗", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Diät / Vegan / Glutenfrei", subs: ["Fitness-Teller","Vegane Gerichte","GF Backwaren","Zuckerfreie Desserts","Keto-Produkte","Protein-Snacks"] },
       { key: "jewelry", icon: "💍", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Schmuck", subs: ["Armband","Kette","Ohrringe","Ring","Fußkettchen","Brosche","Sets","Personalisiert","Makramee","Naturstein","Harz","Drahtwickel"] },
-      { key: "kids", icon: "👶", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Baby & Kind", subs: ["Tier-/Babyfiguren","Rassel","Beißring (gehäkelt)","Stoffspielzeug/-buch","Montessori‑Spielzeug","Sets","Booties‑Mütze (gestrickt)","Babydecke","Lätzchen & Spucktuch","Wochenbett‑Set","Haar‑Accessoires","Handgemachte Kleidung"] },
-      { key: "knit", icon: "🧶", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Strick/Trikot", subs: ["Cardigan","Pullover","Schal & Mütze","Poncho","Tuch","Socken","Baby‑Set","Weste","Kissenbezug/Decke","Bade‑Set"] },
+      { key: "kids", icon: "👶", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Baby & Kind", subs: ["Tier-/Babyfiguren","Rassel","Beißring (gehäkelt)","Stoffspielzeug/-buch","Montessori-Spielzeug","Sets","Booties-Mütze (gestrickt)","Babydecke","Lätzchen & Spucktuch","Wochenbett-Set","Haar-Accessoires","Handgemachte Kleidung"] },
+      { key: "knit", icon: "🧶", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Strick/Trikot", subs: ["Cardigan","Pullover","Schal & Mütze","Poncho","Tuch","Socken","Baby-Set","Weste","Kissenbezug/Decke","Bade-Set"] },
       { key: "sew", icon: "✂️", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Nähen / Schneiderei", subs: ["Saum/Reparaturen","Reißverschlusswechsel","Vorhänge nähen","Bettwäsche/Kissen","Tischdecke","Maßanfertigung","Kostüm"] },
       { key: "macrame", icon: "🧵", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Makramee & Deko", subs: ["Wandbehang","Pflanzenhänger","Schlüsselanhänger","Deckenlampe","Platzset/Läufer","Korb","Regal/Wanddeko"] },
-      { key: "home", icon: "🏠", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Wohn‑Deko & Accessoires", subs: ["Filzarbeiten","Kissen","Türkranz","Tablett‑Deko","Rahmen","Traumfänger","Bild"] },
-      { key: "candle", icon: "🕯️", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Kerzen & Duft", subs: ["Soja/Bienenwachs‑Kerze","Duftstein","Raumspray","Weihrauch","Gelkerze","Geschenk‑Set"] },
+      { key: "home", icon: "🏠", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Wohn-Deko & Accessoires", subs: ["Filzarbeiten","Kissen","Türkranz","Tablett-Deko","Rahmen","Traumfänger","Bild"] },
+      { key: "candle", icon: "🕯️", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Kerzen & Duft", subs: ["Soja/Bienenwachs-Kerze","Duftstein","Raumspray","Weihrauch","Gelkerze","Geschenk-Set"] },
       { key: "soap", icon: "🧼", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Naturseife & Kosmetik", subs: ["Olivenölseife","Kräuterseifen","Festes Shampoo","Lippenbalsam","Creme/Salbe","Badesalz","Lavendelsäckchen"] },
-      { key: "amigurumi", icon: "🧸", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Amigurumi & Spielzeug (dekorativ)", subs: ["Schlüsselanhänger","Magnet","Sammlerfigur","Deko‑Puppe/Charakter","Amigurumi mit Namen"] }
+      { key: "amigurumi", icon: "🧸", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Amigurumi & Spielzeug (dekorativ)", subs: ["Schlüsselanhänger","Magnet","Sammlerfigur","Deko-Puppe/Charakter","Amigurumi mit Namen"] }
     ]
   }
 };
 
 export default function SellerHome() {
-  // --- State & i18n
   const [lang, setLang] = useState("tr");
   const t = useMemo(() => STR[lang], [lang]);
 
-  // SSR → CSR uyumsuzluklarını kesmek için mounted bayrağı
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  // HTML lang/dir sadece client'ta
-  useEffect(() => {
-    if (typeof document !== "undefined") {
-      document.documentElement.lang = lang;
-      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
-    }
-  }, [lang]);
-
-  // Motto rotator (client)
-  const mottos = t.mottos || [];
-  const [pi, setPi] = useState(0);
-  useEffect(() => {
-    if (!mounted || mottos.length <= 1) return;
-    const id = setInterval(() => setPi((p) => (p + 1) % mottos.length), 3000);
-    return () => clearInterval(id);
-  }, [mounted, mottos.length]);
-
-  // Chat
-  const [chatOpen, setChatOpen] = useState(false);
-
-  // İlan Ver tıklama: mevcut sayfayı tespit edip yönlendir
-  const handlePostAd = async () => {
-    const primary = "/portal/seller/post";
-    const fallback = "/portal/seller/post/post";
-    try {
-      const okPrimary = await fetch(primary + "/index.html", { method: "HEAD" }).then(r => r.ok).catch(() => false);
-      if (okPrimary) { window.location.href = primary; return; }
-      const okFallback = await fetch(fallback + "/index.html", { method: "HEAD" }).then(r => r.ok).catch(() => false);
-      window.location.href = okFallback ? fallback : primary; // son çare primary
-    } catch {
-      window.location.href = fallback;
-    }
-  };
-
-  if (!mounted) return null;
-
   return (
-    <>
+    <div lang={lang} dir={lang === "ar" ? "rtl" : "ltr"}>
       <header className="topbar">
-        <div className="brand" onClick={() => (window.location.href = "/")}>
+        <a className="brand" href="/">
           <img src="/logo.png" width={36} height={36} alt="logo" />
           <span>{t.brand}</span>
-        </div>
+        </a>
         <div className="actions">
           <div className="userGroup">
-            <button className="ghost" onClick={() => (window.location.href = "/portal/customer")} aria-label={t.profile}>{t.profile}</button>
-            <button className="danger" onClick={() => (window.location.href = "/login")} aria-label={t.logout}>{t.logout}</button>
+            <a className="ghost" href="/portal/customer" aria-label={t.profile}>{t.profile}</a>
+            <a className="danger" href="/login" aria-label={t.logout}>{t.logout}</a>
           </div>
           <div className="actionGroup">
-            <button className="ghost" onClick={() => (window.location.href = "/portal/seller?tab=search")} aria-label={t.search}>{t.search}</button>
-            <button type="button" className="primary" onClick={handlePostAd} aria-label={t.postAd}>{t.postAd}</button>
+            <a className="ghost" href="/portal/seller?tab=search" aria-label={t.search}>{t.search}</a>
+            {/* Doğrudan anchor: JS çökse bile çalışır */}
+            <a className="primary" href="/portal/seller/post" aria-label={t.postAd}>{t.postAd}</a>
           </div>
-          <select aria-label="Language" value={lang} onChange={(e)=>setLang(e.target.value)}>
+          <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
             {SUPPORTED.map(k => (<option key={k} value={k}>{LOCALE_LABEL[k]}</option>))}
           </select>
         </div>
@@ -324,9 +279,12 @@ export default function SellerHome() {
 
       <section className="hero">
         <h1 className="heroTitle">{t.heroTitle}</h1>
-        {mottos.length > 0 && (
-          <p className="phrase" style={{ color: mottos[pi].color }}>{mottos[pi].text}</p>
-        )}
+        {/* Tüm sloganlar – tek tek listelenir (hydrat. hatası yok) */}
+        <div className="mottos">
+          {t.mottos.map((m, i) => (
+            <div key={i} className="phrase" style={{ color: m.color }}>{m.text}</div>
+          ))}
+        </div>
       </section>
 
       <section className="section">
@@ -342,11 +300,11 @@ export default function SellerHome() {
       <section className="section">
         <div className="sectionHead"><h2>🗂️ {t.categories}</h2></div>
         <div className="grid cats">
-          {(t.cats && t.cats.length ? t.cats : STR.tr.cats).map(cat => (
+          {t.cats.map(cat => (
             <article key={cat.key} className="catCard" style={{ background: cat.bg }}>
               <div className="head"><span className="icn">{cat.icon}</span><h3>{cat.title}</h3></div>
               <div className="subs">
-                {(cat.subs || []).map((s, i) => (<span key={i} className="chip">{s}</span>))}
+                {cat.subs.map((s, i) => (<span key={i} className="chip">{s}</span>))}
               </div>
             </article>
           ))}
@@ -354,25 +312,28 @@ export default function SellerHome() {
       </section>
 
       <nav className="bottombar" aria-label="Bottom Navigation">
-        <button className="tab active" onClick={() => (window.location.href = "/portal/seller")} aria-label={t.tabs.home}><span className="tIc">🏠</span><span>{t.tabs.home}</span></button>
-        <button className="tab" onClick={() => (window.location.href = "/portal/seller?tab=messages")} aria-label={t.tabs.messages}><span className="tIc">💬</span><span>{t.tabs.messages}</span></button>
-        <button className="tab" onClick={() => (window.location.href = "/portal/seller?tab=notifications")} aria-label={t.tabs.notifs}><span className="tIc">🔔</span><span>{t.tabs.notifs}</span></button>
+        <a className="tab active" href="/portal/seller" aria-label={t.tabs.home}><span className="tIc">🏠</span><span>{t.tabs.home}</span></a>
+        <a className="tab" href="/portal/seller?tab=messages" aria-label={t.tabs.messages}><span className="tIc">💬</span><span>{t.tabs.messages}</span></a>
+        <a className="tab" href="/portal/seller?tab=notifications" aria-label={t.tabs.notifs}><span className="tIc">🔔</span><span>{t.tabs.notifs}</span></a>
       </nav>
 
-      <button className="chatBtn" onClick={() => setChatOpen(!chatOpen)}>💬</button>
-      {chatOpen && (
-        <div className="chatWin">
-          <div className="chatHd">{t.chat.title}</div>
-          <div className="chatBd">
-            <div className="msg you">{t.chat.helloYou}</div>
-            <div className="msg me">{t.chat.helloMe}</div>
-          </div>
-          <div className="chatFt">
-            <input type="text" placeholder={t.chat.placeholder} />
-            <button className="send">{t.chat.send}</button>
-          </div>
+      <button className="chatBtn" onClick={(e) => {
+        e.preventDefault();
+        const win = document.querySelector(".chatWin");
+        if (win) win.classList.toggle("open");
+      }}>💬</button>
+
+      <div className="chatWin">
+        <div className="chatHd">{t.chat.title}</div>
+        <div className="chatBd">
+          <div className="msg you">{t.chat.helloYou}</div>
+          <div className="msg me">{t.chat.helloMe}</div>
         </div>
-      )}
+        <div className="chatFt">
+          <input type="text" placeholder={t.chat.placeholder} />
+          <button className="send">{t.chat.send}</button>
+        </div>
+      </div>
 
       <footer className="legal">
         <div className="inner">
@@ -404,26 +365,23 @@ export default function SellerHome() {
                       linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
           background-attachment:fixed;}
 
-        /* TOPBAR */
         .topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;
           padding:10px 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-        .brand{display:flex;align-items:center;gap:8px;font-weight:900;cursor:pointer}
+        .brand{display:flex;align-items:center;gap:8px;font-weight:900;text-decoration:none;color:inherit}
         .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
         .userGroup{display:flex;gap:8px;order:1}
         .actionGroup{display:flex;gap:8px;order:2}
-        .ghost{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
-        .primary{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-block}
-        .danger{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
+        .ghost,.primary,.danger{border:1px solid #111827;background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+        .primary,.danger{background:#111827;color:#fff}
         .actions select{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:#fff}
         @media (min-width:640px){ .actionGroup{order:1} .actions{flex-wrap:nowrap} }
 
-        /* HERO */
         .hero{display:grid;place-items:center;text-align:center;gap:8px;max-width:1100px;margin:12px auto 0;padding:12px 16px}
         .heroTitle{margin:0;font-size:42px;line-height:1.15;letter-spacing:.2px;text-shadow:0 8px 28px rgba(0,0,0,.15)}
-        .phrase{margin:4px 0 0;font-weight:700}
+        .mottos{display:grid;gap:6px;margin-top:6px}
+        .phrase{margin:0;font-weight:700}
         @media (max-width:520px){ .heroTitle{font-size:34px} }
 
-        /* SECTIONS */
         .section{max-width:1100px;margin:12px auto;padding:0 16px}
         .sectionHead{display:flex;align-items:center;justify-content:space-between;margin:8px 0}
         .grid.ads{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
@@ -444,18 +402,17 @@ export default function SellerHome() {
         .subs{display:grid;gap:8px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:8px}
         .chip{display:block;text-align:center;padding:8px;border-radius:12px;border:1px solid #e5e7eb;background:#fff;font-size:12px}
 
-        /* BOTTOM BAR */
         .bottombar{position:sticky;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px;
           background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
-        .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:700}
+        .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:700;text-decoration:none;color:inherit}
         .tab.active{border-color:#111827;background:#111827;color:#fff}
         .tIc{font-size:16px}
 
-        /* CHAT */
         .chatBtn{position:fixed;right:16px;bottom:76px;z-index:60;background:#111827;color:#fff;border:none;border-radius:999px;
           width:54px;height:54px;cursor:pointer;box-shadow:0 10px 26px rgba(0,0,0,.18);font-size:20px}
         .chatWin{position:fixed;right:16px;bottom:140px;z-index:60;width:320px;max-width:calc(100vw - 32px);
-          background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.18);overflow:hidden}
+          background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.18);overflow:hidden;display:none}
+        .chatWin.open{display:block}
         .chatHd{padding:10px 12px;font-weight:900;border-bottom:1px solid #e5e7eb;background:#111827;color:#fff}
         .chatBd{max-height:300px;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
         .msg{padding:8px 10px;border-radius:12px;max-width:80%}
@@ -465,7 +422,6 @@ export default function SellerHome() {
         .chatFt input[type='text']{flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:8px}
         .send{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
 
-        /* LEGAL */
         .legal{background:#0b0b0b;color:#f8fafc;border-top:1px solid rgba(255,255,255,.12);width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);margin-top:14px}
         .inner{max-width:1100px;margin:0 auto;padding:12px 16px}
         .ttl{font-weight:800;margin-bottom:6px}
@@ -475,6 +431,6 @@ export default function SellerHome() {
         .homeLink{margin-left:auto;font-weight:800}
         .copy{margin-top:6px;font-size:12px;color:#cbd5e1}
       `}</style>
-    </>
+    </div>
   );
 }
