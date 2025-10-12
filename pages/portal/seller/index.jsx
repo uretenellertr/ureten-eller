@@ -155,8 +155,10 @@ const STR = {
 };
 
 export default function SellerHome() {
+  const [mounted, setMounted] = useState(false);
   const [lang, setLang] = useState("tr");
   const t = useMemo(() => STR[lang], [lang]);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     // HTML lang/dir güncelle
@@ -167,6 +169,8 @@ export default function SellerHome() {
   }, [lang]);
 
   const [chatOpen, setChatOpen] = useState(false);
+
+  if (!mounted) return null;
 
   return (
     <>
@@ -182,7 +186,7 @@ export default function SellerHome() {
           </div>
           <div className="actionGroup">
             <button className="ghost" onClick={() => (window.location.href = "/portal/seller?tab=search")} aria-label={t.search}>{t.search}</button>
-            <a href="/portal/seller/post" className="primary" aria-label={t.postAd}>{t.postAd}</a>
+            <a href="/portal/seller/post/post" className="primary" aria-label={t.postAd}>{t.postAd}</a>
           </div>
           <select aria-label="Language" value={lang} onChange={(e)=>setLang(e.target.value)}>
             {SUPPORTED.map(k => (<option key={k} value={k}>{LOCALE_LABEL[k]}</option>))}
