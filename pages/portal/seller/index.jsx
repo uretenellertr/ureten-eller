@@ -276,7 +276,7 @@ export default function SellerHome() {
         </a>
         <div className="actions">
           <div className="userGroup">
-            <a className="ghost" href="/portal/customer" aria-label={t.profile}>{t.profile}</a>
+            <a className="ghost" href="/portal/seller/profile/" aria-label={t.profile}>{t.profile}</a>
             <a className="danger" href="/login" aria-label={t.logout}>{t.logout}</a>
           </div>
           <div className="actionGroup">
