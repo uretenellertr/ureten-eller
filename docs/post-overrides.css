@@ -1,0 +1,14 @@
+/* Form elemanlarında okunaklı tema */
+.field select,
+.field input[type="text"],
+.field input[type="number"],
+.field textarea{
+  background:#fff !important;
+  color:#111 !important;
+  border:1px solid #e5e7eb !important;
+}
+
+.field select option{
+  background:#fff !important;
+  color:#111 !important;
+}
