@@ -1,5 +1,7 @@
+// pages/portal/seller/index.jsx
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+
 const SUPPORTED = ["tr", "en", "ar", "de"];
 const LOCALE_LABEL = { tr: "Türkçe", en: "English", ar: "العربية", de: "Deutsch" };
 
@@ -250,9 +252,20 @@ const STR = {
   }
 };
 
-function SellerHome() {
+export default function SellerHome() {
   const [lang, setLang] = useState("tr");
   const t = useMemo(() => STR[lang], [lang]);
+
+  // 5 saniyede bir motto döndür
+  const [motIdx, setMotIdx] = useState(0);
+  const motLen = t.mottos.length;
+  useEffect(() => setMotIdx(0), [lang]); // dil değişince başa dön
+  useEffect(() => {
+    const id = setInterval(() => setMotIdx(i => (i + 1) % motLen), 5000);
+    return () => clearInterval(id);
+  }, [motLen, lang]);
+
+  const currentMotto = t.mottos[motIdx];
 
   return (
     <div lang={lang} dir={lang === "ar" ? "rtl" : "ltr"}>
@@ -268,7 +281,7 @@ function SellerHome() {
           </div>
           <div className="actionGroup">
             <a className="ghost" href="/portal/seller?tab=search" aria-label={t.search}>{t.search}</a>
-            {/* JS çökerse bile çalışsın */}
+            {/* JS olmasa bile çalışsın */}
             <a className="primary" href="/portal/seller/post/" aria-label={t.postAd}>{t.postAd}</a>
           </div>
           <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
@@ -279,10 +292,12 @@ function SellerHome() {
 
       <section className="hero">
         <h1 className="heroTitle">{t.heroTitle}</h1>
-        <div className="mottos">
-          {t.mottos.map((m, i) => (
-            <div key={i} className="phrase" style={{ color: m.color }}>{m.text}</div>
-          ))}
+
+        {/* Tek satır – 5 sn'de bir değişir */}
+        <div className="mottoWrap" aria-live="polite" role="status">
+          <div key={`${lang}-${motIdx}`} className="mottoLine" style={{ color: currentMotto.color }}>
+            {currentMotto.text}
+          </div>
         </div>
       </section>
 
@@ -316,13 +331,16 @@ function SellerHome() {
         <a className="tab" href="/portal/seller?tab=notifications" aria-label={t.tabs.notifs}><span className="tIc">🔔</span><span>{t.tabs.notifs}</span></a>
       </nav>
 
-      <button className="chatBtn" onClick={(e) => {
-        e.preventDefault();
-        if (typeof document !== "undefined") {
+      <button
+        className="chatBtn"
+        onClick={(e) => {
+          e.preventDefault();
           const win = document.querySelector(".chatWin");
           if (win) win.classList.toggle("open");
-        }
-      }}>💬</button>
+        }}
+      >
+        💬
+      </button>
 
       <div className="chatWin">
         <div className="chatHd">{t.chat.title}</div>
@@ -379,9 +397,12 @@ function SellerHome() {
 
         .hero{display:grid;place-items:center;text-align:center;gap:8px;max-width:1100px;margin:12px auto 0;padding:12px 16px}
         .heroTitle{margin:0;font-size:42px;line-height:1.15;letter-spacing:.2px;text-shadow:0 8px 28px rgba(0,0,0,.15)}
-        .mottos{display:grid;gap:6px;margin-top:6px}
-        .phrase{margin:0;font-weight:700}
         @media (max-width:520px){ .heroTitle{font-size:34px} }
+
+        /* Dönen motto */
+        .mottoWrap{min-height:28px;margin-top:6px}
+        .mottoLine{margin:0;font-weight:700;animation:fadeIn .35s ease}
+        @keyframes fadeIn{from{opacity:0; transform: translateY(4px)} to{opacity:1; transform:none}}
 
         .section{max-width:1100px;margin:12px auto;padding:0 16px}
         .sectionHead{display:flex;align-items:center;justify-content:space-between;margin:8px 0}
@@ -435,5 +456,3 @@ function SellerHome() {
     </div>
   );
 }
-
-export default SellerHome;
