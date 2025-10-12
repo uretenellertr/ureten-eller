@@ -1,692 +1,670 @@
 "use client";
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import Head from "next/head";
-import { useRouter } from "next/router";
+import React from "react";
 
-/* ---------------------------- FIREBASE ---------------------------- */
-import { initializeApp, getApps } from "firebase/app";
-import {
-  getAuth,
-  onAuthStateChanged,
-  updateProfile,
-  sendPasswordResetEmail,
-  GoogleAuthProvider,
-} from "firebase/auth";
+export default function SellerProfilePage(){
+  // ====== STATE ======
+  const [lang,setLang] = React.useState("tr");
+  const DIR = lang === "ar" ? "rtl" : "ltr";
+  const SUPPORTED = ["tr","en","ar","de"];
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ",
-  authDomain: "ureteneller-ecaac.firebaseapp.com",
-  projectId: "ureteneller-ecaac",
-  storageBucket: "ureteneller-ecaac.firebasestorage.app",
-  messagingSenderId: "368042877151",
-  appId: "1:368042877151:web:ee0879fc4717928079c96a",
-  measurementId: "G-BJHKN8V4RQ",
-};
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const auth = getAuth(app);
+  // Görünüm kontrolü (profile owner / public visitor). Admin, rozet/veri düzenler.
+  const [view,setView] = React.useState("owner"); // owner | visitor
+  const [isAdmin,setIsAdmin] = React.useState(true);
 
-/* ---------------------------- DİL / METİN ---------------------------- */
-const SUPPORTED = ["tr", "en", "ar", "de"]; // RTL: ar
-const L = {
-  tr: {
-    title: "Profil",
-    pro: "PRO Üyelik",
-    verified: "Onaylı Satıcı",
-    upgrade: "Yükselt",
-    manage: "Yönet",
-    stats: { published: "Yayında", showcase: "Vitrin", pending: "Onay Bekleyen", expired: "Süresi Biten" },
-    tabs: { overview: "Genel", listings: "İlanlarım", reviews: "Yorumlar", orders: "Siparişler", settings: "Ayarlar" },
-    quick: { vacation: "Tatil Modu", confirmOrders: "Sipariş Onayları" },
-    listings: {
-      create: "Yeni İlan",
-      empty: "Henüz ilan yok.",
-      sections: { showcase: "✨ Vitrin", published: "🧺 Yayında", pending: "⏳ Onay Bekleyen", expired: "⌛ Süresi Biten" },
-      actions: {
-        feature: "Vitrine Yayınla",
-        unfeature: "Vitrinden Kaldır",
-        edit: "Düzenle",
-        delete: "Sil",
-        renew: "Süreyi Uzat",
-      },
-      badges: { pro: "PRO", verified: "Onaylı", pending: "Onay Bekliyor", expired: "Süresi Bitti" },
+  // Satıcı temel bilgileri (örnek veri)
+  const [seller,setSeller] = React.useState({
+    username:"el_ustasi",
+    firstName:"Zehra",
+    lastName:"Yılmaz",
+    city:"İzmir",
+    district:"Karşıyaka",
+    joinedAt:"2023-08-14",
+    bio:{
+      tr:"Ev yapımı mantı ve el emeği örgü setleri üretiyorum. Siparişe göre çalışırım, zamanında ve temiz teslim ederim.",
+      en:"I make handmade dumplings and knit sets. I work to order and deliver clean, on time.",
+      ar:"أصنع مانطي منزليًا وأطقم حياكة يدوية. أعمل بالطلبات وأسلم في الوقت وبجودة.",
+      de:"Ich mache hausgemachte Manti und Strick-Sets. Ich arbeite auf Bestellung und liefere pünktlich und sauber."
     },
-    reviews: { avg: "Ortalama", onlyBuyers: "Yalnızca siparişi onaylanan müşteriler yorum/puan verebilir.", delete: "Sil" },
-    orders: { awaiting: "Onay Bekleyen Teslimatlar", confirm: "Teslimatı Onayla", cancel: "İptal", empty: "Bekleyen sipariş yok." },
-    settings: {
-      profile: "Profil Bilgileri",
-      name: "Ad Soyad",
-      email: "E‑posta",
-      phone: "Telefon",
-      save: "Kaydet",
-      saved: "Kaydedildi",
-      address: "Adres Bilgisi",
-      addressLine: "Adres",
-      city: "Şehir",
-      district: "İlçe",
-      postal: "Posta Kodu",
-      password: "Şifre",
-      pwNoteGoogle: "Google ile giriş yaptığınız için şifre burada yönetilmiyor.",
-      resetMail: "Sıfırlama E-postası Gönder",
-      avatar: "Avatar / Profil Fotoğrafı",
-      upload: "Yükle",
-      resetAvatar: "Google Fotosuna Dön",
+    customOrders:true,
+    delivery:{
+      cities:["İzmir","Manisa","Aydın"],
+      etaDays:2,
+      shippingFee:"49 TL",
+      pickup:true
     },
-    brand: "Üreten Eller",
-    bottom: { home: "Ana Sayfa", messages: "Mesajlar", notifs: "Bildirimler" },
-    legalBar: "Kurumsal",
-    legal: {
-      corporate: "Kurumsal",
-      about: "Hakkımızda",
-      contact: "İletişim",
-      privacy: "Gizlilik",
-      kvkk: "KVKK Aydınlatma",
-      terms: "Kullanım Şartları",
-      distance: "Mesafeli Satış",
-      shippingReturn: "Teslimat & İade",
-      cookies: "Çerez Politikası",
-      rules: "Topluluk Kuralları",
-      banned: "Yasaklı Ürünler",
-      all: "Tüm Legal",
+    returns:{
+      tr:["Teslimden 3 gün içinde iade.","Kişiye özel ürünlerde iade yok.","Kargo ücreti alıcıya aittir."],
+      en:["Returns within 3 days of delivery.","No returns for custom items.","Shipping at buyer's cost."],
+      ar:["إرجاع خلال 3 أيام من التسليم.","لا إرجاع للطلبات الخاصة.","الشحن على المشتري."],
+      de:["Rückgabe innerhalb von 3 Tagen.","Keine Rückgabe bei Sonderanfertigungen.","Versandkosten Käufer."]
     },
-  },
-};
+    stats:{ totalSales: 128, ratingAvg: 4.7, ratingCount: 36 },
+    premium:false, // premium değilse "PREMIUM OL" görünsün
+    verified:true, // onaylı satıcı
+    trustBadges:{ id: true, tax: true, securePay: true }, // admin verir
+    phone:"+90 532 000 00 00",
+    address:"Karşıyaka, İzmir — Mavişehir Mah. 123. Sk. No:4",
+  });
 
-function useLang() {
-  const [lang, setLang] = useState("tr");
-  useEffect(() => {
-    const saved = localStorage.getItem("lang");
-    if (saved && SUPPORTED.includes(saved)) setLang(saved);
-  }, []);
-  useEffect(() => { localStorage.setItem("lang", lang); }, [lang]);
-  const t = useMemo(() => L[lang] || L.tr, [lang]);
-  return { lang, setLang, t };
-}
+  // İlanlar (örnek)
+  const [listingsLive] = React.useState([
+    {id:1,title:"Ev Yapımı Mantı (1 kg)",price:220,thumb:"/demo/manti.jpg"},
+    {id:2,title:"Vitrin: Örgü Bebek Takımı",price:450,thumb:"/demo/knit.jpg"},
+    {id:3,title:"Zeytinyağlı Yaprak Sarma",price:260,thumb:"/demo/sarma.jpg"},
+  ]);
+  const [listingsExpired,setListingsExpired] = React.useState([
+    {id:11,title:"Glutensiz Kurabiye",price:180,thumb:"/demo/cookie.jpg", daysAgo: 5},
+  ]);
 
-  /* ---------------------------- Yardımcılar ---------------------------- */
- const GOLD = "linear-gradient(135deg,#f59e0b,#f97316,#fbbf24)";
+  // Sipariş ve yorum sayıları (örnek)
+  const [pendingOrders] = React.useState(3);
+  const [comments] = React.useState([
+    {id:1, user:"Ayşe", text:{tr:"Çok lezzetliydi, paketleme özenliydi.",en:"Very tasty, careful packaging.",ar:"لذيذ جدًا وتغليف متقن.",de:"Sehr lecker, sorgfältig verpackt."}, stars:5, date:"2025-02-10"},
+    {id:2, user:"Mehmet", text:{tr:"Teslimat hızlıydı.",en:"Delivery was fast.",ar:"التسليم كان سريعًا.",de:"Lieferung war schnell."}, stars:4, date:"2025-01-28"},
+  ]);
 
- const isBrowser =
-   typeof window !== "undefined" && typeof window.localStorage !== "undefined";
- function loadLocal(key, fallback) {
-   if (!isBrowser) return fallback;
-   try {
-     const raw = window.localStorage.getItem(key);
-     return raw === null ? fallback : JSON.parse(raw);
-   } catch {
-     return fallback;
-   }
- }
- function saveLocal(key, v) {
-  if (!isBrowser) return;
-  try { window.localStorage.setItem(key, JSON.stringify(v)); } catch {}
-}
+  // Ödeme modal state + kopyalama
+  const [showPay, setShowPay] = React.useState(false);
+  const [copied, setCopied] = React.useState("");
 
-/* ---------------------------- Ana Bileşen ---------------------------- */
-export default function SellerProfilePage() {
-  const router = useRouter();
-  const { lang, setLang, t } = useLang();
-
-  const [user, setUser] = useState(null);
-  const [isPro, setIsPro] = useState(loadLocal("isPro", true));
-  const [vacation, setVacation] = useState(loadLocal("vacation", false));
-  const [avatar, setAvatar] = useState(loadLocal("avatar", ""));
-
-  // İlanlar
-  const [ads, setAds] = useState([]);
-
-  // Siparişler (örnek)
-  const [orders, setOrders] = useState(loadLocal("orders_waiting", [
-    { id: "o1", title: "Ev Yapımı Mantı", buyer: "Ayşe K.", total: "₺240", date: Date.now() - 86400000 },
-    { id: "o2", title: "Lavanta Kesesi", buyer: "Mehmet T.", total: "₺120", date: Date.now() - 3600 * 1000 * 15 },
-  ]));
-
-  // Yorumlar (örnek – herkese görünür, silme: yazar veya admin)
-  const [reviews, setReviews] = useState(loadLocal("reviews", [
-    { id: "r1", fromName: "Zeynep D.", fromEmail: "zeynep@example.com", stars: 5, text: "Harika paketleme ve hızlı teslim!", date: Date.now() - 5 * 86400000 },
-    { id: "r2", fromName: "Ali V.", fromEmail: "ali@example.com", stars: 4, text: "Tatlılar çok lezzetliydi.", date: Date.now() - 10 * 86400000 },
-  ]));
-  const avgStars = reviews.length ? (reviews.reduce((s, r) => s + r.stars, 0) / reviews.length).toFixed(1) : "-";
-
-  /* ---------------- Auth ---------------- */
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      if (u) localStorage.setItem("authed", "1"); else localStorage.removeItem("authed");
-      // Google ise bilgileri otomatik doldur
-      if (u && u.providerData?.some((p) => p.providerId === GoogleAuthProvider.PROVIDER_ID)) {
-        const base = {
-          name: u.displayName || "",
-          email: u.email || "",
-          phone: u.phoneNumber || "",
-        };
-        const addr = loadLocal("address", null) ?? { addressLine: "", city: "", district: "", postal: "" };
-        saveLocal("profile", { ...base });
-        saveLocal("address", addr);
-        if (!avatar && u.photoURL) setAvatar(u.photoURL);
-      }
-    });
-    return () => unsub();
-  }, [avatar]);
-
-  /* ---------------- Ads load ---------------- */
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      // Önce yerel "myAds" varsa onu kullan
-      const local = loadLocal("myAds", null);
-      if (local) { setAds(decorateAds(local)); return; }
-      try {
-        const res = await fetch("/ads.json", { cache: "no-store" });
-        if (res.ok) {
-          const all = await res.json();
-          const mine = decorateAds((all || []).slice(0, 9));
-          if (alive) setAds(mine);
-          saveLocal("myAds", mine);
-          return;
-        }
-      } catch {}
-      if (alive) setAds([]);
-    })();
-    return () => { alive = false; };
-  }, []);
-
-  const stats = useMemo(() => ({
-    published: ads.filter((a) => a.status === "published").length,
-    pending: ads.filter((a) => a.status === "pending").length,
-    expired: ads.filter((a) => a.status === "expired").length,
-    showcase: ads.filter((a) => a.isFeatured).length,
-  }), [ads]);
-
-  /* ---------------- Actions ---------------- */
-  const updateAds = (fn) => setAds((prev) => { const next = fn([...prev]); saveLocal("myAds", next); return next; });
-
-  const featureAd = (id, v) => updateAds((arr) => arr.map((a) => a.id === id ? { ...a, isFeatured: !!v } : a));
-  const editAd = (id) => router.push(`/portal/seller/post?id=${encodeURIComponent(id)}`);
-  const deleteAd = (id) => updateAds((arr) => arr.filter((a) => a.id !== id));
-  const renewAd = (id) => updateAds((arr) => arr.map((a) => a.id === id ? { ...a, status: "published", expiresAt: Date.now() + 1000 * 60 * 60 * 24 * 30 } : a));
-
-  const confirmOrder = (id) => {
-    const left = orders.filter((o) => o.id !== id);
-    setOrders(left); saveLocal("orders_waiting", left);
+  // ====== I18N ======
+  const STR = {
+    tr:{
+      BRAND:"ÜRETEN ELLER",
+      SELLER_PAGE:"Satıcı Profili",
+      FOLLOW:"Takip et", MESSAGE:"Mesaj gönder", REQUEST:"Özel istek",
+      VERIFIED:"Onaylı Satıcı", PRO:"PREMIUM",
+      STARS:"Puan", REVIEWS:"Yorumlar", SEE_REVIEWS:"Yorumları gör",
+      TOTAL_SALES:"Toplam satış", JOINED:"Mağazaya katılma", REPORT:"Şikayet et / Bildir",
+      TRUST:"Güven Rozetleri", ID_VERIFIED:"Kimlik doğrulandı", TAX_VERIFIED:"Vergi bilgisi doğrulandı", SECURE_PAY:"Güvenli ödeme",
+      ABOUT:"2–3 cümle tanıtım",
+      HOW_WORK:"Çalışma şekli", CUSTOM_OK:"Kişiye özel sipariş alıyorum", CUSTOM_NO:"Kişiye özel sipariş almıyorum",
+      DELIVERY:"Teslimat", DELIVERS_TO:"Gönderim yapılan şehirler", ETA:"Tahmini süre (gün)", FEE:"Kargo ücreti", PICKUP:"Elden teslim",
+      RETURNS:"İade / değişim kuralları",
+      OWNER_QUICK:"Hızlı bakış (Sahip)", PENDING_ORDERS:"Onay bekleyen siparişler", MY_REVIEWS:"Yorumlar",
+      TABS_TITLE:"İlanlarım", TAB_PENDING:"Onay bekleyen ilanlar", TAB_LIVE:"Yayındaki ilanlar", TAB_EXPIRED:"Süresi biten ilanlar",
+      EXTEND:"Süre uzat", EDIT:"Düzenle", DELETE:"Sil",
+      LIVE_LISTINGS:"Yayındaki ilanlar", BEST_SELLERS:"En çok satanlar",
+      RATE_SELLER:"Puan ver", CANNOT_RATE_SELF:"Kendi profilinde puan veremezsin",
+      BOTTOM_HOME:"Ana sayfa", BOTTOM_MSG:"Mesajlar", BOTTOM_NOTIF:"Bildirimler",
+      LEGAL_TITLE:"KURUMSAL",
+      LEGAL_LINKS:[
+        {href:"/legal/hakkimizda", label:"HAKKIMIZDA"},
+        {href:"/legal/iletisim", label:"İLETİŞİM"},
+        {href:"/legal/gizlilik", label:"GİZLİLİK"},
+        {href:"/legal/kvkk-aydinlatma", label:"KVKK AYDINLATMA"},
+        {href:"/legal/kullanim-sartlari", label:"KULLANIM ŞARTLARI"},
+        {href:"/legal/mesafeli-satis-sozlesmesi", label:"MESAFELİ SATIŞ"},
+        {href:"/legal/teslimat-iade", label:"TESLİMAT & İADE"},
+        {href:"/legal/cerez-politikasi", label:"ÇEREZ POLİTİKASI"},
+        {href:"/legal/topluluk-kurallari", label:"TOPLULUK KURALLARI"},
+        {href:"/legal/yasakli-urunler", label:"YASAKLI ÜRÜNLER"},
+      ],
+      ADMIN_PANEL:"Admin Paneli", GIVE_VERIFY:"Onay rozeti ver", GIVE_PREMIUM:"Premium ver", GIVE_TRUST:"Güven rozetleri",
+      COMPLAINT_HINT:"Kötüye kullanım için bildir",
+      // Yeni
+      SETTINGS:"Ayarlar",
+      CONTACT:"İletişim",
+      PHONE:"Telefon",
+      ADDRESS:"Adres",
+      FULLNAME:"Ad Soyad",
+      PREMIUM_CTA:"PREMIUM OL",
+      PREMIUM_ACTIVE:"PREMIUM AKTİF",
+      PAY_NOW:"Ödeme Yap",
+      BANK_TRANSFER:"Havale / EFT",
+      BENEFICIARY:"Alıcı",
+      IBAN:"IBAN",
+      PAPARA:"Papara",
+      COPY:"Kopyala",
+      COPIED:"Kopyalandı!",
+      CARD_PAY:"Kartla Öde",
+      CLOSE:"Kapat",
+    },
+    en:{
+      BRAND:"ÜRETEN ELLER",
+      SELLER_PAGE:"Seller Profile",
+      FOLLOW:"Follow", MESSAGE:"Message", REQUEST:"Custom request",
+      VERIFIED:"Verified Seller", PRO:"PREMIUM",
+      STARS:"Stars", REVIEWS:"Reviews", SEE_REVIEWS:"See reviews",
+      TOTAL_SALES:"Total sales", JOINED:"Joined", REPORT:"Report",
+      TRUST:"Trust Badges", ID_VERIFIED:"ID verified", TAX_VERIFIED:"Tax info verified", SECURE_PAY:"Secure payment",
+      ABOUT:"2–3 sentence intro",
+      HOW_WORK:"How I work", CUSTOM_OK:"I accept custom orders", CUSTOM_NO:"No custom orders",
+      DELIVERY:"Delivery", DELIVERS_TO:"Ships to", ETA:"ETA (days)", FEE:"Shipping fee", PICKUP:"Pickup",
+      RETURNS:"Return / exchange rules",
+      OWNER_QUICK:"Owner quick glance", PENDING_ORDERS:"Pending orders", MY_REVIEWS:"Reviews",
+      TABS_TITLE:"My listings", TAB_PENDING:"Pending", TAB_LIVE:"Live", TAB_EXPIRED:"Expired",
+      EXTEND:"Extend", EDIT:"Edit", DELETE:"Delete",
+      LIVE_LISTINGS:"Live listings", BEST_SELLERS:"Best sellers",
+      RATE_SELLER:"Rate seller", CANNOT_RATE_SELF:"You can't rate your own profile",
+      BOTTOM_HOME:"Home", BOTTOM_MSG:"Messages", BOTTOM_NOTIF:"Alerts",
+      LEGAL_TITLE:"CORPORATE",
+      LEGAL_LINKS:[
+        {href:"/legal/hakkimizda", label:"ABOUT"},
+        {href:"/legal/iletisim", label:"CONTACT"},
+        {href:"/legal/gizlilik", label:"PRIVACY"},
+        {href:"/legal/kvkk-aydinlatma", label:"PDPL (KVKK) NOTICE"},
+        {href:"/legal/kullanim-sartlari", label:"TERMS OF USE"},
+        {href:"/legal/mesafeli-satis-sozlesmesi", label:"DISTANCE SALES"},
+        {href:"/legal/teslimat-iade", label:"DELIVERY & RETURNS"},
+        {href:"/legal/cerez-politikasi", label:"COOKIE POLICY"},
+        {href:"/legal/topluluk-kurallari", label:"COMMUNITY GUIDELINES"},
+        {href:"/legal/yasakli-urunler", label:"PROHIBITED ITEMS"},
+      ],
+      ADMIN_PANEL:"Admin Panel", GIVE_VERIFY:"Grant verified badge", GIVE_PREMIUM:"Grant premium", GIVE_TRUST:"Trust badges",
+      COMPLAINT_HINT:"Report misuse",
+      // New
+      SETTINGS:"Settings",
+      CONTACT:"Contact",
+      PHONE:"Phone",
+      ADDRESS:"Address",
+      FULLNAME:"Full name",
+      PREMIUM_CTA:"Go PREMIUM",
+      PREMIUM_ACTIVE:"PREMIUM ACTIVE",
+      PAY_NOW:"Pay Now",
+      BANK_TRANSFER:"Bank transfer",
+      BENEFICIARY:"Beneficiary",
+      IBAN:"IBAN",
+      PAPARA:"Papara",
+      COPY:"Copy",
+      COPIED:"Copied!",
+      CARD_PAY:"Pay by Card",
+      CLOSE:"Close",
+    },
+    ar:{
+      BRAND:"أُورَتِن إِلَّر",
+      SELLER_PAGE:"ملف البائع",
+      FOLLOW:"متابعة", MESSAGE:"رسالة", REQUEST:"طلب خاص",
+      VERIFIED:"بائع موثّق", PRO:"بريميوم",
+      STARS:"نجوم", REVIEWS:"التقييمات", SEE_REVIEWS:"عرض التقييمات",
+      TOTAL_SALES:"إجمالي المبيعات", JOINED:"انضمّ", REPORT:"إبلاغ",
+      TRUST:"شارات الثقة", ID_VERIFIED:"تم توثيق الهوية", TAX_VERIFIED:"تم توثيق الضريبة", SECURE_PAY:"دفع آمن",
+      ABOUT:"تعريف من 2–3 جمل",
+      HOW_WORK:"طريقة العمل", CUSTOM_OK:"أقبل الطلبات الخاصة", CUSTOM_NO:"لا أقبل الطلبات الخاصة",
+      DELIVERY:"التسليم", DELIVERS_TO:"يشحن إلى", ETA:"المدة (أيام)", FEE:"رسوم الشحن", PICKUP:"استلام يدًا بيد",
+      RETURNS:"قواعد الإرجاع/الاستبدال",
+      OWNER_QUICK:"نظرة سريعة (المالك)", PENDING_ORDERS:"طلبات قيد الموافقة", MY_REVIEWS:"التقييمات",
+      TABS_TITLE:"إعلاناتي", TAB_PENDING:"قيد الموافقة", TAB_LIVE:"منشور", TAB_EXPIRED:"منتهي",
+      EXTEND:"تمديد", EDIT:"تعديل", DELETE:"حذف",
+      LIVE_LISTINGS:"الإعلانات المنشورة", BEST_SELLERS:"الأكثر مبيعًا",
+      RATE_SELLER:"قيّم البائع", CANNOT_RATE_SELF:"لا يمكنك تقييم ملفك",
+      BOTTOM_HOME:"الرئيسية", BOTTOM_MSG:"الرسائل", BOTTOM_NOTIF:"الإشعارات",
+      LEGAL_TITLE:"الشركة",
+      LEGAL_LINKS:[
+        {href:"/legal/hakkimizda", label:"مَنْ نَحْنُ"},
+        {href:"/legal/iletisim", label:"اتِّصَال"},
+        {href:"/legal/gizlilik", label:"الخصوصية"},
+        {href:"/legal/kvkk-aydinlatma", label:"إشعار KVKK"},
+        {href:"/legal/kullanim-sartlari", label:"شروط الاستخدام"},
+        {href:"/legal/mesafeli-satis-sozlesmesi", label:"البيع عن بُعد"},
+        {href:"/legal/teslimat-iade", label:"التسليم والإرجاع"},
+        {href:"/legal/cerez-politikasi", label:"سياسة الكوكيز"},
+        {href:"/legal/topluluk-kurallari", label:"إرشادات المجتمع"},
+        {href:"/legal/yasakli-urunler", label:"السلع المحظورة"},
+      ],
+      ADMIN_PANEL:"لوحة الإدارة", GIVE_VERIFY:"منح شارة التوثيق", GIVE_PREMIUM:"منح بريميوم", GIVE_TRUST:"شارات الثقة",
+      COMPLAINT_HINT:"للإبلاغ عن إساءة",
+      // جديد
+      SETTINGS:"الإعدادات",
+      CONTACT:"التواصل",
+      PHONE:"الهاتف",
+      ADDRESS:"العنوان",
+      FULLNAME:"الاسم الكامل",
+      PREMIUM_CTA:"اشترك بريميوم",
+      PREMIUM_ACTIVE:"بريميوم مفعّل",
+      PAY_NOW:"ادفع الآن",
+      BANK_TRANSFER:"حوالة بنكية",
+      BENEFICIARY:"المستفيد",
+      IBAN:"IBAN",
+      PAPARA:"Papara",
+      COPY:"نسخ",
+      COPIED:"تم النسخ!",
+      CARD_PAY:"الدفع بالبطاقة",
+      CLOSE:"إغلاق",
+    },
+    de:{
+      BRAND:"ÜRETEN ELLER",
+      SELLER_PAGE:"Verkäuferprofil",
+      FOLLOW:"Folgen", MESSAGE:"Nachricht", REQUEST:"Sonderwunsch",
+      VERIFIED:"Verifizierter Verkäufer", PRO:"PREMIUM",
+      STARS:"Sterne", REVIEWS:"Bewertungen", SEE_REVIEWS:"Bewertungen ansehen",
+      TOTAL_SALES:"Gesamtverkäufe", JOINED:"Beigetreten", REPORT:"Melden",
+      TRUST:"Vertrauensaspekte", ID_VERIFIED:"ID verifiziert", TAX_VERIFIED:"Steuerinfo verifiziert", SECURE_PAY:"Sichere Zahlung",
+      ABOUT:"Kurzvorstellung (2–3 Sätze)",
+      HOW_WORK:"Arbeitsweise", CUSTOM_OK:"Nimmt Sonderbestellungen an", CUSTOM_NO:"Keine Sonderbestellungen",
+      DELIVERY:"Lieferung", DELIVERS_TO:"Lieferorte", ETA:"Dauer (Tage)", FEE:"Versandkosten", PICKUP:"Abholung",
+      RETURNS:"Rückgabe / Umtausch",
+      OWNER_QUICK:"Schnellansicht (Inhaber)", PENDING_ORDERS:"Ausstehende Bestellungen", MY_REVIEWS:"Bewertungen",
+      TABS_TITLE:"Meine Anzeigen", TAB_PENDING:"Ausstehend", TAB_LIVE:"Live", TAB_EXPIRED:"Abgelaufen",
+      EXTEND:"Verlängern", EDIT:"Bearbeiten", DELETE:"Löschen",
+      LIVE_LISTINGS:"Live-Anzeigen", BEST_SELLERS:"Bestseller",
+      RATE_SELLER:"Verkäufer bewerten", CANNOT_RATE_SELF:"Du kannst dich nicht selbst bewerten",
+      BOTTOM_HOME:"Start", BOTTOM_MSG:"Nachrichten", BOTTOM_NOTIF:"Meldungen",
+      LEGAL_TITLE:"UNTERNEHMEN",
+      LEGAL_LINKS:[
+        {href:"/legal/hakkimizda", label:"ÜBER UNS"},
+        {href:"/legal/iletisim", label:"KONTAKT"},
+        {href:"/legal/gizlilik", label:"DATENSCHUTZ"},
+        {href:"/legal/kvkk-aydinlatma", label:"KVKK-HINWEIS"},
+        {href:"/legal/kullanim-sartlari", label:"NUTZUNGSBEDINGUNGEN"},
+        {href:"/legal/mesafeli-satis-sozlesmesi", label:"FERNABSATZ"},
+        {href:"/legal/teslimat-iade", label:"LIEFERUNG & RÜCKGABE"},
+        {href:"/legal/cerez-politikasi", label:"COOKIE-RICHTLINIE"},
+        {href:"/legal/topluluk-kurallari", label:"COMMUNITY-RICHTLINIEN"},
+        {href:"/legal/yasakli-urunler", label:"VERBOTENE ARTIKEL"},
+      ],
+      ADMIN_PANEL:"Admin-Bereich", GIVE_VERIFY:"Verifizierungsabzeichen geben", GIVE_PREMIUM:"Premium geben", GIVE_TRUST:"Vertrauensaspekte",
+      COMPLAINT_HINT:"Missbrauch melden",
+      // Neu
+      SETTINGS:"Einstellungen",
+      CONTACT:"Kontakt",
+      PHONE:"Telefon",
+      ADDRESS:"Adresse",
+      FULLNAME:"Vollständiger Name",
+      PREMIUM_CTA:"PREMIUM werden",
+      PREMIUM_ACTIVE:"PREMIUM AKTIV",
+      PAY_NOW:"Jetzt zahlen",
+      BANK_TRANSFER:"Überweisung",
+      BENEFICIARY:"Empfänger",
+      IBAN:"IBAN",
+      PAPARA:"Papara",
+      COPY:"Kopieren",
+      COPIED:"Kopiert!",
+      CARD_PAY:"Mit Karte zahlen",
+      CLOSE:"Schließen",
+    },
   };
+  const t = STR[lang];
 
-  const deleteReview = (id) => {
-    const me = user?.email || "";
-    const isAdmin = loadLocal("role", "user") === "admin";
-    const rv = reviews.find((r) => r.id === id);
-    if (!rv) return;
-    if (isAdmin || rv.fromEmail === me) {
-      const next = reviews.filter((r) => r.id !== id);
-      setReviews(next); saveLocal("reviews", next);
-    } else {
-      alert("Yalnızca yorumu yazan kişi veya admin silebilir.");
-    }
-  };
+  // Admin işlemleri (sadece görünüm amaçlı)
+  function toggleVerify(){ if(!isAdmin) return; setSeller(s=>({...s, verified:!s.verified })); }
+  function togglePremium(){ if(!isAdmin) return; setSeller(s=>({...s, premium:!s.premium })); }
+  function toggleTrust(key){ if(!isAdmin) return; setSeller(s=>({...s, trustBadges:{...s.trustBadges, [key]: !s.trustBadges[key]}})); }
 
-  const onToggleVacation = () => { const nv = !vacation; setVacation(nv); saveLocal("vacation", nv); };
+  // Kısa yardımcılar
+  const fullName = `${seller.firstName} ${seller.lastName}`;
+  const canRate = view === 'visitor'; // sahibi kendine puan veremez
+  const ratingStars = Array.from({length:5}, (_,i)=> i < Math.round(seller.stats.ratingAvg));
 
-  const onAvatarChange = async (e) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const data = reader.result;
-      setAvatar(data); saveLocal("avatar", data);
-      if (auth.currentUser) {
-        try { await updateProfile(auth.currentUser, { photoURL: data }); } catch {}
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const onAvatarReset = async () => {
-    if (user?.photoURL) { setAvatar(user.photoURL); saveLocal("avatar", user.photoURL); }
-  };
-
-  const onSaveProfile = () => {
-    const name = document.getElementById("name").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-    const email = user?.email || document.getElementById("email").value.trim();
-    saveLocal("profile", { name, phone, email });
-    alert(t.settings.saved);
-  };
-
-  const onSaveAddress = () => {
-    const addressLine = document.getElementById("addressLine").value.trim();
-    const city = document.getElementById("city").value.trim();
-    const district = document.getElementById("district").value.trim();
-    const postal = document.getElementById("postal").value.trim();
-    saveLocal("address", { addressLine, city, district, postal });
-    alert(t.settings.saved);
-  };
-
-  const onResetPassword = async () => {
-    if (!user?.email) return alert("Hesap e‑postası bulunamadı.");
-    try { await sendPasswordResetEmail(auth, user.email); alert("E‑posta gönderildi."); } catch { alert("Gönderilemedi."); }
-  };
-
-  // Varsayılan sekme
-  const [tab, setTab] = useState("overview");
-
-  // Form varsayılanları
-  const prof = loadLocal("profile", { name: user?.displayName || "", email: user?.email || "", phone: "" });
-  const addr = loadLocal("address", { addressLine: "", city: "", district: "", postal: "" });
-
-  // Bölümlere ayrılmış ilanlar
-  const showcaseAds = ads.filter((a) => a.isFeatured && a.status === "published");
-  const publishedAds = ads.filter((a) => a.status === "published" && !a.isFeatured);
-  const pendingAds = ads.filter((a) => a.status === "pending");
-  const expiredAds = ads.filter((a) => a.status === "expired");
+  function extendExpired(id){ setListingsExpired(arr=>arr.map(x=> x.id===id ? {...x, daysAgo:0} : x)); }
+  function deleteExpired(id){ setListingsExpired(arr=>arr.filter(x=> x.id!==id)); }
+  async function copy(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      setCopied(text);
+      setTimeout(()=>setCopied(""),2000);
+    }catch(_e){ alert("Kopyalanamadı"); }
+  }
 
   return (
-    <>
-      <Head>
-        <title>{t.brand} – {t.title}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#0b0b0b" />
-      </Head>
-
-      {/* TOPBAR */}
-      <header className="topbar">
-        <a className="brand" href="/">
-          <img src="/logo.png" width="36" height="36" alt="logo" />
-          <span>{t.brand}</span>
-        </a>
-        <div className="actions">
-          <div className="leftActions">
-            <button className="ghost" onClick={() => router.push("/portal/seller")}>{t.bottom.home}</button>
-            <button className="ghost" onClick={() => router.push("/messages")}>{t.bottom.messages}</button>
-            <button className="ghost" onClick={() => router.push("/notifications")}>{t.bottom.notifs}</button>
+    <div lang={lang} dir={DIR} className="min-h-screen pb-24">
+      {/* HEADER */}
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-zinc-200">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+          <a className="flex items-center gap-2 font-black no-underline text-zinc-900" href="/">
+            <img src="/logo.png" alt="logo" width="34" height="34"/>
+            <span>{t.BRAND}</span>
+          </a>
+          <div className="ml-auto flex items-center gap-2">
+            <select value={lang} onChange={e=>setLang(e.target.value)} className="border rounded-lg px-2 py-1">
+              {SUPPORTED.map(k=>(<option key={k} value={k}>{k.toUpperCase()}</option>))}
+            </select>
+            <a href="/portal/settings" className="btn sm">{t.SETTINGS}</a>
+            <div className="hidden md:flex items-center gap-2 text-xs">
+              <span className="opacity-60">view:</span>
+              <select value={view} onChange={e=>setView(e.target.value)} className="border rounded px-2 py-1">
+                <option value="owner">owner</option>
+                <option value="visitor">visitor</option>
+              </select>
+              <label className="flex items-center gap-1 ms-2"><input type="checkbox" checked={isAdmin} onChange={e=>setIsAdmin(e.target.checked)}/><span>admin</span></label>
+            </div>
           </div>
-          <select aria-label="Dil" value={lang} onChange={(e)=>setLang(e.target.value)}>
-            {SUPPORTED.map(k => <option key={k} value={k}>{k.toUpperCase()}</option>)}
-          </select>
         </div>
       </header>
 
-      {/* KAFA ALANI */}
-      <section className="hero">
-        <div className="avatarWrap" style={{ background: isPro ? GOLD : undefined }}>
-          <img className={isPro ? "avatar gold" : "avatar"} src={avatar || user?.photoURL || "/logo.png"} alt="avatar" />
-        </div>
-        <div className="info">
-          <div className="nameRow">
-            <h1 className="name">{prof.name || user?.displayName || "Satıcı"}</h1>
-            {isPro && <span className="pill pro">{t.pro}</span>}
-            <span className="pill verified">{t.verified}</span>
-          </div>
-          <div className="sub">
-            <span>⭐ {avgStars} ({reviews.length})</span>
-            <span>•</span>
-            <span>{t.stats.published}: {stats.published}</span>
-            <span>•</span>
-            <span>{t.stats.showcase}: {stats.showcase}</span>
-            <span>•</span>
-            <span>{t.stats.pending}: {stats.pending}</span>
-            <span>•</span>
-            <span>{t.stats.expired}: {stats.expired}</span>
-          </div>
-          <div className="ctaRow">
-            <button className="primary" onClick={() => setIsPro((x)=>{ saveLocal("isPro", !x); return !x; })}>{isPro ? t.manage : t.upgrade}</button>
-            <label className="switch"><input type="checkbox" checked={vacation} onChange={onToggleVacation} /><span className="slider" /> {t.quick.vacation}</label>
-          </div>
-        </div>
-      </section>
+      <main className="max-w-6xl mx-auto px-4 mt-4 grid lg:grid-cols-3 gap-4">
+        {/* LEFT: Avatar & badges */}
+        <aside className="lg:col-span-1">
+          <div className={`rounded-2xl p-4 border bg-white shadow-sm ${seller.premium? 'ring-2 ring-yellow-400':''}`} style={seller.premium?{boxShadow:'0 0 0 3px rgba(234,179,8,.35) inset'}:{}}>
+            <div className="flex items-center gap-3">
+              <div className={`avatar ${seller.premium?'gold':''}`}>
+                <img src="/avatar.png" alt="avatar"/>
+              </div>
+              <div>
+                <div className="text-lg font-black">@{seller.username}</div>
+                <div className="text-sm text-zinc-600">{fullName} • {seller.city}</div>
+              </div>
+            </div>
+            {seller.verified && (
+              <div className="mt-2 text-xs font-bold text-emerald-700 inline-flex items-center gap-2">
+                <span className="badge">{t.VERIFIED}</span>
+                {seller.premium && <span className="badge gold">{t.PRO}</span>}
+              </div>
+            )}
 
-      {/* SEKME BAŞLIKLARI */}
-      <nav className="tabs" role="tablist">
-        {["overview","listings","reviews","orders","settings"].map((k) => (
-          <button key={k} role="tab" aria-selected={tab===k} className={tab===k?"tab active":"tab"} onClick={()=>setTab(k)}>
-            {t.tabs[k]}
-          </button>
-        ))}
-      </nav>
-
-      {/* İÇERİK */}
-      <main className="wrap">
-        {tab === "overview" && (
-          <section className="panel">
-            <h2>Genel Bakış</h2>
-            <ul className="bullets">
-              <li>PRO üyelerde avatar ve ilan çerçeveleri <b>altın</b>, ilanlarda <b>“{t.verified}”</b> rozeti görünür.</li>
-              <li>Yeni ilanlar önce <b>admin onayına</b> düşer, onaylanınca yayına girer.</li>
-              <li>PRO ise, seçtiğiniz ilanı <b>Vitrine</b> taşıyabilirsiniz.</li>
-              <li>Süresi biten ilanlar <b>{t.listings.sections.expired}</b> bölümüne düşer; <b>{t.listings.actions.renew}</b> ile uzatabilirsiniz.</li>
-              <li>Yorumlar herkese görünür; <b>yalnızca siparişi onaylanan müşteri</b> bir kez puan & yorum bırakabilir. Silme: yorum sahibi veya admin.</li>
-            </ul>
-          </section>
-        )}
-
-        {tab === "listings" && (
-          <section className="panel">
-            <div className="panelHead">
-              <h2>{t.tabs.listings}</h2>
-              <button className="primary" onClick={()=>router.push("/portal/seller/post")}>{t.listings.create}</button>
+            <div className="mt-3 flex items-center gap-2">
+              {ratingStars.map((on,i)=> <span key={i} className={`star ${on?'on':''}`}>★</span>)}
+              <span className="text-sm font-bold">{seller.stats.ratingAvg.toFixed(1)}</span>
+              <button className="link text-sm" disabled={!canRate} title={!canRate? t.CANNOT_RATE_SELF : t.RATE_SELLER}>{t.SEE_REVIEWS} ({seller.stats.ratingCount})</button>
             </div>
 
-            {/* Showcase */}
-            <h3 className="secTitle">{t.listings.sections.showcase} <small>({showcaseAds.length})</small></h3>
-            <div className="grid ads">
-              {showcaseAds.length ? showcaseAds.map((a)=> (
-                <AdCard key={a.id} a={a} isPro={isPro} onEdit={editAd} onDelete={deleteAd} onFeature={(v)=>featureAd(a.id, v)} canFeature />
-              )) : <Empty text={t.listings.empty} />}
+            {view==='visitor' && (
+              <div className="mt-3 flex gap-2">
+                <button className="btn sm">{t.FOLLOW}</button>
+                <button className="btn sm">{t.MESSAGE}</button>
+                <button className="btn sm">{t.REQUEST}</button>
+              </div>
+            )}
+
+            {/* İLETİŞİM */}
+            <div className="mt-4">
+              <div className="text-sm font-black mb-1">{t.CONTACT}</div>
+              <ul className="text-sm text-zinc-700 space-y-1">
+                <li><b>{t.FULLNAME}:</b> {fullName}</li>
+                <li><b>{t.PHONE}:</b> {seller.phone}</li>
+                <li><b>{t.ADDRESS}:</b> {seller.address}</li>
+              </ul>
             </div>
 
-            {/* Published */}
-            <h3 className="secTitle">{t.listings.sections.published} <small>({publishedAds.length})</small></h3>
-            <div className="grid ads">
-              {publishedAds.length ? publishedAds.map((a)=> (
-                <AdCard key={a.id} a={a} isPro={isPro} onEdit={editAd} onDelete={deleteAd} onFeature={(v)=>featureAd(a.id, v)} canFeature />
-              )) : <Empty text={t.listings.empty} />}
+            {/* Güven rozetleri */}
+            <div className="mt-4">
+              <div className="text-sm font-black mb-1">{t.TRUST}</div>
+              <div className="flex flex-wrap gap-2">
+                {seller.trustBadges.id && <span className="chip">{t.ID_VERIFIED}</span>}
+                {seller.trustBadges.tax && <span className="chip">{t.TAX_VERIFIED}</span>}
+                {seller.trustBadges.securePay && <span className="chip">{t.SECURE_PAY}</span>}
+              </div>
+              {view==='visitor' && <button className="link mt-2 text-xs" title={t.COMPLAINT_HINT}>{t.REPORT}</button>}
             </div>
 
-            {/* Pending */}
-            <h3 className="secTitle">{t.listings.sections.pending} <small>({pendingAds.length})</small></h3>
-            <div className="grid ads">
-              {pendingAds.length ? pendingAds.map((a)=> (
-                <AdCard key={a.id} a={a} isPro={isPro} onEdit={editAd} onDelete={deleteAd} pending />
-              )) : <Empty text={t.listings.empty} />}
+            {/* PREMIUM */}
+            <div className="mt-4 rounded-xl border p-3 bg-white">
+              <div className="text-sm font-black mb-1">PREMIUM</div>
+              {seller.premium ? (
+                <div className="text-sm text-emerald-700 font-bold">{t.PREMIUM_ACTIVE}</div>
+              ) : (
+                <button className="btn sm" onClick={()=>setShowPay(true)}>{t.PREMIUM_CTA}</button>
+              )}
+              <div className="mt-2 flex gap-2 flex-wrap">
+                <button className="btn sm" onClick={()=>setShowPay(true)}>{t.PAY_NOW}</button>
+                <a className="btn sm" href="/portal/pay?plan=premium">{t.CARD_PAY}</a>
+              </div>
+            </div>
+
+            {/* Admin panel (yalnız admin görsün) */}
+            {isAdmin && (
+              <div className="mt-4 rounded-xl border p-3 bg-zinc-50">
+                <div className="text-xs font-black mb-2">{t.ADMIN_PANEL}</div>
+                <div className="flex flex-col gap-2 text-sm">
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={seller.verified} onChange={toggleVerify}/> {t.GIVE_VERIFY}</label>
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={seller.premium} onChange={togglePremium}/> {t.GIVE_PREMIUM}</label>
+                  <div className="flex flex-col gap-1">
+                    <div className="text-xs opacity-70">{t.GIVE_TRUST}</div>
+                    <label className="flex items-center gap-2"><input type="checkbox" checked={seller.trustBadges.id} onChange={()=>toggleTrust('id')}/> {t.ID_VERIFIED}</label>
+                    <label className="flex items-center gap-2"><input type="checkbox" checked={seller.trustBadges.tax} onChange={()=>toggleTrust('tax')}/> {t.TAX_VERIFIED}</label>
+                    <label className="flex items-center gap-2"><input type="checkbox" checked={seller.trustBadges.securePay} onChange={()=>toggleTrust('securePay')}/> {t.SECURE_PAY}</label>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* RIGHT: Content */}
+        <section className="lg:col-span-2 grid gap-4">
+          {/* Üst istatistikler */}
+          <div className="rounded-2xl p-4 border bg-white shadow-sm grid md:grid-cols-3 gap-3">
+            <div>
+              <div className="text-xs text-zinc-500">{t.TOTAL_SALES}</div>
+              <div className="text-2xl font-black">≈ {seller.stats.totalSales}</div>
+            </div>
+            <div>
+              <div className="text-xs text-zinc-500">{t.JOINED}</div>
+              <div className="text-2xl font-black">{seller.joinedAt}</div>
+            </div>
+            <div>
+              <div className="text-xs text-zinc-500">{t.REVIEWS}</div>
+              <div className="text-2xl font-black">{comments.length}</div>
+            </div>
+          </div>
+
+          {/* Owner quick glance */}
+          {view==='owner' && (
+            <div className="rounded-2xl p-4 border bg-white shadow-sm">
+              <div className="text-sm font-black mb-2">{t.OWNER_QUICK}</div>
+              <div className="grid md:grid-cols-3 gap-3">
+                <div className="kpi">
+                  <div className="kpi-k">{t.PENDING_ORDERS}</div>
+                  <div className="kpi-v">{pendingOrders}</div>
+                </div>
+                <div className="kpi">
+                  <div className="kpi-k">{t.MY_REVIEWS}</div>
+                  <div className="kpi-v">{comments.length}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Hakkında ve politikalar */}
+          <div className="rounded-2xl p-4 border bg-white shadow-sm grid md:grid-cols-2 gap-4">
+            <div>
+              <div className="text-sm font-black mb-1">{t.ABOUT}</div>
+              <div className="text-sm text-zinc-700">{seller.bio[lang]}</div>
+
+              <div className="text-sm font-black mt-4 mb-1">{t.HOW_WORK}</div>
+              <div className="text-sm text-zinc-700">{seller.customOrders ? t.CUSTOM_OK : t.CUSTOM_NO}</div>
+
+              <div className="text-sm font-black mt-4 mb-1">{t.DELIVERY}</div>
+              <ul className="text-sm text-zinc-700 space-y-1 list-disc ps-5">
+                <li><b>{t.DELIVERS_TO}:</b> {seller.delivery.cities.join(', ')}</li>
+                <li><b>{t.ETA}:</b> {seller.delivery.etaDays}</li>
+                <li><b>{t.FEE}:</b> {seller.delivery.shippingFee}</li>
+                <li><b>{t.PICKUP}:</b> {seller.delivery.pickup? '✓':'–'}</li>
+              </ul>
+            </div>
+            <div>
+              <div className="text-sm font-black mb-1">{t.RETURNS}</div>
+              <ul className="text-sm text-zinc-700 space-y-1 list-disc ps-5">
+                {seller.returns[lang].map((r,i)=>(<li key={i}>{r}</li>))}
+              </ul>
+            </div>
+          </div>
+
+          {/* İlan sekmeleri */}
+          <div className="rounded-2xl p-4 border bg-white shadow-sm">
+            <div className="text-sm font-black mb-3">{t.TABS_TITLE}</div>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <button className="tab-btn">{t.TAB_PENDING}</button>
+              <button className="tab-btn primary">{t.TAB_LIVE}</button>
+              <button className="tab-btn">{t.TAB_EXPIRED}</button>
+            </div>
+
+            {/* Live listings */}
+            <div className="grid md:grid-cols-3 gap-3">
+              {listingsLive.map(card=> (
+                <div key={card.id} className="card">
+                  <div className="thumb"><img src={card.thumb} alt=""/></div>
+                  <div className="p-3">
+                    <div className="card-title">{card.title}</div>
+                    <div className="card-sub">{card.price} TL</div>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Expired */}
-            <h3 className="secTitle">{t.listings.sections.expired} <small>({expiredAds.length})</small></h3>
-            <div className="grid ads">
-              {expiredAds.length ? expiredAds.map((a)=> (
-                <AdCard key={a.id} a={a} isPro={isPro} onEdit={editAd} onDelete={deleteAd} onRenew={()=>renewAd(a.id)} expired />
-              )) : <Empty text={t.listings.empty} />}
-            </div>
-          </section>
-        )}
-
-        {tab === "reviews" && (
-          <section className="panel">
-            <h2>{t.tabs.reviews} – ⭐ {avgStars}</h2>
-            <p className="muted">{t.reviews.onlyBuyers}</p>
-            <div className="reviews">
-              {reviews.length ? reviews.map((r)=> (
-                <div key={r.id} className="review">
-                  <div className="revHead">
-                    <div className="stars" aria-label={`${r.stars} yıldız`}>{"★".repeat(r.stars)}{"☆".repeat(5 - r.stars)}</div>
-                    <div className="who">{r.fromName}</div>
-                    <div className="date">{new Date(r.date).toLocaleDateString()}</div>
-                    <button className="ghost small" onClick={()=>deleteReview(r.id)}>{t.reviews.delete}</button>
-                  </div>
-                  <p className="txt">{r.text}</p>
+            {listingsExpired.length>0 && (
+              <div className="mt-4">
+                <div className="text-sm font-black mb-2">{t.TAB_EXPIRED}</div>
+                <div className="grid md:grid-cols-2 gap-3">
+                  {listingsExpired.map(card => (
+                    <div key={card.id} className="card">
+                      <div className="thumb small"><img src={card.thumb} alt=""/></div>
+                      <div className="p-3 flex items-center justify-between gap-3">
+                        <div>
+                          <div className="card-title">{card.title}</div>
+                          <div className="card-sub">{card.price} TL • {card.daysAgo}g önce bitti</div>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          <button className="btn xs" onClick={()=>extendExpired(card.id)}>{t.EXTEND}</button>
+                          <button className="btn xs" onClick={()=>alert('edit '+card.id)}>{t.EDIT}</button>
+                          <button className="btn xs danger" onClick={()=>deleteExpired(card.id)}>{t.DELETE}</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              )) : <Empty text="Henüz yorum yok." />}
-            </div>
-          </section>
-        )}
-
-        {tab === "orders" && (
-          <section className="panel">
-            <h2>{t.orders.awaiting}</h2>
-            {orders.length ? (
-              <div className="orders">
-                {orders.map((o)=> (
-                  <div key={o.id} className="order">
-                    <div className="oMain">
-                      <div className="oTitle">{o.title}</div>
-                      <div className="oMeta">{o.buyer} • {new Date(o.date).toLocaleString()} • {o.total}</div>
-                    </div>
-                    <div className="oAct">
-                      <button className="primary" onClick={()=>confirmOrder(o.id)}>{t.orders.confirm}</button>
-                      <button className="ghost" onClick={()=>confirmOrder(o.id)}>{t.orders.cancel}</button>
-                    </div>
-                  </div>
-                ))}
               </div>
-            ) : (
-              <Empty text={t.orders.empty} />
             )}
-          </section>
-        )}
+          </div>
 
-        {tab === "settings" && (
-          <section className="panel">
-            <h2>{t.tabs.settings}</h2>
-
-            <div className="settingsGrid">
-              {/* Profil Bilgileri */}
-              <div className="card">
-                <h3>{t.settings.profile}</h3>
-                <div className="formRow">
-                  <label>{t.settings.name}</label>
-                  <input id="name" defaultValue={prof.name || user?.displayName || ""} />
-                </div>
-                <div className="formRow">
-                  <label>{t.settings.email}</label>
-                  <input id="email" defaultValue={user?.email || prof.email || ""} disabled={!!user?.email} />
-                </div>
-                <div className="formRow">
-                  <label>{t.settings.phone}</label>
-                  <input id="phone" defaultValue={prof.phone || ""} />
-                </div>
-                <button className="primary" onClick={onSaveProfile}>{t.settings.save}</button>
-              </div>
-
-              {/* Adres */}
-              <div className="card">
-                <h3>{t.settings.address}</h3>
-                <div className="formRow"><label>{t.settings.addressLine}</label><input id="addressLine" defaultValue={addr.addressLine} /></div>
-                <div className="formGrid">
-                  <div className="formRow"><label>{t.settings.city}</label><input id="city" defaultValue={addr.city} /></div>
-                  <div className="formRow"><label>{t.settings.district}</label><input id="district" defaultValue={addr.district} /></div>
-                  <div className="formRow"><label>{t.settings.postal}</label><input id="postal" defaultValue={addr.postal} /></div>
-                </div>
-                <button className="primary" onClick={onSaveAddress}>{t.settings.save}</button>
-              </div>
-
-              {/* Avatar */}
-              <div className="card">
-                <h3>{t.settings.avatar}</h3>
-                <div className="avatarEdit">
-                  <div className="avatarWrap small" style={{ background: isPro ? GOLD : undefined }}>
-                    <img className={isPro ? "avatar gold" : "avatar"} src={avatar || user?.photoURL || "/logo.png"} alt="avatar" />
+          {/* Yorumlar */}
+          <div className="rounded-2xl p-4 border bg-white shadow-sm" id="reviews">
+            <div className="text-sm font-black mb-3">{t.REVIEWS}</div>
+            <div className="space-y-3">
+              {comments.map(c => (
+                <div key={c.id} className="rounded-xl border">
+                  <div className="p-3 flex items-center gap-2">
+                    <div className="avatar sm"><img src="/user.png" alt=""/></div>
+                    <div className="font-bold text-sm">{c.user}</div>
+                    <div className="text-xs text-zinc-500 ms-auto">{c.date}</div>
                   </div>
-                  <div className="btns">
-                    <label className="ghost" role="button">
-                      {t.settings.upload}
-                      <input type="file" accept="image/*" onChange={onAvatarChange} hidden />
-                    </label>
-                    <button className="ghost" onClick={onAvatarReset}>{t.settings.resetAvatar}</button>
-                  </div>
+                  <div className="px-3 pb-3 text-sm text-zinc-700">{c.text[lang]}</div>
                 </div>
-              </div>
-
-              {/* Şifre */}
-              <div className="card">
-                <h3>{t.settings.password}</h3>
-                {user?.providerData?.some((p) => p.providerId === GoogleAuthProvider.PROVIDER_ID) ? (
-                  <p className="muted">{t.settings.pwNoteGoogle}</p>
-                ) : (
-                  <p className="muted">Şifrenizi sıfırlamak için e‑posta alabilirsiniz.</p>
-                )}
-                <button className="primary" onClick={onResetPassword}>{t.settings.resetMail}</button>
-              </div>
+              ))}
             </div>
-          </section>
-        )}
+          </div>
+        </section>
       </main>
 
-      {/* ALT GEZİNME */}
-      <nav className="bottombar" aria-label="Bottom Navigation">
-        <button className="tabBtn" onClick={()=>router.push("/portal/seller")}><span>🏠</span><span>{t.bottom.home}</span></button>
-        <button className="tabBtn" onClick={()=>router.push("/messages")}><span>💬</span><span>{t.bottom.messages}</span></button>
-        <button className="tabBtn" onClick={()=>router.push("/notifications")}><span>🔔</span><span>{t.bottom.notifs}</span></button>
-      </nav>
+      {/* PAYMENT MODAL */}
+      {showPay && (
+        <div className="modal" onClick={()=>setShowPay(false)}>
+          <div className="sheet" onClick={(e)=>e.stopPropagation()}>
+            <div className="text-lg font-black mb-2">{t.PAY_NOW}</div>
+            <div className="space-y-3 text-sm">
+              <div className="rounded-xl border p-3 bg-white">
+                <div className="font-bold mb-1">{t.BANK_TRANSFER}</div>
+                <div><b>{t.BENEFICIARY}:</b> Nejla Kavuncu</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <b>{t.IBAN}:</b>
+                  <span className="mono">TR590082900009491868461105</span>
+                  <button className="btn xs" onClick={()=>copy('TR590082900009491868461105')}>{copied==='TR590082900009491868461105' ? t.COPIED : t.COPY}</button>
+                </div>
+              </div>
+              <div className="rounded-xl border p-3 bg-white">
+                <div className="font-bold mb-1">{t.PAPARA}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="mono">TR590082900009491868461105</span>
+                  <button className="btn xs" onClick={()=>copy('TR590082900009491868461105')}>{copied==='TR590082900009491868461105' ? t.COPIED : t.COPY}</button>
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <a className="btn" href="/portal/pay?plan=premium">{t.CARD_PAY}</a>
+              <button className="btn" onClick={()=>setShowPay(false)}>{t.CLOSE}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* LEGAL FOOTER */}
-      <footer className="legal">
-        <div className="inner">
-          <div className="ttl">{t.legalBar}</div>
-          <nav className="links" aria-label={t.legalBar}>
-            <a href="/legal/kurumsal">{t.legal.corporate}</a>
-            <a href="/legal/hakkimizda">{t.legal.about}</a>
-            <a href="/legal/iletisim">{t.legal.contact}</a>
-            <a href="/legal/gizlilik">{t.legal.privacy}</a>
-            <a href="/legal/kvkk-aydinlatma">{t.legal.kvkk}</a>
-            <a href="/legal/kullanim-sartlari">{t.legal.terms}</a>
-            <a href="/legal/mesafeli-satis-sozlesmesi">{t.legal.distance}</a>
-            <a href="/legal/teslimat-iade">{t.legal.shippingReturn}</a>
-            <a href="/legal/cerez-politikasi">{t.legal.cookies}</a>
-            <a href="/legal/topluluk-kurallari">{t.legal.rules}</a>
-            <a href="/legal/yasakli-urunler">{t.legal.banned}</a>
-            <a href="/legal" className="homeLink">{t.legal.all}</a>
+      {/* FOOTER (LEGAL) */}
+      <footer className="mt-8 w-full bg-black text-zinc-200">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="text-sm font-black mb-2">{t.LEGAL_TITLE}</div>
+          <nav className="flex flex-wrap gap-3 text-xs">
+            {t.LEGAL_LINKS.map((L,i)=> (<a key={i} className="hover:underline" href={L.href}>{L.label}</a>))}
           </nav>
-          <div className="copy">© {new Date().getFullYear()} {t.brand}</div>
+          <div className="text-[11px] text-zinc-400 mt-2">© 2025 Üreten Eller</div>
         </div>
       </footer>
 
+      {/* BOTTOM NAV (sabit) */}
+      <nav className="bottombar">
+        <a href="/" className="bbtn">🏠 <span>{t.BOTTOM_HOME}</span></a>
+        <a href="/portal/messages" className="bbtn">💬 <span>{t.BOTTOM_MSG}</span></a>
+        <a href="/portal/alerts" className="bbtn">🔔 <span>{t.BOTTOM_NOTIF}</span></a>
+      </nav>
+
       {/* STYLES */}
       <style>{`
-        :root{ --ink:#0f172a; --muted:#475569; --line:rgba(0,0,0,.08); }
-        html,body{height:100%}
-        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--ink);
-          background: radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
-                      radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
-                      linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
-          background-attachment:fixed;}
+        *{box-sizing:border-box}
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:
+          radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
+          radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
+          linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399)}
+        .min-h-screen{min-height:100vh}
+        .pb-24{padding-bottom:6rem}
+        .mx-auto{margin-left:auto;margin-right:auto}
+        .max-w-6xl{max-width:72rem}
+        .px-4{padding-left:1rem;padding-right:1rem}
+        .py-3{padding-top:.75rem;padding-bottom:.75rem}
+        .py-4{padding-top:1rem;padding-bottom:1rem}
+        .mt-4{margin-top:1rem}.mt-8{margin-top:2rem}
+        .text-2xl{font-size:1.5rem}
+        .font-black{font-weight:900}.font-bold{font-weight:700}
+        .text-xs{font-size:.75rem}.text-sm{font-size:.875rem}
+        .text-zinc-200{color:#e4e4e7}.text-zinc-400{color:#a1a1aa}.text-zinc-500{color:#71717a}.text-zinc-600{color:#52525b}.text-zinc-700{color:#3f3f46}.text-zinc-900{color:#18181b}
+        .bg-white{background:#fff}.bg-white\/90{background:rgba(255,255,255,.9)}.bg-black{background:#000}.bg-zinc-50{background:#fafafa}
+        .rounded-xl{border-radius:12px}.rounded-2xl{border-radius:16px}
+        .border{border:1px solid #e5e7eb}.border-zinc-200{border-color:#e4e4e7}
+        .shadow-sm{box-shadow:0 10px 25px rgba(0,0,0,.06)}
+        .backdrop-blur{backdrop-filter:blur(8px)}
+        .sticky{position:sticky}.top-0{top:0}
+        .z-40{z-index:40}
+        .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
+        .gap-1{gap:.25rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}
+        .grid{display:grid}.md\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.lg\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+        .lg\:col-span-2{grid-column:span 2 / span 2}
 
-        /* TOPBAR */
-        .topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;
-          padding:10px 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-        .brand{display:flex;align-items:center;gap:8px;font-weight:900;text-decoration:none;color:inherit}
-        .actions{display:flex;gap:10px;align-items:center}
-        .leftActions{display:flex;gap:8px}
-        .ghost{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
-        .primary{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
-        select{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:#fff}
+        .no-underline{text-decoration:none}
+        .hover\:underline:hover{text-decoration:underline}
 
-        /* HERO */
-        .hero{display:flex;gap:16px;align-items:center;max-width:1100px;margin:12px auto 0;padding:0 16px}
-        .avatarWrap{padding:3px;border-radius:999px;display:inline-grid;place-items:center}
-        .avatarWrap.small{padding:2px}
-        .avatar{width:92px;height:92px;border-radius:999px;display:block;border:3px solid #fff;box-shadow:0 8px 22px rgba(0,0,0,.15)}
-        .avatar.gold{box-shadow:0 8px 28px rgba(249, 115, 22, .45)}
-        .info{display:flex;flex-direction:column;gap:6px}
-        .nameRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-        .name{margin:0;font-size:28px}
-        .pill{border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800;display:inline-flex;align-items:center;gap:6px}
-        .pill.pro{background:linear-gradient(135deg,#f59e0b,#f97316,#fbbf24);color:#111827}
-        .pill.verified{background:#10b981;color:#fff}
-        .sub{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:14px}
-        .ctaRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+        .avatar{width:72px;height:72px;border-radius:999px;overflow:hidden;border:3px solid #e5e7eb;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+        .avatar img{width:100%;height:100%;object-fit:cover}
+        .avatar.gold{border:3px solid transparent;background:linear-gradient(#fff,#fff) padding-box, linear-gradient(135deg,#f59e0b,#facc15,#f59e0b) border-box}
+        .avatar.sm{width:36px;height:36px;border-width:2px}
 
-        /* SWITCH */
-        .switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
-        .switch input{display:none}
-        .slider{width:38px;height:22px;border-radius:999px;background:#e5e7eb;position:relative;display:inline-block}
-        .slider::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:999px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:.2s}
-        .switch input:checked + .slider{background:#111827}
-        .switch input:checked + .slider::after{transform:translateX(16px)}
+        .badge{font-size:10px;padding:.25rem .5rem;border-radius:999px;border:1px solid #10b981;background:#ecfdf5;color:#065f46}
+        .badge.gold{border-color:#f59e0b;background:#fff7ed;color:#92400e}
 
-        /* TABS */
-        .tabs{max-width:1100px;margin:10px auto 0;display:flex;gap:8px;padding:0 16px;flex-wrap:wrap}
-        .tab{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
-        .tab.active{background:#111827;border-color:#111827;color:#fff}
+        .star{font-size:18px;opacity:.25}
+        .star.on{opacity:1}
 
-        /* WRAP */
-        .wrap{max-width:1100px;margin:10px auto;padding:0 16px 16px}
-        .panel{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 8px 22px rgba(0,0,0,.06);padding:14px}
-        .panelHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-        .bullets{margin:8px 0 0;padding-left:18px}
+        .btn{border:1px solid #e5e7eb;border-radius:12px;padding:.5rem .75rem;background:#fff;font-weight:700}
+        .btn.sm{padding:.35rem .6rem;font-size:.8rem}
+        .btn.xs{padding:.25rem .45rem;font-size:.75rem;border-radius:10px}
+        .btn.danger{border-color:#ef4444;color:#b91c1c}
+        .link{background:none;border:none;padding:0;color:#2563eb;text-decoration:underline;cursor:pointer}
 
-        /* ADS */
-        .secTitle{margin:14px 2px 8px}
-        .grid.ads{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-        .ad{border:2px solid transparent;border-radius:16px;overflow:hidden;background:#fff;display:flex;flex-direction:column;box-shadow:0 8px 22px rgba(0,0,0,.06)}
-        .ad.gold{border-image:linear-gradient(135deg,#f59e0b,#f97316,#fbbf24) 1}
-        .thumb{aspect-ratio:4/3;background:#f1f5f9;background-size:cover;background-position:center;position:relative}
-        .badge{position:absolute;top:8px;left:8px;background:#111827;color:#fff;font-size:12px;padding:4px 8px;border-radius:999px}
-        .badge.green{background:#10b981}
-        .badge.orange{background:#f59e0b;color:#111827}
-        .badge.gray{background:#475569}
-        .body{padding:10px}
-        .title{font-weight:800;margin:0 0 6px}
-        .meta{display:flex;justify-content:space-between;color:#475569;font-size:13px}
-        .actions{display:flex;gap:6px;padding:0 10px 12px}
-        .ghost.small{border:1px solid var(--line);background:#fff;border-radius:10px;padding:6px 10px;font-weight:700;cursor:pointer}
+        .kpi{border:1px solid #e5e7eb;border-radius:12px;padding:.75rem;background:#fff}
+        .kpi-k{font-size:.75rem;color:#71717a}
+        .kpi-v{font-size:1.25rem;font-weight:900}
 
-        .empty{padding:18px;border:1px dashed #e5e7eb;border-radius:14px;text-align:center;color:#475569}
+        .tab-btn{border:1px solid #e5e7eb;border-radius:999px;padding:.4rem .9rem;background:#fff;font-weight:800}
+        .tab-btn.primary{background:linear-gradient(135deg,#ef4444,#8b5cf6,#22c55e);color:#fff;border-color:transparent}
 
-        /* REVIEWS */
-        .reviews{display:grid;gap:12px}
-        .review{border:1px solid #e5e7eb;border-radius:14px;padding:10px;background:#fff}
-        .revHead{display:flex;gap:10px;align-items:center}
-        .stars{font-weight:800}
-        .who{font-weight:700}
-        .date{color:var(--muted);font-size:12px;margin-left:auto}
-        .txt{margin:6px 0 0}
+        .card{border:1px solid #e5e7eb;border-radius:16px;background:#fff;overflow:hidden}
+        .thumb{aspect-ratio:4/3;background:#f4f4f5}
+        .thumb.small{aspect-ratio:3/2}
+        .thumb img{width:100%;height:100%;object-fit:cover}
+        .p-3{padding:.75rem}
+        .card-title{font-weight:900}
+        .card-sub{font-size:.85rem;color:#52525b;margin-top:.15rem}
 
-        /* ORDERS */
-        .orders{display:grid;gap:10px}
-        .order{border:1px solid #e5e7eb;border-radius:14px;padding:10px;background:#fff;display:flex;justify-content:space-between;align-items:center}
-        .oTitle{font-weight:800}
-        .oMeta{color:var(--muted);font-size:13px}
-        .oAct{display:flex;gap:8px}
+        .chip{font-size:11px;border:1px solid #e5e7eb;border-radius:999px;padding:.2rem .6rem;background:#fff}
 
-        /* SETTINGS */
-        .settingsGrid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
-        .card{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff}
-        .formRow{display:flex;flex-direction:column;gap:6px;margin:8px 0}
-        .formGrid{display:grid;gap:8px;grid-template-columns:repeat(3,1fr)}
-        .formRow input{border:1px solid #e5e7eb;border-radius:10px;padding:8px}
-        .avatarEdit{display:flex;gap:12px;align-items:center}
-        .btns{display:flex;gap:8px}
+        .bottombar{position:fixed;left:0;right:0;bottom:0;background:#0b0b0c;color:#fff;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-around;padding:.5rem;z-index:50}
+        .bbtn{display:flex;align-items:center;gap:.4rem;color:#fff;text-decoration:none;font-weight:800}
+        .bbtn span{font-size:.85rem}
 
-        /* BOTTOM BAR */
-        .bottombar{position:sticky;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px;
-          background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
-        .tabBtn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:700}
+        nav.bottombar + *{margin-bottom:64px}
 
-        /* LEGAL */
-        .legal{background:#0b0b0b;color:#f8fafc;border-top:1px solid rgba(255,255,255,.12);width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);margin-top:14px}
-        .inner{max-width:1100px;margin:0 auto;padding:12px 16px}
-        .ttl{font-weight:800;margin-bottom:6px}
-        .links{display:flex;flex-wrap:wrap;gap:10px}
-        .links a{color:#e2e8f0;font-size:13px;padding:6px 8px;border-radius:8px;text-decoration:none}
-        .links a:hover{background:rgba(255,255,255,.08);color:#fff}
-        .homeLink{margin-left:auto;font-weight:800}
-        .copy{margin-top:6px;font-size:12px;color:#cbd5e1}
-
-        @media (max-width:520px){ .formGrid{grid-template-columns:1fr 1fr;}
-          .hero{flex-direction:column;align-items:flex-start}
-          .name{font-size:24px}
-        }
+        /* extra */
+        .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
+        .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:60}
+        .modal .sheet{width:100%;max-width:520px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:1rem;box-shadow:0 20px 40px rgba(0,0,0,.2)}
       `}</style>
-    </>
-  );
-}
-
-/* ---------------------------- Parçalar ---------------------------- */
-function Empty({ text }) { return <div className="empty">{text}</div>; }
-
-function AdCard({ a, isPro, onEdit, onDelete, onFeature, onRenew, pending, expired, canFeature }) {
-  const label = pending ? "Onay Bekliyor" : expired ? "Süresi Bitti" : isPro && (a.isFeatured ? "Vitrinde" : "Yayında");
-  return (
-    <article className={isPro ? (a.isFeatured ? "ad gold" : "ad") : "ad"}>
-      <div className="thumb" style={{ backgroundImage: a?.img ? `url(${a.img})` : undefined }}>
-        {label && (
-          <span className={`badge ${pending ? 'gray' : expired ? 'orange' : a.isFeatured ? 'green' : ''}`}>{label}</span>
-        )}
-        {isPro && <span className="badge" style={{ right: 8, left: 'auto' }}>PRO</span>}
-      </div>
-      <div className="body">
-        <div className="title">{a.title}</div>
-        <div className="meta"><span>{a.cat}</span><b>{a.price}</b></div>
-      </div>
-      <div className="actions">
-        {canFeature && !pending && !expired && (
-          a.isFeatured ? (
-            <button className="ghost small" onClick={()=>onFeature(false)}>Vitrinden Kaldır</button>
-          ) : (
-            <button className="ghost small" onClick={()=>onFeature(true)}>Vitrine Yayınla</button>
-          )
-        )}
-        {expired && <button className="ghost small" onClick={onRenew}>Süreyi Uzat</button>}
-        <button className="ghost small" onClick={()=>onEdit(a.id)}>Düzenle</button>
-        <button className="ghost small" onClick={()=>onDelete(a.id)}>Sil</button>
-      </div>
-    </article>
+    </div>
   );
 }
