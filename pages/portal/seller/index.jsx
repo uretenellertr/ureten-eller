@@ -1,4 +1,3 @@
-// pages/portal/seller/index.jsx
 "use client";
 import React, { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
@@ -271,6 +270,7 @@ function SellerHome() {
           </div>
           <div className="actionGroup">
             <a className="ghost" href="/portal/seller?tab=search" aria-label={t.search}>{t.search}</a>
+            {/* JS çökerse bile çalışsın */}
             <a className="primary" href="/portal/seller/post/" aria-label={t.postAd}>{t.postAd}</a>
           </div>
           <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
@@ -318,16 +318,13 @@ function SellerHome() {
         <a className="tab" href="/portal/seller?tab=notifications" aria-label={t.tabs.notifs}><span className="tIc">🔔</span><span>{t.tabs.notifs}</span></a>
       </nav>
 
-      <button
-        className="chatBtn"
-        onClick={(e) => {
-          e.preventDefault();
+      <button className="chatBtn" onClick={(e) => {
+        e.preventDefault();
+        if (typeof document !== "undefined") {
           const win = document.querySelector(".chatWin");
           if (win) win.classList.toggle("open");
-        }}
-      >
-        💬
-      </button>
+        }
+      }}>💬</button>
 
       <div className="chatWin">
         <div className="chatHd">{t.chat.title}</div>
@@ -441,6 +438,5 @@ function SellerHome() {
   );
 }
 
-// no-SSR: hydration hatalarını keser
 const NoSSR = dynamic(() => Promise.resolve(SellerHome), { ssr: false });
 export default NoSSR;
