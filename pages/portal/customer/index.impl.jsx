@@ -310,7 +310,7 @@ export default function CustomerHome() {
 
   const go = useCallback((href) => router.push(href), [router]);
   const onLogout = async () => {
-    try { await signOut(auth); } catch {}
+    try { await signOut(auth); localStorage.removeItem("authed"); window.location.href = "/"; } catch {}
     localStorage.removeItem("authed");
     window.location.href = "/";
   };
