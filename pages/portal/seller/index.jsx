@@ -1,7 +1,5 @@
 "use client";
 import React, { useState, useMemo } from "react";
-import dynamic from "next/dynamic";
-
 const SUPPORTED = ["tr", "en", "ar", "de"];
 const LOCALE_LABEL = { tr: "Türkçe", en: "English", ar: "العربية", de: "Deutsch" };
 
@@ -438,5 +436,4 @@ function SellerHome() {
   );
 }
 
-const NoSSR = dynamic(() => Promise.resolve(SellerHome), { ssr: false });
-export default NoSSR;
+export default SellerHome;
