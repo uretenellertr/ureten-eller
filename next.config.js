@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
-module.exports = {
-  output: 'export',
-  trailingSlash: true,
-  images: { unoptimized: true },
+const nextConfig = {
+  output: 'export',        // static export
+  trailingSlash: true,     // /path/ -> path/index.html
+  images: { unoptimized: true }, // next/image kullanıyorsan statik olsun
 };
+module.exports = nextConfig;
