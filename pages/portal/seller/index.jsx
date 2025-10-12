@@ -1,4 +1,7 @@
+// pages/portal/seller/index.jsx
+"use client";
 import React, { useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 
 const SUPPORTED = ["tr", "en", "ar", "de"];
 const LOCALE_LABEL = { tr: "Türkçe", en: "English", ar: "العربية", de: "Deutsch" };
@@ -250,7 +253,7 @@ const STR = {
   }
 };
 
-export default function SellerHome() {
+function SellerHome() {
   const [lang, setLang] = useState("tr");
   const t = useMemo(() => STR[lang], [lang]);
 
@@ -268,8 +271,7 @@ export default function SellerHome() {
           </div>
           <div className="actionGroup">
             <a className="ghost" href="/portal/seller?tab=search" aria-label={t.search}>{t.search}</a>
-            {/* Doğrudan anchor: JS çökse bile çalışır */}
-            <a className="primary" href="/portal/seller/post" aria-label={t.postAd}>{t.postAd}</a>
+            <a className="primary" href="/portal/seller/post/" aria-label={t.postAd}>{t.postAd}</a>
           </div>
           <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
             {SUPPORTED.map(k => (<option key={k} value={k}>{LOCALE_LABEL[k]}</option>))}
@@ -279,7 +281,6 @@ export default function SellerHome() {
 
       <section className="hero">
         <h1 className="heroTitle">{t.heroTitle}</h1>
-        {/* Tüm sloganlar – tek tek listelenir (hydrat. hatası yok) */}
         <div className="mottos">
           {t.mottos.map((m, i) => (
             <div key={i} className="phrase" style={{ color: m.color }}>{m.text}</div>
@@ -317,11 +318,16 @@ export default function SellerHome() {
         <a className="tab" href="/portal/seller?tab=notifications" aria-label={t.tabs.notifs}><span className="tIc">🔔</span><span>{t.tabs.notifs}</span></a>
       </nav>
 
-      <button className="chatBtn" onClick={(e) => {
-        e.preventDefault();
-        const win = document.querySelector(".chatWin");
-        if (win) win.classList.toggle("open");
-      }}>💬</button>
+      <button
+        className="chatBtn"
+        onClick={(e) => {
+          e.preventDefault();
+          const win = document.querySelector(".chatWin");
+          if (win) win.classList.toggle("open");
+        }}
+      >
+        💬
+      </button>
 
       <div className="chatWin">
         <div className="chatHd">{t.chat.title}</div>
@@ -434,3 +440,7 @@ export default function SellerHome() {
     </div>
   );
 }
+
+// no-SSR: hydration hatalarını keser
+const NoSSR = dynamic(() => Promise.resolve(SellerHome), { ssr: false });
+export default NoSSR;
