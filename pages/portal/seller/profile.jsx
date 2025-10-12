@@ -1,670 +1,756 @@
-"use client";
-import React from "react";
+import React, {useEffect, useMemo, useState} from "react";
 
-export default function SellerProfilePage(){
-  // ====== STATE ======
-  const [lang,setLang] = React.useState("tr");
-  const DIR = lang === "ar" ? "rtl" : "ltr";
-  const SUPPORTED = ["tr","en","ar","de"];
+/**
+ * SELLER PROFILE — Rev 2 (per latest notes)
+ * - İletişim (Ad Soyad / Telefon / Açık Adres) avatarın YANINDA
+ * - "Şikayet et / Bildir" misafir dahil herkes görür
+ * - Premium Ol butonu ÖDEME MODALI açar (IBAN/Papara + kopyala + uyarı)
+ * - Onay Bekleyen / Yayında / Süresi Biten: butonlar TAB açar (sayfa içi)
+ * - Üst bardaki semboller kaldırıldı, renkli banner eklendi
+ * - Dil (TR / EN / AR / DE) ve RTL destekli
+ * - Admin/Mod: Verified & Premium toggle → localStorage
+ */
 
-  // Görünüm kontrolü (profile owner / public visitor). Admin, rozet/veri düzenler.
-  const [view,setView] = React.useState("owner"); // owner | visitor
-  const [isAdmin,setIsAdmin] = React.useState(true);
+export default function SellerProfile(){
+  const [profile, setProfile] = useState({});
+  const [lang, setLang] = useState("tr");
+  const [tab, setTab] = useState("live"); // pending | live | expired
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  // Premium form state
+  const [paymentForm, setPaymentForm] = useState({fullName: '', phone:'', address:'', username:'', file:null});
+  const [paymentErrors, setPaymentErrors] = useState({});
 
-  // Satıcı temel bilgileri (örnek veri)
-  const [seller,setSeller] = React.useState({
-    username:"el_ustasi",
-    firstName:"Zehra",
-    lastName:"Yılmaz",
-    city:"İzmir",
-    district:"Karşıyaka",
-    joinedAt:"2023-08-14",
-    bio:{
-      tr:"Ev yapımı mantı ve el emeği örgü setleri üretiyorum. Siparişe göre çalışırım, zamanında ve temiz teslim ederim.",
-      en:"I make handmade dumplings and knit sets. I work to order and deliver clean, on time.",
-      ar:"أصنع مانطي منزليًا وأطقم حياكة يدوية. أعمل بالطلبات وأسلم في الوقت وبجودة.",
-      de:"Ich mache hausgemachte Manti und Strick-Sets. Ich arbeite auf Bestellung und liefere pünktlich und sauber."
-    },
-    customOrders:true,
-    delivery:{
-      cities:["İzmir","Manisa","Aydın"],
-      etaDays:2,
-      shippingFee:"49 TL",
-      pickup:true
-    },
-    returns:{
-      tr:["Teslimden 3 gün içinde iade.","Kişiye özel ürünlerde iade yok.","Kargo ücreti alıcıya aittir."],
-      en:["Returns within 3 days of delivery.","No returns for custom items.","Shipping at buyer's cost."],
-      ar:["إرجاع خلال 3 أيام من التسليم.","لا إرجاع للطلبات الخاصة.","الشحن على المشتري."],
-      de:["Rückgabe innerhalb von 3 Tagen.","Keine Rückgabe bei Sonderanfertigungen.","Versandkosten Käufer."]
-    },
-    stats:{ totalSales: 128, ratingAvg: 4.7, ratingCount: 36 },
-    premium:false, // premium değilse "PREMIUM OL" görünsün
-    verified:true, // onaylı satıcı
-    trustBadges:{ id: true, tax: true, securePay: true }, // admin verir
-    phone:"+90 532 000 00 00",
-    address:"Karşıyaka, İzmir — Mavişehir Mah. 123. Sk. No:4",
-  });
+  useEffect(()=>{
+    if(typeof window!=="undefined"){
+      try{
+        const s = localStorage.getItem("ue_profile");
+        setProfile(s? JSON.parse(s) : {});
+      }catch{}
+      const L = localStorage.getItem("lang") || "tr";
+      setLang(L);
+    }
+  },[]);
 
-  // İlanlar (örnek)
-  const [listingsLive] = React.useState([
-    {id:1,title:"Ev Yapımı Mantı (1 kg)",price:220,thumb:"/demo/manti.jpg"},
-    {id:2,title:"Vitrin: Örgü Bebek Takımı",price:450,thumb:"/demo/knit.jpg"},
-    {id:3,title:"Zeytinyağlı Yaprak Sarma",price:260,thumb:"/demo/sarma.jpg"},
-  ]);
-  const [listingsExpired,setListingsExpired] = React.useState([
-    {id:11,title:"Glutensiz Kurabiye",price:180,thumb:"/demo/cookie.jpg", daysAgo: 5},
-  ]);
+  const dir = lang === "ar" ? "rtl" : "ltr";
+  const t = texts[lang] || texts.tr;
 
-  // Sipariş ve yorum sayıları (örnek)
-  const [pendingOrders] = React.useState(3);
-  const [comments] = React.useState([
-    {id:1, user:"Ayşe", text:{tr:"Çok lezzetliydi, paketleme özenliydi.",en:"Very tasty, careful packaging.",ar:"لذيذ جدًا وتغليف متقن.",de:"Sehr lecker, sorgfältig verpackt."}, stars:5, date:"2025-02-10"},
-    {id:2, user:"Mehmet", text:{tr:"Teslimat hızlıydı.",en:"Delivery was fast.",ar:"التسليم كان سريعًا.",de:"Lieferung war schnell."}, stars:4, date:"2025-01-28"},
-  ]);
-
-  // Ödeme modal state + kopyalama
-  const [showPay, setShowPay] = React.useState(false);
-  const [copied, setCopied] = React.useState("");
-
-  // ====== I18N ======
-  const STR = {
-    tr:{
-      BRAND:"ÜRETEN ELLER",
-      SELLER_PAGE:"Satıcı Profili",
-      FOLLOW:"Takip et", MESSAGE:"Mesaj gönder", REQUEST:"Özel istek",
-      VERIFIED:"Onaylı Satıcı", PRO:"PREMIUM",
-      STARS:"Puan", REVIEWS:"Yorumlar", SEE_REVIEWS:"Yorumları gör",
-      TOTAL_SALES:"Toplam satış", JOINED:"Mağazaya katılma", REPORT:"Şikayet et / Bildir",
-      TRUST:"Güven Rozetleri", ID_VERIFIED:"Kimlik doğrulandı", TAX_VERIFIED:"Vergi bilgisi doğrulandı", SECURE_PAY:"Güvenli ödeme",
-      ABOUT:"2–3 cümle tanıtım",
-      HOW_WORK:"Çalışma şekli", CUSTOM_OK:"Kişiye özel sipariş alıyorum", CUSTOM_NO:"Kişiye özel sipariş almıyorum",
-      DELIVERY:"Teslimat", DELIVERS_TO:"Gönderim yapılan şehirler", ETA:"Tahmini süre (gün)", FEE:"Kargo ücreti", PICKUP:"Elden teslim",
-      RETURNS:"İade / değişim kuralları",
-      OWNER_QUICK:"Hızlı bakış (Sahip)", PENDING_ORDERS:"Onay bekleyen siparişler", MY_REVIEWS:"Yorumlar",
-      TABS_TITLE:"İlanlarım", TAB_PENDING:"Onay bekleyen ilanlar", TAB_LIVE:"Yayındaki ilanlar", TAB_EXPIRED:"Süresi biten ilanlar",
-      EXTEND:"Süre uzat", EDIT:"Düzenle", DELETE:"Sil",
-      LIVE_LISTINGS:"Yayındaki ilanlar", BEST_SELLERS:"En çok satanlar",
-      RATE_SELLER:"Puan ver", CANNOT_RATE_SELF:"Kendi profilinde puan veremezsin",
-      BOTTOM_HOME:"Ana sayfa", BOTTOM_MSG:"Mesajlar", BOTTOM_NOTIF:"Bildirimler",
-      LEGAL_TITLE:"KURUMSAL",
-      LEGAL_LINKS:[
-        {href:"/legal/hakkimizda", label:"HAKKIMIZDA"},
-        {href:"/legal/iletisim", label:"İLETİŞİM"},
-        {href:"/legal/gizlilik", label:"GİZLİLİK"},
-        {href:"/legal/kvkk-aydinlatma", label:"KVKK AYDINLATMA"},
-        {href:"/legal/kullanim-sartlari", label:"KULLANIM ŞARTLARI"},
-        {href:"/legal/mesafeli-satis-sozlesmesi", label:"MESAFELİ SATIŞ"},
-        {href:"/legal/teslimat-iade", label:"TESLİMAT & İADE"},
-        {href:"/legal/cerez-politikasi", label:"ÇEREZ POLİTİKASI"},
-        {href:"/legal/topluluk-kurallari", label:"TOPLULUK KURALLARI"},
-        {href:"/legal/yasakli-urunler", label:"YASAKLI ÜRÜNLER"},
-      ],
-      ADMIN_PANEL:"Admin Paneli", GIVE_VERIFY:"Onay rozeti ver", GIVE_PREMIUM:"Premium ver", GIVE_TRUST:"Güven rozetleri",
-      COMPLAINT_HINT:"Kötüye kullanım için bildir",
-      // Yeni
-      SETTINGS:"Ayarlar",
-      CONTACT:"İletişim",
-      PHONE:"Telefon",
-      ADDRESS:"Adres",
-      FULLNAME:"Ad Soyad",
-      PREMIUM_CTA:"PREMIUM OL",
-      PREMIUM_ACTIVE:"PREMIUM AKTİF",
-      PAY_NOW:"Ödeme Yap",
-      BANK_TRANSFER:"Havale / EFT",
-      BENEFICIARY:"Alıcı",
-      IBAN:"IBAN",
-      PAPARA:"Papara",
-      COPY:"Kopyala",
-      COPIED:"Kopyalandı!",
-      CARD_PAY:"Kartla Öde",
-      CLOSE:"Kapat",
-    },
-    en:{
-      BRAND:"ÜRETEN ELLER",
-      SELLER_PAGE:"Seller Profile",
-      FOLLOW:"Follow", MESSAGE:"Message", REQUEST:"Custom request",
-      VERIFIED:"Verified Seller", PRO:"PREMIUM",
-      STARS:"Stars", REVIEWS:"Reviews", SEE_REVIEWS:"See reviews",
-      TOTAL_SALES:"Total sales", JOINED:"Joined", REPORT:"Report",
-      TRUST:"Trust Badges", ID_VERIFIED:"ID verified", TAX_VERIFIED:"Tax info verified", SECURE_PAY:"Secure payment",
-      ABOUT:"2–3 sentence intro",
-      HOW_WORK:"How I work", CUSTOM_OK:"I accept custom orders", CUSTOM_NO:"No custom orders",
-      DELIVERY:"Delivery", DELIVERS_TO:"Ships to", ETA:"ETA (days)", FEE:"Shipping fee", PICKUP:"Pickup",
-      RETURNS:"Return / exchange rules",
-      OWNER_QUICK:"Owner quick glance", PENDING_ORDERS:"Pending orders", MY_REVIEWS:"Reviews",
-      TABS_TITLE:"My listings", TAB_PENDING:"Pending", TAB_LIVE:"Live", TAB_EXPIRED:"Expired",
-      EXTEND:"Extend", EDIT:"Edit", DELETE:"Delete",
-      LIVE_LISTINGS:"Live listings", BEST_SELLERS:"Best sellers",
-      RATE_SELLER:"Rate seller", CANNOT_RATE_SELF:"You can't rate your own profile",
-      BOTTOM_HOME:"Home", BOTTOM_MSG:"Messages", BOTTOM_NOTIF:"Alerts",
-      LEGAL_TITLE:"CORPORATE",
-      LEGAL_LINKS:[
-        {href:"/legal/hakkimizda", label:"ABOUT"},
-        {href:"/legal/iletisim", label:"CONTACT"},
-        {href:"/legal/gizlilik", label:"PRIVACY"},
-        {href:"/legal/kvkk-aydinlatma", label:"PDPL (KVKK) NOTICE"},
-        {href:"/legal/kullanim-sartlari", label:"TERMS OF USE"},
-        {href:"/legal/mesafeli-satis-sozlesmesi", label:"DISTANCE SALES"},
-        {href:"/legal/teslimat-iade", label:"DELIVERY & RETURNS"},
-        {href:"/legal/cerez-politikasi", label:"COOKIE POLICY"},
-        {href:"/legal/topluluk-kurallari", label:"COMMUNITY GUIDELINES"},
-        {href:"/legal/yasakli-urunler", label:"PROHIBITED ITEMS"},
-      ],
-      ADMIN_PANEL:"Admin Panel", GIVE_VERIFY:"Grant verified badge", GIVE_PREMIUM:"Grant premium", GIVE_TRUST:"Trust badges",
-      COMPLAINT_HINT:"Report misuse",
-      // New
-      SETTINGS:"Settings",
-      CONTACT:"Contact",
-      PHONE:"Phone",
-      ADDRESS:"Address",
-      FULLNAME:"Full name",
-      PREMIUM_CTA:"Go PREMIUM",
-      PREMIUM_ACTIVE:"PREMIUM ACTIVE",
-      PAY_NOW:"Pay Now",
-      BANK_TRANSFER:"Bank transfer",
-      BENEFICIARY:"Beneficiary",
-      IBAN:"IBAN",
-      PAPARA:"Papara",
-      COPY:"Copy",
-      COPIED:"Copied!",
-      CARD_PAY:"Pay by Card",
-      CLOSE:"Close",
-    },
-    ar:{
-      BRAND:"أُورَتِن إِلَّر",
-      SELLER_PAGE:"ملف البائع",
-      FOLLOW:"متابعة", MESSAGE:"رسالة", REQUEST:"طلب خاص",
-      VERIFIED:"بائع موثّق", PRO:"بريميوم",
-      STARS:"نجوم", REVIEWS:"التقييمات", SEE_REVIEWS:"عرض التقييمات",
-      TOTAL_SALES:"إجمالي المبيعات", JOINED:"انضمّ", REPORT:"إبلاغ",
-      TRUST:"شارات الثقة", ID_VERIFIED:"تم توثيق الهوية", TAX_VERIFIED:"تم توثيق الضريبة", SECURE_PAY:"دفع آمن",
-      ABOUT:"تعريف من 2–3 جمل",
-      HOW_WORK:"طريقة العمل", CUSTOM_OK:"أقبل الطلبات الخاصة", CUSTOM_NO:"لا أقبل الطلبات الخاصة",
-      DELIVERY:"التسليم", DELIVERS_TO:"يشحن إلى", ETA:"المدة (أيام)", FEE:"رسوم الشحن", PICKUP:"استلام يدًا بيد",
-      RETURNS:"قواعد الإرجاع/الاستبدال",
-      OWNER_QUICK:"نظرة سريعة (المالك)", PENDING_ORDERS:"طلبات قيد الموافقة", MY_REVIEWS:"التقييمات",
-      TABS_TITLE:"إعلاناتي", TAB_PENDING:"قيد الموافقة", TAB_LIVE:"منشور", TAB_EXPIRED:"منتهي",
-      EXTEND:"تمديد", EDIT:"تعديل", DELETE:"حذف",
-      LIVE_LISTINGS:"الإعلانات المنشورة", BEST_SELLERS:"الأكثر مبيعًا",
-      RATE_SELLER:"قيّم البائع", CANNOT_RATE_SELF:"لا يمكنك تقييم ملفك",
-      BOTTOM_HOME:"الرئيسية", BOTTOM_MSG:"الرسائل", BOTTOM_NOTIF:"الإشعارات",
-      LEGAL_TITLE:"الشركة",
-      LEGAL_LINKS:[
-        {href:"/legal/hakkimizda", label:"مَنْ نَحْنُ"},
-        {href:"/legal/iletisim", label:"اتِّصَال"},
-        {href:"/legal/gizlilik", label:"الخصوصية"},
-        {href:"/legal/kvkk-aydinlatma", label:"إشعار KVKK"},
-        {href:"/legal/kullanim-sartlari", label:"شروط الاستخدام"},
-        {href:"/legal/mesafeli-satis-sozlesmesi", label:"البيع عن بُعد"},
-        {href:"/legal/teslimat-iade", label:"التسليم والإرجاع"},
-        {href:"/legal/cerez-politikasi", label:"سياسة الكوكيز"},
-        {href:"/legal/topluluk-kurallari", label:"إرشادات المجتمع"},
-        {href:"/legal/yasakli-urunler", label:"السلع المحظورة"},
-      ],
-      ADMIN_PANEL:"لوحة الإدارة", GIVE_VERIFY:"منح شارة التوثيق", GIVE_PREMIUM:"منح بريميوم", GIVE_TRUST:"شارات الثقة",
-      COMPLAINT_HINT:"للإبلاغ عن إساءة",
-      // جديد
-      SETTINGS:"الإعدادات",
-      CONTACT:"التواصل",
-      PHONE:"الهاتف",
-      ADDRESS:"العنوان",
-      FULLNAME:"الاسم الكامل",
-      PREMIUM_CTA:"اشترك بريميوم",
-      PREMIUM_ACTIVE:"بريميوم مفعّل",
-      PAY_NOW:"ادفع الآن",
-      BANK_TRANSFER:"حوالة بنكية",
-      BENEFICIARY:"المستفيد",
-      IBAN:"IBAN",
-      PAPARA:"Papara",
-      COPY:"نسخ",
-      COPIED:"تم النسخ!",
-      CARD_PAY:"الدفع بالبطاقة",
-      CLOSE:"إغلاق",
-    },
-    de:{
-      BRAND:"ÜRETEN ELLER",
-      SELLER_PAGE:"Verkäuferprofil",
-      FOLLOW:"Folgen", MESSAGE:"Nachricht", REQUEST:"Sonderwunsch",
-      VERIFIED:"Verifizierter Verkäufer", PRO:"PREMIUM",
-      STARS:"Sterne", REVIEWS:"Bewertungen", SEE_REVIEWS:"Bewertungen ansehen",
-      TOTAL_SALES:"Gesamtverkäufe", JOINED:"Beigetreten", REPORT:"Melden",
-      TRUST:"Vertrauensaspekte", ID_VERIFIED:"ID verifiziert", TAX_VERIFIED:"Steuerinfo verifiziert", SECURE_PAY:"Sichere Zahlung",
-      ABOUT:"Kurzvorstellung (2–3 Sätze)",
-      HOW_WORK:"Arbeitsweise", CUSTOM_OK:"Nimmt Sonderbestellungen an", CUSTOM_NO:"Keine Sonderbestellungen",
-      DELIVERY:"Lieferung", DELIVERS_TO:"Lieferorte", ETA:"Dauer (Tage)", FEE:"Versandkosten", PICKUP:"Abholung",
-      RETURNS:"Rückgabe / Umtausch",
-      OWNER_QUICK:"Schnellansicht (Inhaber)", PENDING_ORDERS:"Ausstehende Bestellungen", MY_REVIEWS:"Bewertungen",
-      TABS_TITLE:"Meine Anzeigen", TAB_PENDING:"Ausstehend", TAB_LIVE:"Live", TAB_EXPIRED:"Abgelaufen",
-      EXTEND:"Verlängern", EDIT:"Bearbeiten", DELETE:"Löschen",
-      LIVE_LISTINGS:"Live-Anzeigen", BEST_SELLERS:"Bestseller",
-      RATE_SELLER:"Verkäufer bewerten", CANNOT_RATE_SELF:"Du kannst dich nicht selbst bewerten",
-      BOTTOM_HOME:"Start", BOTTOM_MSG:"Nachrichten", BOTTOM_NOTIF:"Meldungen",
-      LEGAL_TITLE:"UNTERNEHMEN",
-      LEGAL_LINKS:[
-        {href:"/legal/hakkimizda", label:"ÜBER UNS"},
-        {href:"/legal/iletisim", label:"KONTAKT"},
-        {href:"/legal/gizlilik", label:"DATENSCHUTZ"},
-        {href:"/legal/kvkk-aydinlatma", label:"KVKK-HINWEIS"},
-        {href:"/legal/kullanim-sartlari", label:"NUTZUNGSBEDINGUNGEN"},
-        {href:"/legal/mesafeli-satis-sozlesmesi", label:"FERNABSATZ"},
-        {href:"/legal/teslimat-iade", label:"LIEFERUNG & RÜCKGABE"},
-        {href:"/legal/cerez-politikasi", label:"COOKIE-RICHTLINIE"},
-        {href:"/legal/topluluk-kurallari", label:"COMMUNITY-RICHTLINIEN"},
-        {href:"/legal/yasakli-urunler", label:"VERBOTENE ARTIKEL"},
-      ],
-      ADMIN_PANEL:"Admin-Bereich", GIVE_VERIFY:"Verifizierungsabzeichen geben", GIVE_PREMIUM:"Premium geben", GIVE_TRUST:"Vertrauensaspekte",
-      COMPLAINT_HINT:"Missbrauch melden",
-      // Neu
-      SETTINGS:"Einstellungen",
-      CONTACT:"Kontakt",
-      PHONE:"Telefon",
-      ADDRESS:"Adresse",
-      FULLNAME:"Vollständiger Name",
-      PREMIUM_CTA:"PREMIUM werden",
-      PREMIUM_ACTIVE:"PREMIUM AKTIV",
-      PAY_NOW:"Jetzt zahlen",
-      BANK_TRANSFER:"Überweisung",
-      BENEFICIARY:"Empfänger",
-      IBAN:"IBAN",
-      PAPARA:"Papara",
-      COPY:"Kopieren",
-      COPIED:"Kopiert!",
-      CARD_PAY:"Mit Karte zahlen",
-      CLOSE:"Schließen",
-    },
+  // helpers
+  const val = (v) => (v===0 || v ? String(v) : "—");
+  const initials = (name) => {
+    if(!name) return "?";
+    return name.split(" ").filter(Boolean).slice(0,2).map(s=>s[0]).join("").toUpperCase();
   };
-  const t = STR[lang];
 
-  // Admin işlemleri (sadece görünüm amaçlı)
-  function toggleVerify(){ if(!isAdmin) return; setSeller(s=>({...s, verified:!s.verified })); }
-  function togglePremium(){ if(!isAdmin) return; setSeller(s=>({...s, premium:!s.premium })); }
-  function toggleTrust(key){ if(!isAdmin) return; setSeller(s=>({...s, trustBadges:{...s.trustBadges, [key]: !s.trustBadges[key]}})); }
+  const isPremium = !!profile.premium;
+  const isVerified = !!profile.verified;
+  const role = (typeof window!=="undefined" && (localStorage.getItem("role")||"user")).toLowerCase();
+  const isStaff = ["admin","moderator","mod"].includes(role);
 
-  // Kısa yardımcılar
-  const fullName = `${seller.firstName} ${seller.lastName}`;
-  const canRate = view === 'visitor'; // sahibi kendine puan veremez
-  const ratingStars = Array.from({length:5}, (_,i)=> i < Math.round(seller.stats.ratingAvg));
+  const stats = profile.stats || {};
+  const rating = typeof stats.rating === "number" ? stats.rating : null;
+  const ratingCount = stats.ratingCount || 0;
+  const totalSales = stats.totalSales || 0;
 
-  function extendExpired(id){ setListingsExpired(arr=>arr.map(x=> x.id===id ? {...x, daysAgo:0} : x)); }
-  function deleteExpired(id){ setListingsExpired(arr=>arr.filter(x=> x.id!==id)); }
-  async function copy(text){
+  const delivery = profile.delivery || { cities: [], etaDays: null, fee: null, pickup: false };
+  const returns = Array.isArray(profile.returns) ? profile.returns : [];
+
+  // Contact & payment & listings helpers
+  const fullName = profile.fullName || profile.displayName || profile.name;
+  const phone = profile.phone || "—";
+  const address = profile.address || (profile.city && profile.district ? `${profile.city}, ${profile.district}` : "—");
+
+  const payments = profile.payments || {};
+  const IBAN = payments.iban || "TR590082900009491868461105";
+  const accountName = payments.accountName || "Nejla Kavuncu";
+  const papara = payments.papara || "Nejla Kavuncu";
+
+  const listings = Array.isArray(profile.listings) ? profile.listings : [];
+  const ownerView = isStaff || role==='seller';
+
+  const live = listings.filter(it=>it.status==='live');
+  const pending = listings.filter(it=>it.status==='pending');
+  const expired = listings.filter(it=>it.status==='expired');
+  const currentListings = tab==='pending' ? pending : (tab==='live' ? live : expired);
+
+  function saveProfile(next){
+    const merged = { ...profile, ...next };
+    try{ localStorage.setItem("ue_profile", JSON.stringify(merged)); }catch{}
+    setProfile(merged);
+  }
+
+  function onLangChange(e){
+    const L = e.target.value;
+    setLang(L);
+    try{ localStorage.setItem("lang", L); 
+  }
+
+  // Prefill premium form when modal opens
+  useEffect(()=>{
+    if(showPremiumModal){
+      setPaymentForm({
+        fullName: fullName || '',
+        phone: phone || '',
+        address: address || '',
+        username: (profile.username || profile.name || ''),
+        file: null
+      });
+      setPaymentErrors({});
+    }
+  }, [showPremiumModal]);
+
+  function handlePFChange(e){
+    setPaymentForm({...paymentForm, [e.target.name]: e.target.value});
+  }
+  function handlePFFile(e){
+    setPaymentForm({...paymentForm, file: e.target.files?.[0] || null});
+  }
+  function submitPremium(){
+    const errs = {};
+    if(!paymentForm.fullName) errs.fullName = true;
+    if(!paymentForm.phone) errs.phone = true;
+    if(!paymentForm.address) errs.address = true;
+    if(!paymentForm.username) errs.username = true;
+    if(!paymentForm.file) errs.file = true;
+    setPaymentErrors(errs);
+    if(Object.keys(errs).length){ alert(t.missingInfo); return; }
     try{
-      await navigator.clipboard.writeText(text);
-      setCopied(text);
-      setTimeout(()=>setCopied(""),2000);
-    }catch(_e){ alert("Kopyalanamadı"); }
+      const payload = { ...paymentForm, fileName: paymentForm.file?.name, fileType: paymentForm.file?.type, date: new Date().toISOString() };
+      localStorage.setItem("ue_premium_request", JSON.stringify(payload));
+      alert(t.sentForReview);
+      setShowPremiumModal(false);
+    }catch{
+      alert(t.saveError);
+    }
+  }catch{}
   }
 
   return (
-    <div lang={lang} dir={DIR} className="min-h-screen pb-24">
-      {/* HEADER */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-zinc-200">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-          <a className="flex items-center gap-2 font-black no-underline text-zinc-900" href="/">
-            <img src="/logo.png" alt="logo" width="34" height="34"/>
-            <span>{t.BRAND}</span>
-          </a>
-          <div className="ml-auto flex items-center gap-2">
-            <select value={lang} onChange={e=>setLang(e.target.value)} className="border rounded-lg px-2 py-1">
-              {SUPPORTED.map(k=>(<option key={k} value={k}>{k.toUpperCase()}</option>))}
-            </select>
-            <a href="/portal/settings" className="btn sm">{t.SETTINGS}</a>
-            <div className="hidden md:flex items-center gap-2 text-xs">
-              <span className="opacity-60">view:</span>
-              <select value={view} onChange={e=>setView(e.target.value)} className="border rounded px-2 py-1">
-                <option value="owner">owner</option>
-                <option value="visitor">visitor</option>
-              </select>
-              <label className="flex items-center gap-1 ms-2"><input type="checkbox" checked={isAdmin} onChange={e=>setIsAdmin(e.target.checked)}/><span>admin</span></label>
-            </div>
-          </div>
+    <div dir={dir} className="min-h-screen bg-gradient-to-br from-slate-50 via-rose-50 to-amber-50 text-slate-900">
+      {/* Top bar */}
+      <header className="sticky top-0 z-20 bg-white/80 backdrop-blur border-b border-slate-200 px-4 py-3 flex items-center gap-3">
+        {/* Avatar */}
+        <div className={`relative shrink-0 ${isPremium?"goldFrame":""}`}>
+          <div className={`w-12 h-12 rounded-full grid place-items-center font-black text-lg bg-slate-200`}>{initials(profile.displayName || profile.name)}</div>
         </div>
+
+        {/* Title block */}
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-extrabold truncate">{val(profile.displayName || profile.name)}</h1>
+          <div className="text-slate-600 text-sm truncate">{[val(profile.city), profile.district?`/${profile.district}`:""] .join("")}</div>
+        </div>
+
+        {/* Language selector */}
+        <label className="sr-only" htmlFor="langSel">{t.language}</label>
+        <select id="langSel" value={lang} onChange={onLangChange} className="border border-slate-300 rounded-lg px-2 py-1 text-sm bg-white">
+          <option value="tr">TR</option>
+          <option value="en">EN</option>
+          <option value="ar">AR</option>
+          <option value="de">DE</option>
+        </select>
+
+        {/* Premium button opens PAYMENT MODAL */}
+        {!isPremium && (
+          <button onClick={()=>setShowPremiumModal(true)} className="ml-2 btnPremium">{t.completePremium}</button>
+        )}
+
+        {/* Home */}
+        
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 mt-4 grid lg:grid-cols-3 gap-4">
-        {/* LEFT: Avatar & badges */}
-        <aside className="lg:col-span-1">
-          <div className={`rounded-2xl p-4 border bg-white shadow-sm ${seller.premium? 'ring-2 ring-yellow-400':''}`} style={seller.premium?{boxShadow:'0 0 0 3px rgba(234,179,8,.35) inset'}:{}}>
-            <div className="flex items-center gap-3">
-              <div className={`avatar ${seller.premium?'gold':''}`}>
-                <img src="/avatar.png" alt="avatar"/>
-              </div>
-              <div>
-                <div className="text-lg font-black">@{seller.username}</div>
-                <div className="text-sm text-zinc-600">{fullName} • {seller.city}</div>
-              </div>
-            </div>
-            {seller.verified && (
-              <div className="mt-2 text-xs font-bold text-emerald-700 inline-flex items-center gap-2">
-                <span className="badge">{t.VERIFIED}</span>
-                {seller.premium && <span className="badge gold">{t.PRO}</span>}
-              </div>
-            )}
+      {/* Decorative banner */}
+      <div className="mx-3 sm:mx-4 mt-3">
+        <div className="rounded-2xl p-4 md:p-5 bg-gradient-to-r from-rose-500 via-fuchsia-500 to-amber-400 text-white shadow-lg">
+          <div className="max-w-5xl mx-auto flex items-center gap-3">
+            <div className="text-lg md:text-xl font-extrabold">{t.profileBanner}</div>
+            {isVerified && <span className="ms-auto text-xs font-black bg-white/20 px-2 py-1 rounded-full">{t.verified}</span>}
+          </div>
+        </div>
+      </div>
 
-            <div className="mt-3 flex items-center gap-2">
-              {ratingStars.map((on,i)=> <span key={i} className={`star ${on?'on':''}`}>★</span>)}
-              <span className="text-sm font-bold">{seller.stats.ratingAvg.toFixed(1)}</span>
-              <button className="link text-sm" disabled={!canRate} title={!canRate? t.CANNOT_RATE_SELF : t.RATE_SELLER}>{t.SEE_REVIEWS} ({seller.stats.ratingCount})</button>
-            </div>
-
-            {view==='visitor' && (
-              <div className="mt-3 flex gap-2">
-                <button className="btn sm">{t.FOLLOW}</button>
-                <button className="btn sm">{t.MESSAGE}</button>
-                <button className="btn sm">{t.REQUEST}</button>
-              </div>
-            )}
-
-            {/* İLETİŞİM */}
-            <div className="mt-4">
-              <div className="text-sm font-black mb-1">{t.CONTACT}</div>
-              <ul className="text-sm text-zinc-700 space-y-1">
-                <li><b>{t.FULLNAME}:</b> {fullName}</li>
-                <li><b>{t.PHONE}:</b> {seller.phone}</li>
-                <li><b>{t.ADDRESS}:</b> {seller.address}</li>
-              </ul>
-            </div>
-
-            {/* Güven rozetleri */}
-            <div className="mt-4">
-              <div className="text-sm font-black mb-1">{t.TRUST}</div>
-              <div className="flex flex-wrap gap-2">
-                {seller.trustBadges.id && <span className="chip">{t.ID_VERIFIED}</span>}
-                {seller.trustBadges.tax && <span className="chip">{t.TAX_VERIFIED}</span>}
-                {seller.trustBadges.securePay && <span className="chip">{t.SECURE_PAY}</span>}
-              </div>
-              {view==='visitor' && <button className="link mt-2 text-xs" title={t.COMPLAINT_HINT}>{t.REPORT}</button>}
-            </div>
-
-            {/* PREMIUM */}
-            <div className="mt-4 rounded-xl border p-3 bg-white">
-              <div className="text-sm font-black mb-1">PREMIUM</div>
-              {seller.premium ? (
-                <div className="text-sm text-emerald-700 font-bold">{t.PREMIUM_ACTIVE}</div>
-              ) : (
-                <button className="btn sm" onClick={()=>setShowPay(true)}>{t.PREMIUM_CTA}</button>
-              )}
-              <div className="mt-2 flex gap-2 flex-wrap">
-                <button className="btn sm" onClick={()=>setShowPay(true)}>{t.PAY_NOW}</button>
-                <a className="btn sm" href="/portal/pay?plan=premium">{t.CARD_PAY}</a>
-              </div>
-            </div>
-
-            {/* Admin panel (yalnız admin görsün) */}
-            {isAdmin && (
-              <div className="mt-4 rounded-xl border p-3 bg-zinc-50">
-                <div className="text-xs font-black mb-2">{t.ADMIN_PANEL}</div>
-                <div className="flex flex-col gap-2 text-sm">
-                  <label className="flex items-center gap-2"><input type="checkbox" checked={seller.verified} onChange={toggleVerify}/> {t.GIVE_VERIFY}</label>
-                  <label className="flex items-center gap-2"><input type="checkbox" checked={seller.premium} onChange={togglePremium}/> {t.GIVE_PREMIUM}</label>
-                  <div className="flex flex-col gap-1">
-                    <div className="text-xs opacity-70">{t.GIVE_TRUST}</div>
-                    <label className="flex items-center gap-2"><input type="checkbox" checked={seller.trustBadges.id} onChange={()=>toggleTrust('id')}/> {t.ID_VERIFIED}</label>
-                    <label className="flex items-center gap-2"><input type="checkbox" checked={seller.trustBadges.tax} onChange={()=>toggleTrust('tax')}/> {t.TAX_VERIFIED}</label>
-                    <label className="flex items-center gap-2"><input type="checkbox" checked={seller.trustBadges.securePay} onChange={()=>toggleTrust('securePay')}/> {t.SECURE_PAY}</label>
-                  </div>
+      {/* Body */}
+      <main className="px-3 sm:px-4 py-4 pb-28 max-w-5xl mx-auto grid md:grid-cols-[300px,1fr] gap-6">
+        {/* Left column */}
+        <aside className="md:sticky md:top-[72px] self-start space-y-4">
+          {/* Avatar & Contact card (contact NEXT TO avatar) */}
+          <section className="panel p-4">
+            <div className="flex items-start gap-3">
+              <div className={`relative ${isPremium?"goldFrameLg":""}`}>
+                <div className="w-20 h-20 rounded-2xl grid place-items-center text-2xl font-black bg-slate-200">
+                  {initials(profile.displayName || profile.name)}
                 </div>
               </div>
+              <div className="flex-1">
+                {isVerified && (
+                  <div className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 inline-flex items-center gap-1 rounded-full px-2 py-0.5">
+                    {t.verified}
+                  </div>
+                )}
+                <div className="mt-2 text-sm text-slate-700 leading-5">
+                  <div><b>{t.memberSince}:</b> {val(profile.joinedAt)}</div>
+                  <div><b>{t.sales}:</b> {totalSales>0? totalSales : "0"}</div>
+                </div>
+
+                {/* CONTACT right beside avatar */}
+                <div className="mt-3 text-sm leading-5">
+                  <div className="font-semibold mb-1">{t.contactInfo}</div>
+                  <div><b>{t.fullName}:</b> {val(fullName)}</div>
+                  <div><b>{t.username}:</b> {val(profile.username)}</div>
+                  <div><b>{t.phone}:</b> <a href={`tel:${phone}`} className="hover:underline">{val(phone)}</a></div>
+                  <div><b>{t.openAddress}:</b> <span className="whitespace-pre-wrap">{val(address)}</span></div>
+                </div>
+              </div>
+            </div>
+            {/* Label under avatar when verified */}
+            {isVerified && (
+              <div className="mt-3 text-center text-[12px] font-extrabold text-emerald-700">{t.verified}</div>
             )}
-          </div>
+
+            <div className="mt-4 text-sm">
+              <div className="font-semibold mb-1">{t.badges}</div>
+              <div className="flex flex-wrap gap-2">
+                {(profile.badges||[]).length? (profile.badges||[]).map((b,i)=> (
+                  <span key={i} className="text-xs bg-white/70 border border-slate-200 px-2 py-1 rounded-full">{String(b)}</span>
+                )) : (
+                  <span className="text-xs text-slate-500">{t.noBadges}</span>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Owner shortcuts (open tabs) */}
+          {ownerView && (
+            <section className="panel p-4 space-y-2">
+              <div className="text-sm font-bold mb-2">{t.myStore}</div>
+              <div className="grid grid-cols-3 gap-2">
+                <button type="button" className={`btnGhost ${tab==='pending'?'ring-2 ring-rose-400':''}`} onClick={()=>setTab('pending')}>{t.pendingListings}</button>
+                <button type="button" className={`btnGhost ${tab==='live'?'ring-2 ring-emerald-400':''}`} onClick={()=>setTab('live')}>{t.liveListings}</button>
+                <button type="button" className={`btnGhost ${tab==='expired'?'ring-2 ring-amber-400':''}`} onClick={()=>setTab('expired')}>{t.expiredListings}</button>
+              </div>
+            </section>
+          )}
+
+          {/* Admin / Moderator Panel */}
+          {isStaff && (
+            <section className="panel p-4 space-y-3">
+              <div className="text-sm font-extrabold">{t.adminPanel}</div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={isVerified} onChange={(e)=>saveProfile({ verified: e.target.checked })} />
+                <span>{t.grantVerified}</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={isPremium} onChange={(e)=>saveProfile({ premium: e.target.checked })} />
+                <span>{t.grantPremium}</span>
+              </label>
+              <button className="btnPrimary" onClick={()=>alert(t.saved)}>{t.save}</button>
+              <p className="text-xs text-slate-500">{t.adminHint}</p>
+            </section>
+          )}
+
+          {/* Report — visible to guests too */}
+          <section className="panel p-4">
+            <button className="w-full btnDanger">{t.report}</button>
+          </section>
         </aside>
 
-        {/* RIGHT: Content */}
-        <section className="lg:col-span-2 grid gap-4">
-          {/* Üst istatistikler */}
-          <div className="rounded-2xl p-4 border bg-white shadow-sm grid md:grid-cols-3 gap-3">
-            <div>
-              <div className="text-xs text-zinc-500">{t.TOTAL_SALES}</div>
-              <div className="text-2xl font-black">≈ {seller.stats.totalSales}</div>
-            </div>
-            <div>
-              <div className="text-xs text-zinc-500">{t.JOINED}</div>
-              <div className="text-2xl font-black">{seller.joinedAt}</div>
-            </div>
-            <div>
-              <div className="text-xs text-zinc-500">{t.REVIEWS}</div>
-              <div className="text-2xl font-black">{comments.length}</div>
-            </div>
-          </div>
-
-          {/* Owner quick glance */}
-          {view==='owner' && (
-            <div className="rounded-2xl p-4 border bg-white shadow-sm">
-              <div className="text-sm font-black mb-2">{t.OWNER_QUICK}</div>
-              <div className="grid md:grid-cols-3 gap-3">
-                <div className="kpi">
-                  <div className="kpi-k">{t.PENDING_ORDERS}</div>
-                  <div className="kpi-v">{pendingOrders}</div>
-                </div>
-                <div className="kpi">
-                  <div className="kpi-k">{t.MY_REVIEWS}</div>
-                  <div className="kpi-v">{comments.length}</div>
-                </div>
+        {/* Right column */}
+        <section className="space-y-6">
+          {/* Listings Manager with tabs */}
+          {ownerView && (
+            <div id="sellerPanel" className="panel p-4">
+              <div className="flex items-center gap-2">
+                <button type="button" className={`btnGhost ${tab==='pending'?'ring-2 ring-rose-400':''}`} onClick={()=>setTab('pending')}>{t.pendingListings}</button>
+                <button type="button" className={`btnGhost ${tab==='live'?'ring-2 ring-emerald-400':''}`} onClick={()=>setTab('live')}>{t.liveListings}</button>
+                <button type="button" className={`btnGhost ${tab==='expired'?'ring-2 ring-amber-400':''}`} onClick={()=>setTab('expired')}>{t.expiredListings}</button>
+              </div>
+              <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
+                {currentListings?.length ? currentListings.map((it,idx)=> (
+                  <div key={idx} className="relative panel p-3">
+                    <div className="aspect-[4/3] bg-slate-100 rounded-lg"></div>
+                    <div className="mt-2 font-semibold text-sm truncate">{it.title || "İlan"}</div>
+                    {/* Aksiyonlar ILAN ÜSTÜNDE */}
+                    <div className="absActions">
+                      <a className="pill" href={`/portal/seller/extend?id=${it.id||idx}`}>{t.extend}</a>
+                      <a className="pill" href={`/portal/seller/edit?id=${it.id||idx}`}>{t.edit}</a>
+                      <a className="pill danger" href={`/portal/seller/delete?id=${it.id||idx}`}>{t.delete}</a>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="col-span-full text-slate-500 text-sm">{t.noListings}</div>
+                )}
               </div>
             </div>
           )}
 
-          {/* Hakkında ve politikalar */}
-          <div className="rounded-2xl p-4 border bg-white shadow-sm grid md:grid-cols-2 gap-4">
+          {/* Bio */}
+          <div className="panel p-4">
+            <div className="text-sm font-bold mb-2">{t.about}</div>
+            <p className="text-slate-800 leading-6 whitespace-pre-wrap">{val(profile.bio)}</p>
+          </div>
+
+          {/* Work mode & Delivery */}
+          <div className="panel p-4 grid sm:grid-cols-2 gap-4">
             <div>
-              <div className="text-sm font-black mb-1">{t.ABOUT}</div>
-              <div className="text-sm text-zinc-700">{seller.bio[lang]}</div>
-
-              <div className="text-sm font-black mt-4 mb-1">{t.HOW_WORK}</div>
-              <div className="text-sm text-zinc-700">{seller.customOrders ? t.CUSTOM_OK : t.CUSTOM_NO}</div>
-
-              <div className="text-sm font-black mt-4 mb-1">{t.DELIVERY}</div>
-              <ul className="text-sm text-zinc-700 space-y-1 list-disc ps-5">
-                <li><b>{t.DELIVERS_TO}:</b> {seller.delivery.cities.join(', ')}</li>
-                <li><b>{t.ETA}:</b> {seller.delivery.etaDays}</li>
-                <li><b>{t.FEE}:</b> {seller.delivery.shippingFee}</li>
-                <li><b>{t.PICKUP}:</b> {seller.delivery.pickup? '✓':'–'}</li>
-              </ul>
+              <div className="text-sm font-bold mb-1">{t.customOrder}</div>
+              <div className="text-slate-800">{profile.acceptsCustom? t.customYes: t.customNo}</div>
             </div>
             <div>
-              <div className="text-sm font-black mb-1">{t.RETURNS}</div>
-              <ul className="text-sm text-zinc-700 space-y-1 list-disc ps-5">
-                {seller.returns[lang].map((r,i)=>(<li key={i}>{r}</li>))}
-              </ul>
+              <div className="text-sm font-bold mb-1">{t.delivery}</div>
+              <div className="text-slate-800 text-sm">
+                <div><b>{t.cities}:</b> {delivery.cities && delivery.cities.length ? delivery.cities.join(", ") : "—"}</div>
+                <div><b>{t.eta}:</b> {delivery.etaDays ? `${delivery.etaDays} ${t.day}` : "—"}</div>
+                <div><b>{t.fee}:</b> {delivery.fee ?? "—"}</div>
+                <div><b>{t.pickup}:</b> {delivery.pickup? t.yes: t.no}</div>
+              </div>
             </div>
           </div>
 
-          {/* İlan sekmeleri */}
-          <div className="rounded-2xl p-4 border bg-white shadow-sm">
-            <div className="text-sm font-black mb-3">{t.TABS_TITLE}</div>
-            <div className="flex flex-wrap gap-2 mb-3">
-              <button className="tab-btn">{t.TAB_PENDING}</button>
-              <button className="tab-btn primary">{t.TAB_LIVE}</button>
-              <button className="tab-btn">{t.TAB_EXPIRED}</button>
-            </div>
-
-            {/* Live listings */}
-            <div className="grid md:grid-cols-3 gap-3">
-              {listingsLive.map(card=> (
-                <div key={card.id} className="card">
-                  <div className="thumb"><img src={card.thumb} alt=""/></div>
-                  <div className="p-3">
-                    <div className="card-title">{card.title}</div>
-                    <div className="card-sub">{card.price} TL</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Expired */}
-            {listingsExpired.length>0 && (
-              <div className="mt-4">
-                <div className="text-sm font-black mb-2">{t.TAB_EXPIRED}</div>
-                <div className="grid md:grid-cols-2 gap-3">
-                  {listingsExpired.map(card => (
-                    <div key={card.id} className="card">
-                      <div className="thumb small"><img src={card.thumb} alt=""/></div>
-                      <div className="p-3 flex items-center justify-between gap-3">
-                        <div>
-                          <div className="card-title">{card.title}</div>
-                          <div className="card-sub">{card.price} TL • {card.daysAgo}g önce bitti</div>
-                        </div>
-                        <div className="flex gap-2 flex-wrap">
-                          <button className="btn xs" onClick={()=>extendExpired(card.id)}>{t.EXTEND}</button>
-                          <button className="btn xs" onClick={()=>alert('edit '+card.id)}>{t.EDIT}</button>
-                          <button className="btn xs danger" onClick={()=>deleteExpired(card.id)}>{t.DELETE}</button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          {/* Returns */}
+          <div className="panel p-4">
+            <div className="text-sm font-bold mb-2">{t.returns}</div>
+            {returns.length ? (
+              <ul className="list-disc ms-5 text-slate-800 space-y-1">
+                {returns.map((r,i)=> <li key={i}>{String(r)}</li>)}
+              </ul>
+            ) : (
+              <div className="text-slate-500 text-sm">{t.noReturns}</div>
             )}
           </div>
 
-          {/* Yorumlar */}
-          <div className="rounded-2xl p-4 border bg-white shadow-sm" id="reviews">
-            <div className="text-sm font-black mb-3">{t.REVIEWS}</div>
-            <div className="space-y-3">
-              {comments.map(c => (
-                <div key={c.id} className="rounded-xl border">
-                  <div className="p-3 flex items-center gap-2">
-                    <div className="avatar sm"><img src="/user.png" alt=""/></div>
-                    <div className="font-bold text-sm">{c.user}</div>
-                    <div className="text-xs text-zinc-500 ms-auto">{c.date}</div>
-                  </div>
-                  <div className="px-3 pb-3 text-sm text-zinc-700">{c.text[lang]}</div>
+          {/* Rating & Reviews */}
+          <div className="panel p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-bold">{t.rating}</div>
+              <a className="btnGhost" href="#reviews">{t.reviews}</a>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <Stars value={rating} />
+              <div className="text-sm text-slate-700">{rating? rating.toFixed(1) : "—"} ({ratingCount})</div>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">{t.noSelfRate}</p>
+          </div>
+
+          {/* Showcase (public) */}
+          <div className="panel p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-bold">{t.showcase}</div>
+              {ownerView && <a href="/portal/seller/post" className="btnPrimary">{t.newListing}</a>}
+            </div>
+            <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
+              {listings.length ? listings.map((it,idx)=> (
+                <div key={idx} className="relative panel p-3">
+                  <div className="aspect-[4/3] bg-slate-100 rounded-lg"></div>
+                  <div className="mt-2 font-semibold text-sm truncate">{it.title || "İlan"}</div>
+                  {ownerView && (
+                    <div className="absActions">
+                      <a className="pill" href={`/portal/seller/extend?id=${it.id||idx}`}>{t.extend}</a>
+                      <a className="pill" href={`/portal/seller/edit?id=${it.id||idx}`}>{t.edit}</a>
+                      <a className="pill danger" href={`/portal/seller/delete?id=${it.id||idx}`}>{t.delete}</a>
+                    </div>
+                  )}
                 </div>
-              ))}
+              )) : (
+                <div className="col-span-full text-slate-500 text-sm">{t.noListings}</div>
+              )}
             </div>
           </div>
         </section>
       </main>
 
-      {/* PAYMENT MODAL */}
-      {showPay && (
-        <div className="modal" onClick={()=>setShowPay(false)}>
-          <div className="sheet" onClick={(e)=>e.stopPropagation()}>
-            <div className="text-lg font-black mb-2">{t.PAY_NOW}</div>
-            <div className="space-y-3 text-sm">
-              <div className="rounded-xl border p-3 bg-white">
-                <div className="font-bold mb-1">{t.BANK_TRANSFER}</div>
-                <div><b>{t.BENEFICIARY}:</b> Nejla Kavuncu</div>
-                <div className="flex items-center gap-2 mt-1">
-                  <b>{t.IBAN}:</b>
-                  <span className="mono">TR590082900009491868461105</span>
-                  <button className="btn xs" onClick={()=>copy('TR590082900009491868461105')}>{copied==='TR590082900009491868461105' ? t.COPIED : t.COPY}</button>
+      {/* Legal footer */}
+      <footer className="mt-8 border-t border-slate-200 bg-black text-slate-100">
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 flex flex-wrap gap-3 items-center text-sm">
+          <a className="hover:underline" href="/legal/kurumsal">{t.corporate}</a>
+          <a className="hover:underline" href="/legal/hakkimizda">{t.aboutUs}</a>
+          <a className="hover:underline" href="/legal/iletisim">{t.contact}</a>
+          <a className="hover:underline" href="/legal/gizlilik">{t.privacy}</a>
+          <a className="hover:underline" href="/legal/kullanim-sartlari">{t.terms}</a>
+          <a className="hover:underline" href="/legal/teslimat-iade">{t.shippingReturn}</a>
+          <a className="hover:underline" href="/legal/cerez-politikasi">{t.cookies}</a>
+          <a className="ml-auto opacity-80">© 2025 Üreten Eller</a>
+        </div>
+      </footer>
+
+      {/* Fixed bottom bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-slate-200 px-4 py-2 flex items-center justify-around z-20">
+        <a href="/" className="navBtn">{t.home}</a>
+        <a href="/portal/customer" className="navBtn">{t.messages}</a>
+        <a href="/portal/seller" className="navBtn">{t.notifications}</a>
+      </nav>
+
+      {/* PREMIUM PAYMENT MODAL */}
+      {showPremiumModal && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={()=>setShowPremiumModal(false)}></div>
+          <div className="relative z-40 w-[min(560px,92vw)] panel p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-lg font-extrabold">{t.payment}</div>
+              <button className="btnGhost" onClick={()=>setShowPremiumModal(false)}>✕</button>
+            </div>
+            <form className="mt-2 text-sm space-y-3" onSubmit={(e)=>{e.preventDefault(); submitPremium();}}>
+              <div><b>{t.payNow}:</b></div>
+              <div className="grid gap-2">
+                <label className="block">
+                  <span className="text-xs font-bold">{t.fullName}</span>
+                  <input name="fullName" value={paymentForm.fullName} onChange={handlePFChange} className={`w-full mt-1 border rounded-lg px-3 py-2 ${paymentErrors.fullName? 'border-red-500':'border-slate-300'}`} placeholder="Ad Soyad" />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-bold">{t.username}</span>
+                  <input name="username" value={paymentForm.username} onChange={handlePFChange} className={`w-full mt-1 border rounded-lg px-3 py-2 ${paymentErrors.username? 'border-red-500':'border-slate-300'}`} placeholder="kullaniciadi" />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-bold">{t.phone}</span>
+                  <input name="phone" value={paymentForm.phone} onChange={handlePFChange} className={`w-full mt-1 border rounded-lg px-3 py-2 ${paymentErrors.phone? 'border-red-500':'border-slate-300'}`} placeholder="05xx xxx xx xx" />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-bold">{t.openAddress}</span>
+                  <textarea name="address" value={paymentForm.address} onChange={handlePFChange} className={`w-full mt-1 border rounded-lg px-3 py-2 ${paymentErrors.address? 'border-red-500':'border-slate-300'}`} rows={3} placeholder="Açık adres" />
+                </label>
+                <div className="text-xs text-slate-600">{t.paymentNote} <b>{t.paymentUserHint}</b></div>
+              </div>
+
+              <div className="pt-2 border-t">
+                <div className="font-semibold mb-1">{t.transferInfo}</div>
+                <div><b>{t.bankTransfer}:</b> <span className="break-all">{IBAN}</span></div>
+                <div><b>{t.accountName}:</b> {accountName}</div>
+                <div><b>{t.papara}:</b> {papara}</div>
+                <div className="flex gap-2 mt-2">
+                  <button type="button" className="btnGhost" onClick={()=>navigator.clipboard?.writeText(IBAN).then(()=>alert(t.copied))}>{t.copy} IBAN</button>
+                  <button type="button" className="btnGhost" onClick={()=>navigator.clipboard?.writeText(papara).then(()=>alert(t.copied))}>{t.copy} Papara</button>
                 </div>
               </div>
-              <div className="rounded-xl border p-3 bg-white">
-                <div className="font-bold mb-1">{t.PAPARA}</div>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="mono">TR590082900009491868461105</span>
-                  <button className="btn xs" onClick={()=>copy('TR590082900009491868461105')}>{copied==='TR590082900009491868461105' ? t.COPIED : t.COPY}</button>
-                </div>
+
+              <label className="block pt-2 border-t">
+                <span className="text-xs font-bold">{t.uploadReceipt}</span>
+                <input type="file" accept="image/*,.pdf" onChange={handlePFFile} className={`block mt-1 ${paymentErrors.file? 'text-red-600':'text-slate-700'}`} />
+                {paymentForm.file && <div className="text-xs mt-1">{paymentForm.file.name}</div>}
+              </label>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button type="button" className="btnGhost" onClick={()=>setShowPremiumModal(false)}>{t.cancel}</button>
+                <button type="submit" className="btnPremium">{t.completePremium}</button>
               </div>
-            </div>
-            <div className="mt-3 flex gap-2">
-              <a className="btn" href="/portal/pay?plan=premium">{t.CARD_PAY}</a>
-              <button className="btn" onClick={()=>setShowPay(false)}>{t.CLOSE}</button>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* FOOTER (LEGAL) */}
-      <footer className="mt-8 w-full bg-black text-zinc-200">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="text-sm font-black mb-2">{t.LEGAL_TITLE}</div>
-          <nav className="flex flex-wrap gap-3 text-xs">
-            {t.LEGAL_LINKS.map((L,i)=> (<a key={i} className="hover:underline" href={L.href}>{L.label}</a>))}
-          </nav>
-          <div className="text-[11px] text-zinc-400 mt-2">© 2025 Üreten Eller</div>
-        </div>
-      </footer>
-
-      {/* BOTTOM NAV (sabit) */}
-      <nav className="bottombar">
-        <a href="/" className="bbtn">🏠 <span>{t.BOTTOM_HOME}</span></a>
-        <a href="/portal/messages" className="bbtn">💬 <span>{t.BOTTOM_MSG}</span></a>
-        <a href="/portal/alerts" className="bbtn">🔔 <span>{t.BOTTOM_NOTIF}</span></a>
-      </nav>
-
-      {/* STYLES */}
       <style>{`
-        *{box-sizing:border-box}
-        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:
-          radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
-          radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
-          linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399)}
-        .min-h-screen{min-height:100vh}
-        .pb-24{padding-bottom:6rem}
-        .mx-auto{margin-left:auto;margin-right:auto}
-        .max-w-6xl{max-width:72rem}
-        .px-4{padding-left:1rem;padding-right:1rem}
-        .py-3{padding-top:.75rem;padding-bottom:.75rem}
-        .py-4{padding-top:1rem;padding-bottom:1rem}
-        .mt-4{margin-top:1rem}.mt-8{margin-top:2rem}
-        .text-2xl{font-size:1.5rem}
-        .font-black{font-weight:900}.font-bold{font-weight:700}
-        .text-xs{font-size:.75rem}.text-sm{font-size:.875rem}
-        .text-zinc-200{color:#e4e4e7}.text-zinc-400{color:#a1a1aa}.text-zinc-500{color:#71717a}.text-zinc-600{color:#52525b}.text-zinc-700{color:#3f3f46}.text-zinc-900{color:#18181b}
-        .bg-white{background:#fff}.bg-white\/90{background:rgba(255,255,255,.9)}.bg-black{background:#000}.bg-zinc-50{background:#fafafa}
-        .rounded-xl{border-radius:12px}.rounded-2xl{border-radius:16px}
-        .border{border:1px solid #e5e7eb}.border-zinc-200{border-color:#e4e4e7}
-        .shadow-sm{box-shadow:0 10px 25px rgba(0,0,0,.06)}
-        .backdrop-blur{backdrop-filter:blur(8px)}
-        .sticky{position:sticky}.top-0{top:0}
-        .z-40{z-index:40}
-        .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
-        .gap-1{gap:.25rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}
-        .grid{display:grid}.md\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.lg\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-        .lg\:col-span-2{grid-column:span 2 / span 2}
+        /* Buttons */
+        .btnPrimary{border:1px solid #111827;background:#111827;color:#fff;border-radius:12px;padding:8px 12px;font-weight:800}
+        .btnGhost{border:1px solid rgba(0,0,0,.12);background:#fff;border-radius:10px;padding:8px 10px;font-weight:700}
+        .btnDestructive{border:1px solid #991b1b;background:#fee2e2;color:#991b1b;border-radius:10px;padding:8px 10px;font-weight:800}
+        .btnDanger{border:1px solid #991b1b;background:#991b1b;color:#fff;border-radius:12px;padding:10px 12px;font-weight:900}
+        .btnPremium{border:1px solid #f59e0b;background:linear-gradient(180deg,#fde68a,#f59e0b);color:#111827;border-radius:12px;padding:8px 12px;font-weight:900}
+        .navBtn{font-weight:800;padding:8px 12px;border-radius:10px;border:1px solid rgba(0,0,0,.1)}
 
-        .no-underline{text-decoration:none}
-        .hover\:underline:hover{text-decoration:underline}
+        /* Panels */
+        .panel{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(255,255,255,.85));border:1px solid rgba(15,23,42,.08);border-radius:16px;box-shadow:0 10px 24px -12px rgba(15,23,42,.15)}
 
-        .avatar{width:72px;height:72px;border-radius:999px;overflow:hidden;border:3px solid #e5e7eb;box-shadow:0 4px 16px rgba(0,0,0,.08)}
-        .avatar img{width:100%;height:100%;object-fit:cover}
-        .avatar.gold{border:3px solid transparent;background:linear-gradient(#fff,#fff) padding-box, linear-gradient(135deg,#f59e0b,#facc15,#f59e0b) border-box}
-        .avatar.sm{width:36px;height:36px;border-width:2px}
+        /* Ornate golden frames for premium */
+        .goldFrame:before{content:"";position:absolute;inset:-4px;border-radius:9999px;padding:2px;background:conic-gradient(from 0deg,#f59e0b,#fde68a,#f59e0b);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+        .goldFrameLg:before{content:"";position:absolute;inset:-6px;border-radius:16px;padding:3px;background:conic-gradient(from 0deg,#f59e0b,#fde68a,#f59e0b);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
 
-        .badge{font-size:10px;padding:.25rem .5rem;border-radius:999px;border:1px solid #10b981;background:#ecfdf5;color:#065f46}
-        .badge.gold{border-color:#f59e0b;background:#fff7ed;color:#92400e}
-
-        .star{font-size:18px;opacity:.25}
-        .star.on{opacity:1}
-
-        .btn{border:1px solid #e5e7eb;border-radius:12px;padding:.5rem .75rem;background:#fff;font-weight:700}
-        .btn.sm{padding:.35rem .6rem;font-size:.8rem}
-        .btn.xs{padding:.25rem .45rem;font-size:.75rem;border-radius:10px}
-        .btn.danger{border-color:#ef4444;color:#b91c1c}
-        .link{background:none;border:none;padding:0;color:#2563eb;text-decoration:underline;cursor:pointer}
-
-        .kpi{border:1px solid #e5e7eb;border-radius:12px;padding:.75rem;background:#fff}
-        .kpi-k{font-size:.75rem;color:#71717a}
-        .kpi-v{font-size:1.25rem;font-weight:900}
-
-        .tab-btn{border:1px solid #e5e7eb;border-radius:999px;padding:.4rem .9rem;background:#fff;font-weight:800}
-        .tab-btn.primary{background:linear-gradient(135deg,#ef4444,#8b5cf6,#22c55e);color:#fff;border-color:transparent}
-
-        .card{border:1px solid #e5e7eb;border-radius:16px;background:#fff;overflow:hidden}
-        .thumb{aspect-ratio:4/3;background:#f4f4f5}
-        .thumb.small{aspect-ratio:3/2}
-        .thumb img{width:100%;height:100%;object-fit:cover}
-        .p-3{padding:.75rem}
-        .card-title{font-weight:900}
-        .card-sub{font-size:.85rem;color:#52525b;margin-top:.15rem}
-
-        .chip{font-size:11px;border:1px solid #e5e7eb;border-radius:999px;padding:.2rem .6rem;background:#fff}
-
-        .bottombar{position:fixed;left:0;right:0;bottom:0;background:#0b0b0c;color:#fff;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-around;padding:.5rem;z-index:50}
-        .bbtn{display:flex;align-items:center;gap:.4rem;color:#fff;text-decoration:none;font-weight:800}
-        .bbtn span{font-size:.85rem}
-
-        nav.bottombar + *{margin-bottom:64px}
-
-        /* extra */
-        .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
-        .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:60}
-        .modal .sheet{width:100%;max-width:520px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:1rem;box-shadow:0 20px 40px rgba(0,0,0,.2)}
+        /* Card actions */
+        .absActions{position:absolute;top:8px;right:8px;display:flex;gap:6px}
+        .pill{background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:9999px;padding:4px 8px;font-size:12px;font-weight:800}
+        .pill.danger{border-color:#991b1b;color:#991b1b;background:#fee2e2}
       `}</style>
     </div>
   );
 }
+
+function Stars({value}){
+  const v = typeof value === "number" ? Math.max(0, Math.min(5, value)) : 0;
+  return (
+    <div className="inline-flex items-center gap-1" aria-label="rating">
+      {Array.from({length:5}).map((_,i)=> (
+        <svg key={i} width="18" height="18" viewBox="0 0 24 24" fill={i+1<=Math.round(v)?"currentColor":"none"} stroke="currentColor" className={i+1<=Math.round(v)?"text-amber-500":"text-slate-300"}>
+          <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+const texts = {
+  tr: {
+    language: "Dil",
+    profileBanner: "Satıcı Profiliniz",
+    verified: "Onaylı Satıcı",
+    memberSince: "Mağazaya Katılım",
+    sales: "Toplam Satış",
+    contactInfo: "İletişim",
+    fullName: "Ad Soyad",
+    username: "Kullanıcı Adı",
+    phone: "Telefon",
+    openAddress: "Açık Adres",
+    badges: "Güven Rozetleri",
+    noBadges: "Rozet yok",
+    myStore: "Mağazam",
+    pendingListings: "Onay Bekleyen",
+    liveListings: "Yayında",
+    expiredListings: "Süresi Biten",
+    adminPanel: "Yönetici Paneli",
+    grantVerified: "Onaylı satıcı ver",
+    grantPremium: "Premium ver",
+    save: "Kaydet",
+    saved: "Kaydedildi",
+    adminHint: "Bu ayarlar yalnızca yerel olarak saklanır.",
+    report: "Şikayet et / Bildir",
+    about: "Hakkımda",
+    customOrder: "Kişiye özel sipariş",
+    customYes: "Alıyorum",
+    customNo: "Almıyorum",
+    delivery: "Teslimat",
+    cities: "Şehirler",
+    eta: "Tahmini Süre",
+    day: "gün",
+    fee: "Kargo Ücreti",
+    pickup: "Elden Teslim",
+    yes: "Evet",
+    no: "Hayır",
+    returns: "İade / Değişim Kuralları",
+    noReturns: "Belirtilmedi.",
+    rating: "Puan",
+    reviews: "Yorumlar",
+    noSelfRate: "Kendi kendine puan verilemez.",
+    showcase: "Vitrin",
+    newListing: "Yeni İlan",
+    noListings: "Gösterilecek ilan yok.",
+    corporate: "Kurumsal",
+    aboutUs: "Hakkımızda",
+    contact: "İletişim",
+    privacy: "Gizlilik",
+    terms: "Kullanım Şartları",
+    shippingReturn: "Teslimat & İade",
+    cookies: "Çerez Politikası",
+    home: "Ana Sayfa",
+    messages: "Mesajlar",
+    notifications: "Bildirimler",
+    payment: "Ödeme",
+    payNow: "Ödeme Yap",
+    paymentNote: "Ödeme yapmadan önce siparişi oluşturunuz. Lütfen açıklama kısmına kullanıcı adınızı ve profil bilgilerinizi yazın.",
+    paymentUserHint: "(kullanıcı adınız)",
+    bankTransfer: "Havale/EFT",
+    accountName: "Hesap Adı",
+    papara: "Papara",
+    copy: "Kopyala",
+    uploadReceipt: "Dekont Yükle",
+    cancel: "Vazgeç",
+    completePremium: "Premium Tamamla",
+    missingInfo: "Lütfen gerekli alanları doldurun.",
+    sentForReview: "Başvurunuz alındı. Yönetici incelemesine gönderildi.",
+    saveError: "Kaydedilemedi, lütfen tekrar deneyin.",
+    transferInfo: "Havale Bilgileri"
+  },
+  en: {
+    language: "Language",
+    profileBanner: "Your Seller Profile",
+    verified: "Verified Seller",
+    memberSince: "Member Since",
+    sales: "Total Sales",
+    contactInfo: "Contact",
+    fullName: "Full Name",
+    username: "Username",
+    phone: "Phone",
+    openAddress: "Address",
+    badges: "Trust Badges",
+    noBadges: "No badges",
+    myStore: "My Store",
+    pendingListings: "Pending",
+    liveListings: "Live",
+    expiredListings: "Expired",
+    adminPanel: "Admin Panel",
+    grantVerified: "Grant verified",
+    grantPremium: "Grant premium",
+    save: "Save",
+    saved: "Saved",
+    adminHint: "These settings are stored locally only.",
+    report: "Report",
+    about: "About",
+    customOrder: "Custom orders",
+    customYes: "Accepting",
+    customNo: "Not accepting",
+    delivery: "Delivery",
+    cities: "Cities",
+    eta: "ETA",
+    day: "day",
+    fee: "Shipping Fee",
+    pickup: "Pickup",
+    yes: "Yes",
+    no: "No",
+    returns: "Return / Exchange Rules",
+    noReturns: "Not specified.",
+    rating: "Rating",
+    reviews: "Reviews",
+    noSelfRate: "Self‑rating is not allowed.",
+    showcase: "Showcase",
+    newListing: "New Listing",
+    noListings: "No listings to show.",
+    corporate: "Corporate",
+    aboutUs: "About Us",
+    contact: "Contact",
+    privacy: "Privacy",
+    terms: "Terms",
+    shippingReturn: "Shipping & Returns",
+    cookies: "Cookie Policy",
+    home: "Home",
+    messages: "Messages",
+    notifications: "Notifications",
+    payment: "Payment",
+    payNow: "Pay Now",
+    paymentNote: "Create your order before paying. Please add your username and profile info in the description.",
+    paymentUserHint: "(your username)",
+    bankTransfer: "Bank Transfer",
+    accountName: "Account Name",
+    papara: "Papara",
+    copy: "Copy",
+    uploadReceipt: "Upload Receipt",
+    cancel: "Cancel",
+    completePremium: "Complete Premium",
+    missingInfo: "Please fill the required fields.",
+    sentForReview: "Submission received. Sent to admin for review.",
+    saveError: "Could not save, please try again.",
+    transferInfo: "Transfer Info"
+  },
+  ar: {
+    language: "اللغة",
+    profileBanner: "ملف البائع",
+    verified: "بائع موثّق",
+    memberSince: "عضو منذ",
+    sales: "إجمالي المبيعات",
+    contactInfo: "التواصل",
+    fullName: "الاسم الكامل",
+    username: "اسم المستخدم",
+    phone: "الهاتف",
+    openAddress: "العنوان",
+    badges: "شارات الثقة",
+    noBadges: "لا توجد شارات",
+    myStore: "متجري",
+    pendingListings: "بانتظار الموافقة",
+    liveListings: "نشط",
+    expiredListings: "منتهي",
+    adminPanel: "لوحة المشرف",
+    grantVerified: "منح التوثيق",
+    grantPremium: "منح بريميوم",
+    save: "حفظ",
+    saved: "تم الحفظ",
+    adminHint: "يتم حفظ هذه الإعدادات محليًا فقط.",
+    report: "إبلاغ",
+    about: "نبذة",
+    customOrder: "طلبات خاصة",
+    customYes: "مقبول",
+    customNo: "غير مقبول",
+    delivery: "التسليم",
+    cities: "المدن",
+    eta: "المدة المتوقعة",
+    day: "يوم",
+    fee: "رسوم الشحن",
+    pickup: "الاستلام",
+    yes: "نعم",
+    no: "لا",
+    returns: "سياسة الإرجاع/الاستبدال",
+    noReturns: "غير محدد.",
+    rating: "التقييم",
+    reviews: "المراجعات",
+    noSelfRate: "لا يسمح بالتقييم الذاتي.",
+    showcase: "المعرض",
+    newListing: "إعلان جديد",
+    noListings: "لا توجد إعلانات.",
+    corporate: "الشركة",
+    aboutUs: "من نحن",
+    contact: "اتصال",
+    privacy: "الخصوصية",
+    terms: "الشروط",
+    shippingReturn: "الشحن والإرجاع",
+    cookies: "سياسة الكوكيز",
+    home: "الصفحة الرئيسية",
+    messages: "الرسائل",
+    notifications: "الإشعارات",
+    payment: "الدفع",
+    payNow: "ادفع الآن",
+    paymentNote: "يُرجى إنشاء الطلب قبل الدفع. أضف اسم المستخدم ومعلومات ملفك في الوصف.",
+    paymentUserHint: "(اسم المستخدم)",
+    bankTransfer: "حوالة بنكية",
+    accountName: "اسم الحساب",
+    papara: "Papara",
+    copy: "نسخ",
+    uploadReceipt: "رفع إيصال",
+    cancel: "إلغاء",
+    completePremium: "إكمال البريميوم",
+    missingInfo: "يرجى ملء الحقول المطلوبة.",
+    sentForReview: "تم الاستلام وأُرسل للمشرف.",
+    saveError: "تعذر الحفظ، حاول مرة أخرى.",
+    transferInfo: "معلومات الحوالة"
+  },
+  de: {
+    language: "Sprache",
+    profileBanner: "Ihr Verkäuferprofil",
+    verified: "Verifizierter Verkäufer",
+    memberSince: "Mitglied seit",
+    sales: "Gesamtverkäufe",
+    contactInfo: "Kontakt",
+    fullName: "Vollständiger Name",
+    username: "Benutzername",
+    phone: "Telefon",
+    openAddress: "Adresse",
+    badges: "Vertrauensabzeichen",
+    noBadges: "Keine Abzeichen",
+    myStore: "Mein Shop",
+    pendingListings: "Ausstehend",
+    liveListings: "Aktiv",
+    expiredListings: "Abgelaufen",
+    adminPanel: "Adminbereich",
+    grantVerified: "Verifiziert vergeben",
+    grantPremium: "Premium vergeben",
+    save: "Speichern",
+    saved: "Gespeichert",
+    adminHint: "Diese Einstellungen werden nur lokal gespeichert.",
+    report: "Melden",
+    about: "Über mich",
+    customOrder: "Sonderbestellungen",
+    customYes: "Ja",
+    customNo: "Nein",
+    delivery: "Lieferung",
+    cities: "Städte",
+    eta: "Lieferzeit",
+    day: "Tag",
+    fee: "Versandkosten",
+    pickup: "Abholung",
+    yes: "Ja",
+    no: "Nein",
+    returns: "Rückgabe / Umtausch",
+    noReturns: "Nicht angegeben.",
+    rating: "Bewertung",
+    reviews: "Bewertungen",
+    noSelfRate: "Selbstbewertung ist nicht erlaubt.",
+    showcase: "Schaufenster",
+    newListing: "Neue Anzeige",
+    noListings: "Keine Anzeigen vorhanden.",
+    corporate: "Unternehmen",
+    aboutUs: "Über uns",
+    contact: "Kontakt",
+    privacy: "Datenschutz",
+    terms: "Nutzungsbedingungen",
+    shippingReturn: "Lieferung & Rückgabe",
+    cookies: "Cookie‑Richtlinie",
+    home: "Startseite",
+    messages: "Nachrichten",
+    notifications: "Benachrichtigungen",
+    payment: "Zahlung",
+    payNow: "Jetzt zahlen",
+    paymentNote: "Bitte Bestellung vor der Zahlung anlegen. Fügen Sie Benutzername und Profilinfo in die Beschreibung ein.",
+    paymentUserHint: "(Ihr Benutzername)",
+    bankTransfer: "Überweisung",
+    accountName: "Kontoinhaber",
+    papara: "Papara",
+    copy: "Kopieren",
+    uploadReceipt: "Beleg hochladen",
+    cancel: "Abbrechen",
+    completePremium: "Premium abschließen",
+    missingInfo: "Bitte Pflichtfelder ausfüllen.",
+    sentForReview: "Eingang bestätigt. An Admin gesendet.",
+    saveError: "Speichern fehlgeschlagen, bitte erneut versuchen.",
+    transferInfo: "Überweisungsdaten"
+  }
+};
