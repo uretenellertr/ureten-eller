@@ -12,7 +12,7 @@ import React from "react";
 export default function Page(){
   // === STATE ===
   const [lang, setLang] = React.useState("tr");
-  const [uid, setUid] = React.useState<string|null>(null);
+  const [uid, setUid] = React.useState(null);
   const [isPro, setIsPro] = React.useState(false);
   const [adsThisMonth, setAdsThisMonth] = React.useState(0);
   const [showcaseThisMonth, setShowcaseThisMonth] = React.useState(0);
@@ -21,16 +21,16 @@ export default function Page(){
   const [subcat, setSubcat] = React.useState("");
   const [city, setCity] = React.useState("İstanbul");
   const [district, setDistrict] = React.useState("");
-  const [listingType, setListingType] = React.useState<"standard"|"showcase">("standard");
+  const [listingType, setListingType] = React.useState("standard");
 
   const [title, setTitle] = React.useState("");
   const [price, setPrice] = React.useState("");
   const [desc, setDesc] = React.useState("");
-  const [photos, setPhotos] = React.useState<File[]>([]);
+  const [photos, setPhotos] = React.useState([]);
   const [uploading, setUploading] = React.useState(false);
   const [payWarn, setPayWarn] = React.useState("");
 
-  const SUPPORTED = ["tr","en","ar","de"] as const;
+  const SUPPORTED = ["tr","en","ar","de"];
   const DIR = lang === "ar" ? "rtl" : "ltr";
 
   // === I18N ===
@@ -44,8 +44,8 @@ export default function Page(){
     en:{ BRAND:"ÜRETEN ELLER", PAGE_TITLE:"POST LISTING", SUBTITLE:"Photos → title → description → category → subcategory → city → district → price.", MEMBERSHIP:"Membership", PRO:"PRO", STANDARD:"STANDARD", REMAINING:"Remaining quota", ADS_THIS_MONTH:"Your ads this month", SHOWCASE_THIS_MONTH:"Your showcase this month", CATEGORY:"Category", SUBCATEGORY:"Subcategory", CITY:"City", DISTRICT:"District", LISTING_TYPE:"Listing Type", STANDARD_L:"Standard", SHOWCASE_L:"Showcase", TITLE:"Title", PRICE:"Price (TRY)", DESC:"Description", PHOTOS:"Photos (max 5)", DRAG:"Drag files or click to upload", ESTIMATE:"Estimated Fee", FEE_DETAIL:"Calculated from quota / showcase.", SUBMIT:"Publish", CANCEL:"Cancel", RULES_TITLE:"Rules", R1:"PRO: 10 / month.", R2:"STANDARD: 1 / month.", R3:"PRO: 1 showcase / month free.", R4:"Over‑quota: PRO 100 TRY, STANDARD 150 TRY.", R5:"Showcase: PRO 150 TRY (if no free left), STANDARD 299 TRY.", R6:"All listings require ADMIN APPROVAL first.", WILL_SHOWCASE:"After approval appears on Home › Showcase.", WILL_STANDARD:"After approval appears in Standard list.", VERIFIED:"VERIFIED SELLER", GOLD_HINT:"PRO listings show with GOLD frame.", ERR_MAX5:"Max 5 photos.", UPLOADING:"Uploading…", DONE:"Submitted.", NEED_PAYMENT:"Payment required: ", GO_PAY:"Proceed to payment", AFTER_REVIEW:"Your listing will be published after review." },
     ar:{ BRAND:"أُورَتِن إِلَّر", PAGE_TITLE:"أَضِفْ إِعْلَانًا", SUBTITLE:"صور ← العنوان ← الوصف ← الفئة ← الفرعية ← الولاية ← القضاء ← السعر.", MEMBERSHIP:"العضوية", PRO:"برو", STANDARD:"عادي", REMAINING:"المتبقّي", ADS_THIS_MONTH:"إعلانات هذا الشهر", SHOWCASE_THIS_MONTH:"عروض مميزة هذا الشهر", CATEGORY:"الفئة", SUBCATEGORY:"الفرعية", CITY:"الولاية", DISTRICT:"القضاء", LISTING_TYPE:"نوع الإعلان", STANDARD_L:"عادي", SHOWCASE_L:"مميّز", TITLE:"العنوان", PRICE:"السعر (TL)", DESC:"الوصف", PHOTOS:"صور (حتى 5)", DRAG:"اسحب الملفات أو انقر للرفع", ESTIMATE:"الرسوم التقديرية", FEE_DETAIL:"بحسب الحصة/المميّز.", SUBMIT:"نشر", CANCEL:"إلغاء", RULES_TITLE:"القواعد", R1:"برو: 10 شهريًا.", R2:"عادي: 1 شهريًا.", R3:"برو: مميّز واحد مجانًا شهريًا.", R4:"تجاوز الحصة: برو 100 TL، عادي 150 TL.", R5:"المميّز: برو 150 TL (إن نفدت المجانية)، عادي 299 TL.", R6:"كل الإعلانات تتطلّب موافقة الإدارة أولًا.", WILL_SHOWCASE:"بعد الموافقة يظهر في الرئيسية › المميز.", WILL_STANDARD:"بعد الموافقة يظهر في القائمة العادية.", VERIFIED:"بائع موثّق", GOLD_HINT:"إعلانات برو بإطار ذهبي.", ERR_MAX5:"الحد 5 صور.", UPLOADING:"جارٍ الرفع…", DONE:"تم الإرسال.", NEED_PAYMENT:"يلزم دفع: ", GO_PAY:"انتقال للدفع", AFTER_REVIEW:"سيُنشر إعلانك بعد المراجعة." },
     de:{ BRAND:"ÜRETEN ELLER", PAGE_TITLE:"ANZEIGE AUFGEBEN", SUBTITLE:"Fotos → Titel → Beschreibung → Kategorie → Unterkategorie → Stadt → Bezirk → Preis.", MEMBERSHIP:"Mitgliedschaft", PRO:"PRO", STANDARD:"STANDARD", REMAINING:"Restkontingent", ADS_THIS_MONTH:"Deine Anzeigen (Monat)", SHOWCASE_THIS_MONTH:"Deine Schaufenster (Monat)", CATEGORY:"Kategorie", SUBCATEGORY:"Unterkategorie", CITY:"Stadt", DISTRICT:"Bezirk", LISTING_TYPE:"Anzeigentyp", STANDARD_L:"Standard", SHOWCASE_L:"Schaufenster", TITLE:"Titel", PRICE:"Preis (TRY)", DESC:"Beschreibung", PHOTOS:"Fotos (max. 5)", DRAG:"Dateien ziehen oder klicken", ESTIMATE:"Vorauss. Gebühr", FEE_DETAIL:"aus Kontingent/Schaufenster.", SUBMIT:"Veröffentlichen", CANCEL:"Abbrechen", RULES_TITLE:"Regeln", R1:"PRO: 10 / Monat.", R2:"STANDARD: 1 / Monat.", R3:"PRO: 1 Schaufenster/Monat gratis.", R4:"Überkontingent: PRO 100 TRY, STANDARD 150 TRY.", R5:"Schaufenster: PRO 150 TRY (wenn gratis verbraucht), STANDARD 299 TRY.", R6:"Alle Anzeigen zuerst ADMIN‑Freigabe.", WILL_SHOWCASE:"Nach Freigabe: Start › Schaufenster.", WILL_STANDARD:"Nach Freigabe: Standardliste.", VERIFIED:"VERIFIZIERTER VERKÄUFER", GOLD_HINT:"PRO‑Anzeigen mit GOLD‑Rahmen.", ERR_MAX5:"Max. 5 Fotos.", UPLOADING:"Wird hochgeladen…", DONE:"Gesendet.", NEED_PAYMENT:"Zahlung nötig: ", GO_PAY:"Zur Zahlung", AFTER_REVIEW:"Deine Anzeige wird nach Prüfung veröffentlicht." }
-  } as const;
-  const t = STR[lang as keyof typeof STR];
+  };
+  const t = STR[lang] || STR.tr;
 
   // === KATEGORİLER ===
   const CATS = React.useMemo(()=>({
@@ -127,13 +127,13 @@ export default function Page(){
     en:["Big support for small producers","Secure payment, easy returns","Transparent price, clear delivery"],
     ar:["دعم كبير للمنتِج الصغير","دفع آمن وإرجاع سهل","سعر شفاف وتسليم واضح"],
     de:["Große Unterstützung für kleine Produzenten","Sichere Zahlung, einfache Rückgabe","Transparente Preise, klare Lieferung"],
-  } as const;
+  };
   const BAD_WORDS = ["amk","aq","orospu","sike","sikerim","siktir","piç","yarrak","ananı","avradını","göt","ibne","pezevenk","kahpe","allahsız","şerefsiz"];
   const [mi,setMi]=React.useState(0);
   React.useEffect(()=>{ const id=setInterval(()=>setMi(p=>(p+1)%MOTTO[lang as keyof typeof MOTTO].length),5000); return()=>clearInterval(id); },[lang]);
 
   // === Firebase (lazy) ===
-  const fbRef = React.useRef<{app:any,auth:any,db:any,storage:any}>({app:null,auth:null,db:null,storage:null});
+  const fbRef = React.useRef({app:null,auth:null,db:null,storage:null});
   React.useEffect(()=>{ let unsub = ()=>{}; (async()=>{
     try{
       const { initializeApp, getApps } = await import("firebase/app");
