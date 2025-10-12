@@ -458,7 +458,7 @@ export default function Home() {
     window.location.href = href;
   };
   const needAuth = (role) => {
-    window.location.href = "/";
+    window.location.href = `/login?role=${role}`;
   };
 
   return (
