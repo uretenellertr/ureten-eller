@@ -1,5 +1,6 @@
-// Dosya: pages/portal/seller/index.impl.jsx
-// İstek: Tüm metinleri TR/EN/AR/DE dillerinde çevir – eksiksiz. (İlan Ver linki korunur)
+// Dosya: pages/portal/seller/index.jsx
+// 4 dil (TR/EN/AR/DE) + tüm buton yönlendirmeleri aktif.
+// "İlan Ver" önce /portal/seller/post'u dener; yoksa /portal/seller/post/post'a yönlendirir (GH Pages fallback).
 
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
@@ -15,7 +16,32 @@ const STR = {
     search: "İlan Ara",
     postAd: "İlan Ver",
     heroTitle: "Üreten Ellere Hoş Geldiniz",
-    tagline: "Amacımız: ev hanımlarına bütçe katkısı sağlamak.",
+    mottos: [
+      { text: "Amacımız: ev hanımlarına bütçe katkısı sağlamak.", color: "#e11d48" },
+      { text: "Kadın emeği değer bulsun.", color: "#c026d3" },
+      { text: "El emeği ürünler adil fiyata.", color: "#7c3aed" },
+      { text: "Mahalle lezzetleri kapınıza gelsin.", color: "#2563eb" },
+      { text: "Usta ellerden taze üretim.", color: "#0ea5e9" },
+      { text: "Her siparişte platform güvencesi.", color: "#14b8a6" },
+      { text: "Küçük üreticiye büyük destek.", color: "#059669" },
+      { text: "Şeffaf fiyat, net teslimat.", color: "#16a34a" },
+      { text: "Güvenli ödeme, kolay iade.", color: "#65a30d" },
+      { text: "Yerelden al, ekonomiye can ver.", color: "#ca8a04" },
+      { text: "Emeğin karşılığı, müşteriye kazanç.", color: "#d97706" },
+      { text: "Ev yapımı tatlar, el işi güzellikler.", color: "#ea580c" },
+      { text: "Her kategoride özenli üretim.", color: "#f97316" },
+      { text: "Siparişten teslimata kesintisiz takip.", color: "#f59e0b" },
+      { text: "Güvenilir satıcı rozetleri.", color: "#eab308" },
+      { text: "Topluluğumuzla daha güçlüyüz.", color: "#84cc16" },
+      { text: "Sürdürülebilir üretime destek.", color: "#22c55e" },
+      { text: "Adil ticaret, mutlu müşteri.", color: "#10b981" },
+      { text: "El emeğine saygı, bütçeye dost fiyat.", color: "#06b6d4" },
+      { text: "Kadınların emeğiyle büyüyoruz.", color: "#3b82f6" },
+      { text: "Şehrinden taze üretim, güvenle alışveriş.", color: "#6366f1" },
+      { text: "Kalite, özen ve şeffaflık.", color: "#8b5cf6" },
+      { text: "İhtiyacın olan el emeği burada.", color: "#d946ef" },
+      { text: "Uygun fiyat, güvenli süreç, mutlu son.", color: "#ec4899" }
+    ],
     showcase: "Vitrin",
     standard: "Standart İlanlar",
     categories: "Kategorilerimiz",
@@ -25,7 +51,7 @@ const STR = {
     legal: {
       corporate: "Kurumsal", about: "Hakkımızda", contact: "İletişim", privacy: "Gizlilik", kvkk: "KVKK Aydınlatma",
       terms: "Kullanım Şartları", distance: "Mesafeli Satış", delivery: "Teslimat & İade", cookie: "Çerez Politikası",
-      community: "Topluluk Kuralları", prohibited: "Yasaklı Ürünler", all: "Tüm Legal", copyright: "© 2025 Üreten Eller"
+      community: "Topluluk Kuralları", prohibited: "Yasaklı Ürünler", all: "Tüm Legal"
     },
     cats: [
       { key: "food", icon: "🍲", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Yemekler", subs: ["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"] },
@@ -51,7 +77,32 @@ const STR = {
     search: "Search Listings",
     postAd: "Post Listing",
     heroTitle: "Welcome to Üreten Eller",
-    tagline: "Our aim: support homemakers' budgets.",
+    mottos: [
+      { text: "Our aim: support homemakers' budgets.", color: "#e11d48" },
+      { text: "Let women's labor be valued.", color: "#c026d3" },
+      { text: "Handmade products at fair prices.", color: "#7c3aed" },
+      { text: "Neighborhood flavors to your doorstep.", color: "#2563eb" },
+      { text: "Fresh production from skilled hands.", color: "#0ea5e9" },
+      { text: "Platform assurance on every order.", color: "#14b8a6" },
+      { text: "Big support for small producers.", color: "#059669" },
+      { text: "Transparent pricing, clear delivery.", color: "#16a34a" },
+      { text: "Secure payment, easy returns.", color: "#65a30d" },
+      { text: "Buy local, boost the economy.", color: "#ca8a04" },
+      { text: "Fair pay for labor, value for customers.", color: "#d97706" },
+      { text: "Homemade tastes, handcrafted beauties.", color: "#ea580c" },
+      { text: "Careful production in every category.", color: "#f97316" },
+      { text: "Seamless tracking from order to delivery.", color: "#f59e0b" },
+      { text: "Trusted seller badges.", color: "#eab308" },
+      { text: "Stronger with our community.", color: "#84cc16" },
+      { text: "Support for sustainable production.", color: "#22c55e" },
+      { text: "Fair trade, happy customers.", color: "#10b981" },
+      { text: "Respect for craft, budget‑friendly prices.", color: "#06b6d4" },
+      { text: "We grow with women's labor.", color: "#3b82f6" },
+      { text: "Fresh production from your city, shop with confidence.", color: "#6366f1" },
+      { text: "Quality, care and transparency.", color: "#8b5cf6" },
+      { text: "The handmade you need is here.", color: "#d946ef" },
+      { text: "Good prices, safe process, happy outcome.", color: "#ec4899" }
+    ],
     showcase: "Showcase",
     standard: "Standard Listings",
     categories: "Our Categories",
@@ -61,23 +112,23 @@ const STR = {
     legal: {
       corporate: "Corporate", about: "About", contact: "Contact", privacy: "Privacy", kvkk: "PDPL (KVKK) Notice",
       terms: "Terms of Use", distance: "Distance Sales", delivery: "Delivery & Returns", cookie: "Cookie Policy",
-      community: "Community Guidelines", prohibited: "Prohibited Items", all: "All Legal", copyright: "© 2025 Üreten Eller"
+      community: "Community Guidelines", prohibited: "Prohibited Items", all: "All Legal"
     },
     cats: [
-      { key: "food", icon: "🍲", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Home‑cooked Meals", subs: ["Home‑cooked","Savory pastries","Soup","Olive‑oil dishes","Rice/Pasta","Meat/Chicken","Breakfast","Meze","Frozen","Kids' meals","Diet/Vegan/GF"] },
-      { key: "cake", icon: "🎂", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Cakes & Desserts", subs: ["Fresh cake","Cake/Cupcake","Cookies","Syrupy desserts","Milk desserts","Cheesecake","Diet desserts","Chocolate/Confectionery","Birthday sets"] },
-      { key: "jam", icon: "🫙", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Jams • Pickles • Sauces", subs: ["Jam/Marmalade","Molasses","Pickles","Tomato/pepper sauce","Hot sauce","Paste","Vinegar","Canned"] },
-      { key: "local", icon: "🌾", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Local / Winter Prep", subs: ["Erişte noodles","Tarhana","Yufka","Manti","Dried veg/fruit","Paste","Vinegar","Canned"] },
-      { key: "diet", icon: "🥗", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Diet / Vegan / Gluten‑Free", subs: ["Fit plates","Vegan meals","GF bakery","Sugar‑free dessert","Keto product","Protein snack"] },
-      { key: "jewelry", icon: "💍", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Jewelry", subs: ["Bracelet","Necklace","Earrings","Ring","Anklet","Brooch","Sets","Personalized/Named","Macramé","Natural stone","Resin","Wire wrap"] },
-      { key: "kids", icon: "👶", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Baby & Kids", subs: ["Animal/Baby figures","Rattle","Crochet teether","Cloth toy/book","Montessori toy","Sets","Knit booties/hat","Baby blanket","Bib/Burp cloth","Postpartum set","Hair accessory","Handmade clothing"] },
-      { key: "knit", icon: "🧶", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Knits", subs: ["Cardigan","Sweater","Scarf/Beanie","Poncho","Shawl","Socks","Baby set","Vest","Cushion/Throw","Bath set"] },
-      { key: "sew", icon: "✂️", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Sewing / Tailoring", subs: ["Hem/Repair","Zipper replacement","Curtain sewing","Duvet/Pillow","Tablecloth","Custom tailoring","Costume"] },
-      { key: "macrame", icon: "🧵", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Macramé & Decor", subs: ["Wall hanging","Plant hanger","Keychain","Chandelier","Placemat/Runner","Basket","Shelf/Wall decor"] },
-      { key: "home", icon: "🏠", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Home Decor & Accessories", subs: ["Felt works","Cushion","Door wreath","Tray decor","Frame","Dreamcatcher","Painting"] },
-      { key: "candle", icon: "🕯️", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Candles & Fragranced Items", subs: ["Soy/Beeswax candles","Scented stone","Room spray","Incense","Gel candle","Gift set"] },
-      { key: "soap", icon: "🧼", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Natural Soap & Cosmetics", subs: ["Olive‑oil soap","Herbal soaps","Solid shampoo","Lip balm","Cream/Ointment","Bath salt","Lavender sachet"] },
-      { key: "amigurumi", icon: "🧸", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Amigurumi & Decorative Toys", subs: ["Keychain","Magnet","Collectible figure","Decor doll/character","Named amigurumi"] }
+      { key: "food", icon: "🍲", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Food", subs: ["Home‑cooked meals","Börek & pastries","Soup","Olive‑oil dishes","Rice & pasta","Meat & chicken","Breakfast items","Meze","Frozen","Kids' meals","Diet/vegan/GF"] },
+      { key: "cake", icon: "🎂", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Cakes & Desserts", subs: ["Layer cakes","Cakes & cupcakes","Cookies","Syrupy desserts","Milk‑based desserts","Cheesecake","Diet desserts","Chocolate/candy","Birthday sets"] },
+      { key: "jam", icon: "🫙", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Jam • Pickle • Sauce", subs: ["Jam & marmalade","Molasses (pekmez)","Pickles","Tomato/pepper sauce","Hot sauce","Tomato paste","Vinegar","Canned goods"] },
+      { key: "local", icon: "🌾", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Local / Pantry Staples", subs: ["Homemade noodles (erişte)","Tarhana","Yufka","Mantı","Dried veg/fruit","Tomato paste","Vinegar","Canned"] },
+      { key: "diet", icon: "🥗", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Diet / Vegan / Gluten‑free", subs: ["Fit plates","Vegan meals","GF baked goods","Sugar‑free desserts","Keto products","Protein snacks"] },
+      { key: "jewelry", icon: "💍", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Jewelry", subs: ["Bracelet","Necklace","Earrings","Ring","Anklet","Brooch","Sets","Personalized","Macrame","Natural stone","Resin","Wire wrap"] },
+      { key: "kids", icon: "👶", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Baby & Child", subs: ["Animal/baby figures","Rattle","Crochet teether","Cloth toy/book","Montessori toy","Sets","Knitted booties‑hat","Baby blanket","Bib & burp cloth","Maternity set","Hair accessory","Handmade clothing"] },
+      { key: "knit", icon: "🧶", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Knitwear", subs: ["Cardigan","Sweater","Scarf & beanie","Poncho","Shawl","Socks","Baby set","Vest","Cushion/throw","Bath set"] },
+      { key: "sew", icon: "✂️", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Sewing / Tailoring", subs: ["Hems/repairs","Zipper replacement","Curtain sewing","Duvet/pillow","Tablecloth","Custom tailoring","Costume"] },
+      { key: "macrame", icon: "🧵", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Macrame & Decor", subs: ["Wall hanging","Plant hanger","Keychain","Chandelier","Placemat/runner","Basket","Shelf/wall decor"] },
+      { key: "home", icon: "🏠", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Home Decor & Accessories", subs: ["Felt crafts","Cushion","Door wreath","Tray decoration","Frame","Dreamcatcher","Painting"] },
+      { key: "candle", icon: "🕯️", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Candles & Fragrances", subs: ["Soy/beeswax candle","Scented stone","Room spray","Incense","Gel candle","Gift set"] },
+      { key: "soap", icon: "🧼", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Natural Soap & Cosmetics", subs: ["Olive‑oil soap","Herbal soaps","Solid shampoo","Lip balm","Cream/ointment","Bath salts","Lavender sachet"] },
+      { key: "amigurumi", icon: "🧸", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Amigurumi & Toys (decorative)", subs: ["Keychain","Magnet","Collector figure","Decor doll/character","Name‑custom amigurumi"] }
     ]
   },
   ar: {
@@ -87,7 +138,32 @@ const STR = {
     search: "البحث في الإعلانات",
     postAd: "أضف إعلانًا",
     heroTitle: "مرحبًا بكم في Üreten Eller",
-    tagline: "هدفنا: دعم ميزانية ربات البيوت.",
+    mottos: [
+      { text: "هدفنا: دعم ميزانية ربات البيوت.", color: "#e11d48" },
+      { text: "ليُقَدَّر عمل المرأة.", color: "#c026d3" },
+      { text: "منتجات يدوية بأسعار عادلة.", color: "#7c3aed" },
+      { text: "نكهات الحي إلى بابك.", color: "#2563eb" },
+      { text: "إنتاج طازج بأيدي خبيرة.", color: "#0ea5e9" },
+      { text: "ضمان المنصّة مع كل طلب.", color: "#14b8a6" },
+      { text: "دعم كبير للمنتِج الصغير.", color: "#059669" },
+      { text: "سعر شفاف، تسليم واضح.", color: "#16a34a" },
+      { text: "دفع آمن، إرجاع سهل.", color: "#65a30d" },
+      { text: "اشترِ المحليّ، وانعش الاقتصاد.", color: "#ca8a04" },
+      { text: "أجر عادل للعمل، وقيمة للعميل.", color: "#d97706" },
+      { text: "نكهات منزلية، وجماليات مصنوعة يدويًا.", color: "#ea580c" },
+      { text: "إنتاج مُتقَن في كل فئة.", color: "#f97316" },
+      { text: "تتبّع سلس من الطلب حتى التسليم.", color: "#f59e0b" },
+      { text: "شارات بائع موثوق.", color: "#eab308" },
+      { text: "نقوى مع مجتمعنا.", color: "#84cc16" },
+      { text: "دعم للإنتاج المستدام.", color: "#22c55e" },
+      { text: "تجارة عادلة، عملاء سعداء.", color: "#10b981" },
+      { text: "احترام للحِرفة وأسعار مناسبة للميزانية.", color: "#06b6d4" },
+      { text: "ننمو بجهد النساء.", color: "#3b82f6" },
+      { text: "إنتاج طازج من مدينتك وتسوق بثقة.", color: "#6366f1" },
+      { text: "جودة وعناية وشفافية.", color: "#8b5cf6" },
+      { text: "الحِرف اليدوية التي تحتاجها هنا.", color: "#d946ef" },
+      { text: "سعر مناسب، عملية آمنة، ونتيجة سعيدة.", color: "#ec4899" }
+    ],
     showcase: "الواجهة المميزة",
     standard: "إعلانات عادية",
     categories: "فئاتنا",
@@ -97,23 +173,23 @@ const STR = {
     legal: {
       corporate: "الشركة", about: "من نحن", contact: "اتصال", privacy: "الخصوصية", kvkk: "إشعار KVKK",
       terms: "شروط الاستخدام", distance: "البيع عن بُعد", delivery: "التسليم والإرجاع", cookie: "سياسة ملفات تعريف الارتباط",
-      community: "إرشادات المجتمع", prohibited: "السلع المحظورة", all: "جميع الصفحات القانونية", copyright: "© 2025 Üreten Eller"
+      community: "إرشادات المجتمع", prohibited: "السلع المحظورة", all: "جميع الصفحات القانونية"
     },
     cats: [
-      { key: "food", icon: "🍲", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "أطعمة منزلية", subs: ["أطباق منزلية","فطائر ومعجنات","شوربة","أطباق بالزيت","أرز/معكرونة","لحوم/دجاج","فطور","مقبلات","مجمدات","وجبات للأطفال","حمية/نباتي/خالٍ من الغلوتين"] },
-      { key: "cake", icon: "🎂", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "كعك وحلويات", subs: ["كيك طازج","كيك/كب كيك","بسكويت","حلويات شرابية","حلويات بالحليب","تشيزكيك","حلويات دايت","شوكولاتة/حلويات","مجموعات عيد الميلاد"] },
-      { key: "jam", icon: "🫙", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "مربى • مخللات • صلصات", subs: ["مربى/مارملاد","دبس","مخللات","صلصة طماطم/فلفل","صلصة حارة","صلصة مركزة","خل","معلبات"] },
-      { key: "local", icon: "🌾", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "منتجات تقليدية/مؤونة الشتاء", subs: ["إريشته (نودلز)","طرحنة","يوفكا (رقائق)","مانتي","خضار/فاكهة مجففة","صلصة مركزة","خل","معلبات"] },
-      { key: "diet", icon: "🥗", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "حمية/نباتي/خالٍ من الغلوتين", subs: ["أطباق صحية","أطعمة نباتية","مخبوزات خالية من الغلوتين","حلويات بدون سكر","منتجات كيتو","وجبات خفيفة بروتينية"] },
-      { key: "jewelry", icon: "💍", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "إكسسوارات", subs: ["أساور","قلائد","أقراط","خواتم","خلخال","بروش","مجموعات","مخصص/بالاسم","مكرمية","أحجار طبيعية","ريزين","سلك ملفوف"] },
-      { key: "kids", icon: "👶", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "رضّع وأطفال", subs: ["دمى حيوانات/أطفال","خشخيشة","عضّاضة محاكة","ألعاب/كتب قماشية","ألعاب مونتيسوري","مجموعات","حذاء/قبعة محاكة","بطانية أطفال","مريلة/منشفة فم","طقم نفاس","إكسسوار شعر","ملابس يدوية"] },
-      { key: "knit", icon: "🧶", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "حياكة/تريكو", subs: ["كارديغان","كنزة","وشاح/قبعة","بانشو","شال","جوارب","طقم أطفال","فيست","وسادة/غطاء","طقم ليف"] },
-      { key: "sew", icon: "✂️", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "خياطة/تفصيل", subs: ["ثني/تصليح","تبديل سحاب","تفصيل ستائر","أغطية/وسائد","مفرش طاولة","تفصيل خاص","زي تنكري"] },
-      { key: "macrame", icon: "🧵", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "مكرمية وديكور", subs: ["زينة جدارية","حامل أصيص","ميدالية","ثريا","مفرش أمريكي/رنر","سلة","رف/ديكور جداري"] },
-      { key: "home", icon: "🏠", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "ديكور وإكسسوارات منزلية", subs: ["أعمال لباد","وسادة","زينة باب","تزيين صينية","إطار","صائدة أحلام","لوحة"] },
-      { key: "candle", icon: "🕯️", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "شموع ومنتجات عطرية", subs: ["شموع صويا/شمع عسل","حجر عطري","رذاذ للغرفة","بخور","شموع هلامية","طقم هدايا"] },
-      { key: "soap", icon: "🧼", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "صابون طبيعي ومستحضرات", subs: ["صابون بزيت الزيتون","صابون عشبي","شامبو صلب","بلسم شفاه","كريم/مرهم","ملح حمام","أكياس لافندر"] },
-      { key: "amigurumi", icon: "🧸", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "أميغورومي ولُعب (زخرفية)", subs: ["ميدالية","مغناطيس","مجسّم تجميعي","دمية/شخصية للزينة","أميغورومي بالاسم"] }
+      { key: "food", icon: "🍲", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "الأطعمة", subs: ["أطعمة منزلية","بورك ومعجنات","شوربة","أطباق بزيت الزيتون","أرز ومعكرونة","لحوم ودجاج","فطور","مقبلات","مجمدات","وجبات للأطفال","دايت/نباتي/خالٍ من الغلوتين"] },
+      { key: "cake", icon: "🎂", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "كيك وحلويات", subs: ["كعكات طبقات","كيك وكب كيك","بسكويت","حلويات شرابية","حلويات بالحليب","تشيزكيك","حلويات دايت","شوكولاتة/حلوى","مجموعات عيد الميلاد"] },
+      { key: "jam", icon: "🫙", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "مربى • مخللات • صلصات", subs: ["مربى ومارمالاد","دبس (بكميز)","مخللات","صلصة طماطم/فلفل","صلصة حارة","معجون طماطم","خل","معلبات"] },
+      { key: "local", icon: "🌾", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "منتجات محلية / مؤن", subs: ["معكرونة منزلية (إريشته)","طرخانة","يوفكا","مانتي","خضار/فاكهة مجففة","معجون طماطم","خل","معلبات"] },
+      { key: "diet", icon: "🥗", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "دايت / نباتي / خالٍ من الغلوتين", subs: ["أطباق لياقة","وجبات نباتية","مخبوزات GF","حلويات بدون سكر","منتجات كيتو","سناك بروتين"] },
+      { key: "jewelry", icon: "💍", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "مجوهرات", subs: ["أساور","قلادات","أقراط","خواتم","خلخال","بروش","أطقم","مخصصة بالاسم","مكرمية","أحجار طبيعية","ريزين","لفّ سلكي"] },
+      { key: "kids", icon: "👶", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "رضّع وأطفال", subs: ["مجسّمات حيوانات/أطفال","خشخاشة","عضّاضة كروشيه","دمى/كتب قماش","ألعاب منتسوري","أطقم","بوت/قبعة محبوكة","بطانية أطفال","مريلة/قطعة تجفيف","طقم نفاس","إكسسوارات شعر","ملابس يدوية"] },
+      { key: "knit", icon: "🧶", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "حياكة/تريكو", subs: ["كارديغان","كنزة","وشاح/قبعة","بونشو","شال","جوارب","طقم أطفال","صديري","غلاف وسادة/بطانية","طقم حمّام"] },
+      { key: "sew", icon: "✂️", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "خياطة / تفصيل", subs: ["تقصير/تصليح","تبديل سحّاب","خياطة ستائر","أغطية/وسائد","مفرش طاولة","تفصيل خاص","زيّ تنكري"] },
+      { key: "macrame", icon: "🧵", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "مكرمية وديكور", subs: ["تعليق جداري","حامل نبات","ميدالية مفاتيح","ثريا","مفرش/رانر","سلّة","رف/ديكور جداري"] },
+      { key: "home", icon: "🏠", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "ديكور المنزل وإكسسواراته", subs: ["أعمال لباد","وسادة","إكليل الباب","تزيين صينية","إطار","صائد أحلام","لوحة"] },
+      { key: "candle", icon: "🕯️", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "شموع ومنتجات عطرية", subs: ["شموع صويا/شمع نحل","حجر عطري","معطر غرف","بخور","شمعة جل","طقم هدايا"] },
+      { key: "soap", icon: "🧼", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "صابون طبيعي ومستحضرات", subs: ["صابون بزيت الزيتون","صوابين عشبية","شامبو صلب","بلسم شفاه","كريم/مرهم","أملاح حمام","أكياس خزامى"] },
+      { key: "amigurumi", icon: "🧸", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "أميغورومي وألعاب (ديكورية)", subs: ["ميدالية مفاتيح","مغناطيس","مجسمات تجميع","دمية/شخصية ديكورية","أميغورومي بالاسم"] }
     ]
   },
   de: {
@@ -123,7 +199,32 @@ const STR = {
     search: "Anzeigen suchen",
     postAd: "Anzeige aufgeben",
     heroTitle: "Willkommen bei Üreten Eller",
-    tagline: "Ziel: Das Haushaltsbudget von Frauen unterstützen.",
+    mottos: [
+      { text: "Unser Ziel: das Haushaltsbudget von Frauen unterstützen.", color: "#e11d48" },
+      { text: "Frauenarbeit soll wertgeschätzt werden.", color: "#c026d3" },
+      { text: "Handgefertigte Produkte zu fairen Preisen.", color: "#7c3aed" },
+      { text: "Geschmäcker aus deinem Viertel bis an die Haustür.", color: "#2563eb" },
+      { text: "Frische Produktion aus Meisterhand.", color: "#0ea5e9" },
+      { text: "Plattform-Garantie bei jeder Bestellung.", color: "#14b8a6" },
+      { text: "Große Unterstützung für kleine Produzenten.", color: "#059669" },
+      { text: "Transparente Preise, klare Lieferung.", color: "#16a34a" },
+      { text: "Sichere Zahlung, einfache Rückgabe.", color: "#65a30d" },
+      { text: "Kauf lokal, stärke die Wirtschaft.", color: "#ca8a04" },
+      { text: "Faire Entlohnung der Arbeit, Mehrwert für Kund:innen.", color: "#d97706" },
+      { text: "Hausgemachte Geschmäcker, handgefertigte Schönheiten.", color: "#ea580c" },
+      { text: "Sorgfältige Produktion in jeder Kategorie.", color: "#f97316" },
+      { text: "Nahtloses Tracking von Bestellung bis Lieferung.", color: "#f59e0b" },
+      { text: "Abzeichen für verlässliche Verkäufer:innen.", color: "#eab308" },
+      { text: "Mit unserer Community sind wir stärker.", color: "#84cc16" },
+      { text: "Unterstützung für nachhaltige Produktion.", color: "#22c55e" },
+      { text: "Fairer Handel, zufriedene Kundschaft.", color: "#10b981" },
+      { text: "Respekt fürs Handwerk, preiswert für dein Budget.", color: "#06b6d4" },
+      { text: "Wir wachsen durch die Arbeit von Frauen.", color: "#3b82f6" },
+      { text: "Frische Produkte aus deiner Stadt – sicher einkaufen.", color: "#6366f1" },
+      { text: "Qualität, Sorgfalt und Transparenz.", color: "#8b5cf6" },
+      { text: "Das Handgemachte, das du brauchst, ist hier.", color: "#d946ef" },
+      { text: "Guter Preis, sicherer Prozess, gutes Ergebnis.", color: "#ec4899" }
+    ],
     showcase: "Schaufenster",
     standard: "Standardanzeigen",
     categories: "Kategorien",
@@ -133,49 +234,76 @@ const STR = {
     legal: {
       corporate: "Unternehmen", about: "Über uns", contact: "Kontakt", privacy: "Datenschutz", kvkk: "KVKK‑Hinweis",
       terms: "Nutzungsbedingungen", distance: "Fernabsatz", delivery: "Lieferung & Rückgabe", cookie: "Cookie‑Richtlinie",
-      community: "Community‑Richtlinien", prohibited: "Verbotene Artikel", all: "Alle Rechtstexte", copyright: "© 2025 Üreten Eller"
+      community: "Community‑Richtlinien", prohibited: "Verbotene Artikel", all: "Alle Rechtstexte"
     },
     cats: [
-      { key: "food", icon: "🍲", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Hausgemachte Gerichte", subs: ["Hausmannskost","Börek & Gebäck","Suppe","Olivenölgerichte","Reis/Nudeln","Fleisch/Huhn","Frühstück","Meze","Tiefgekühlt","Kindermahlzeiten","Diät/Vegan/Glutenfrei"] },
-      { key: "cake", icon: "🎂", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Kuchen & Desserts", subs: ["Frische Torte","Kuchen/Cupcake","Kekse","Sirupdesserts","Milchdesserts","Käsekuchen","Diät‑Desserts","Schokolade/Süßwaren","Geburtstags‑Sets"] },
-      { key: "jam", icon: "🫙", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Marmelade • Eingelegtes • Saucen", subs: ["Marmelade","Pekmez","Eingelegtes","Tomaten-/Paprikasoße","Scharfe Soße","Tomatenmark","Essig","Konserven"] },
-      { key: "local", icon: "🌾", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Regional / Wintervorrat", subs: ["Erişte (Nudeln)","Tarhana","Yufka (Teigblätter)","Mantı","Getrocknetes Obst/Gemüse","Tomatenmark","Essig","Konserven"] },
-      { key: "diet", icon: "🥗", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Diät / Vegan / Glutenfrei", subs: ["Fitness‑Teller","Vegane Gerichte","Glutenfreie Backwaren","Zuckerfreie Desserts","Keto‑Produkte","Protein‑Snacks"] },
-      { key: "jewelry", icon: "💍", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Schmuck", subs: ["Armband","Halskette","Ohrringe","Ring","Fußkettchen","Brosche","Sets","Personalisiert","Makramee","Naturstein","Harz","Drahtumwicklung"] },
-      { key: "kids", icon: "👶", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Baby & Kinder", subs: ["Tier-/Babyfiguren","Rassel","Gehäkelter Beißring","Stoffspielzeug/-buch","Montessori‑Spielzeug","Sets","Gehäkelte Puschen/Mütze","Babydecke","Lätzchen/Sabber","Wochenbett‑Set","Haaraccessoire","Handgemachte Kleidung"] },
-      { key: "knit", icon: "🧶", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Strick / Häkel", subs: ["Strickjacke","Pullover","Schal/Mütze","Poncho","Schal (Stola)","Socken","Baby‑Set","Weste","Kissen/Decke","Wasch‑Set"] },
-      { key: "sew", icon: "✂️", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Näherei / Schneiderei", subs: ["Saum/Reparatur","Reißverschlusswechsel","Gardinen nähen","Bettwäsche/Kissen","Tischdecke","Maßanfertigung","Kostüm"] },
-      { key: "macrame", icon: "🧵", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Makramee & Deko", subs: ["Wanddeko","Blumenampel","Schlüsselanhänger","Deckenleuchte","Platzset/Runner","Korb","Regal/Wanddeko"] },
-      { key: "home", icon: "🏠", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Wohndeko & Accessoires", subs: ["Filzarbeiten","Kissen","Türdeko","Tablett‑Deko","Rahmen","Traumfänger","Bild"] },
-      { key: "candle", icon: "🕯️", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Kerzen & Duftprodukte", subs: ["Soja-/Bienenwachskerzen","Duftstein","Raumspray","Weihrauch","Gelierkerze","Geschenkset"] },
-      { key: "soap", icon: "🧼", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Natürliche Seife & Kosmetik", subs: ["Olivenölseife","Kräuterseifen","Festes Shampoo","Lippenbalsam","Creme/Salbe","Badesalz","Lavendelsäckchen"] },
-      { key: "amigurumi", icon: "🧸", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Amigurumi & Deko‑Spielzeug", subs: ["Schlüsselanhänger","Magnet","Sammelfigur","Deko‑Puppe/Charakter","Amigurumi mit Namen"] }
+      { key: "food", icon: "🍲", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Speisen", subs: ["Hausmannskost","Börek & Gebäck","Suppe","Gerichte mit Olivenöl","Reis & Pasta","Fleisch & Hähnchen","Frühstück","Meze","Tiefgekühlt","Kindergerichte","Diät/vegan/glutenfrei"] },
+      { key: "cake", icon: "🎂", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Kuchen & Süßes", subs: ["Torten","Kuchen & Cupcakes","Kekse","Sirup‑Desserts","Milch‑Desserts","Käsekuchen","Diät‑Desserts","Schokolade/Bonbons","Geburtstags‑Sets"] },
+      { key: "jam", icon: "🫙", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Marmelade • Pickles • Saucen", subs: ["Marmelade","Pekmez (Traubensirup)","Eingelegtes","Tomaten-/Paprikasauce","Scharfe Sauce","Tomatenmark","Essig","Konserven"] },
+      { key: "local", icon: "🌾", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Regional / Vorrat", subs: ["Erişte (Hausnudeln)","Tarhana","Yufka","Mantı","Getrocknetes Obst/Gemüse","Tomatenmark","Essig","Konserven"] },
+      { key: "diet", icon: "🥗", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Diät / Vegan / Glutenfrei", subs: ["Fitness‑Teller","Vegane Gerichte","GF Backwaren","Zuckerfreie Desserts","Keto‑Produkte","Protein‑Snacks"] },
+      { key: "jewelry", icon: "💍", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Schmuck", subs: ["Armband","Kette","Ohrringe","Ring","Fußkettchen","Brosche","Sets","Personalisiert","Makramee","Naturstein","Harz","Drahtwickel"] },
+      { key: "kids", icon: "👶", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Baby & Kind", subs: ["Tier-/Babyfiguren","Rassel","Beißring (gehäkelt)","Stoffspielzeug/-buch","Montessori‑Spielzeug","Sets","Booties‑Mütze (gestrickt)","Babydecke","Lätzchen & Spucktuch","Wochenbett‑Set","Haar‑Accessoires","Handgemachte Kleidung"] },
+      { key: "knit", icon: "🧶", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Strick/Trikot", subs: ["Cardigan","Pullover","Schal & Mütze","Poncho","Tuch","Socken","Baby‑Set","Weste","Kissenbezug/Decke","Bade‑Set"] },
+      { key: "sew", icon: "✂️", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Nähen / Schneiderei", subs: ["Saum/Reparaturen","Reißverschlusswechsel","Vorhänge nähen","Bettwäsche/Kissen","Tischdecke","Maßanfertigung","Kostüm"] },
+      { key: "macrame", icon: "🧵", bg: "linear-gradient(135deg,#06b6d4,#3b82f6)", title: "Makramee & Deko", subs: ["Wandbehang","Pflanzenhänger","Schlüsselanhänger","Deckenlampe","Platzset/Läufer","Korb","Regal/Wanddeko"] },
+      { key: "home", icon: "🏠", bg: "linear-gradient(135deg,#ff80ab,#ffd166)", title: "Wohn‑Deko & Accessoires", subs: ["Filzarbeiten","Kissen","Türkranz","Tablett‑Deko","Rahmen","Traumfänger","Bild"] },
+      { key: "candle", icon: "🕯️", bg: "linear-gradient(135deg,#a78bfa,#60a5fa)", title: "Kerzen & Duft", subs: ["Soja/Bienenwachs‑Kerze","Duftstein","Raumspray","Weihrauch","Gelkerze","Geschenk‑Set"] },
+      { key: "soap", icon: "🧼", bg: "linear-gradient(135deg,#34d399,#a7f3d0)", title: "Naturseife & Kosmetik", subs: ["Olivenölseife","Kräuterseifen","Festes Shampoo","Lippenbalsam","Creme/Salbe","Badesalz","Lavendelsäckchen"] },
+      { key: "amigurumi", icon: "🧸", bg: "linear-gradient(135deg,#f59e0b,#f97316)", title: "Amigurumi & Spielzeug (dekorativ)", subs: ["Schlüsselanhänger","Magnet","Sammlerfigur","Deko‑Puppe/Charakter","Amigurumi mit Namen"] }
     ]
   }
 };
 
 export default function SellerHome() {
-  const [mounted, setMounted] = useState(false);
+  // --- State & i18n
   const [lang, setLang] = useState("tr");
   const t = useMemo(() => STR[lang], [lang]);
+
+  // SSR → CSR uyumsuzluklarını kesmek için mounted bayrağı
+  const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  // HTML lang/dir sadece client'ta
   useEffect(() => {
-    // HTML lang/dir güncelle
     if (typeof document !== "undefined") {
       document.documentElement.lang = lang;
       document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
     }
   }, [lang]);
 
+  // Motto rotator (client)
+  const mottos = t.mottos || [];
+  const [pi, setPi] = useState(0);
+  useEffect(() => {
+    if (!mounted || mottos.length <= 1) return;
+    const id = setInterval(() => setPi((p) => (p + 1) % mottos.length), 3000);
+    return () => clearInterval(id);
+  }, [mounted, mottos.length]);
+
+  // Chat
   const [chatOpen, setChatOpen] = useState(false);
+
+  // İlan Ver tıklama: mevcut sayfayı tespit edip yönlendir
+  const handlePostAd = async () => {
+    const primary = "/portal/seller/post";
+    const fallback = "/portal/seller/post/post";
+    try {
+      const okPrimary = await fetch(primary + "/index.html", { method: "HEAD" }).then(r => r.ok).catch(() => false);
+      if (okPrimary) { window.location.href = primary; return; }
+      const okFallback = await fetch(fallback + "/index.html", { method: "HEAD" }).then(r => r.ok).catch(() => false);
+      window.location.href = okFallback ? fallback : primary; // son çare primary
+    } catch {
+      window.location.href = fallback;
+    }
+  };
 
   if (!mounted) return null;
 
   return (
     <>
       <header className="topbar">
-        <div className="brand" onClick={() => (window.location.href = "/")}> 
+        <div className="brand" onClick={() => (window.location.href = "/")}>
           <img src="/logo.png" width={36} height={36} alt="logo" />
           <span>{t.brand}</span>
         </div>
@@ -186,7 +314,7 @@ export default function SellerHome() {
           </div>
           <div className="actionGroup">
             <button className="ghost" onClick={() => (window.location.href = "/portal/seller?tab=search")} aria-label={t.search}>{t.search}</button>
-            <a href="/portal/seller/post/post" className="primary" aria-label={t.postAd}>{t.postAd}</a>
+            <button type="button" className="primary" onClick={handlePostAd} aria-label={t.postAd}>{t.postAd}</button>
           </div>
           <select aria-label="Language" value={lang} onChange={(e)=>setLang(e.target.value)}>
             {SUPPORTED.map(k => (<option key={k} value={k}>{LOCALE_LABEL[k]}</option>))}
@@ -196,7 +324,9 @@ export default function SellerHome() {
 
       <section className="hero">
         <h1 className="heroTitle">{t.heroTitle}</h1>
-        <p className="phrase" style={{ color: "#e11d48" }}>{t.tagline}</p>
+        {mottos.length > 0 && (
+          <p className="phrase" style={{ color: mottos[pi].color }}>{mottos[pi].text}</p>
+        )}
       </section>
 
       <section className="section">
@@ -212,11 +342,11 @@ export default function SellerHome() {
       <section className="section">
         <div className="sectionHead"><h2>🗂️ {t.categories}</h2></div>
         <div className="grid cats">
-          {t.cats.map(cat => (
-            <article key={cat.key} className="catCard" style={{ backgroundImage: cat.bg }}>
+          {(t.cats && t.cats.length ? t.cats : STR.tr.cats).map(cat => (
+            <article key={cat.key} className="catCard" style={{ background: cat.bg }}>
               <div className="head"><span className="icn">{cat.icon}</span><h3>{cat.title}</h3></div>
               <div className="subs">
-                {cat.subs.map((s, i) => (<span key={i} className="chip">{s}</span>))}
+                {(cat.subs || []).map((s, i) => (<span key={i} className="chip">{s}</span>))}
               </div>
             </article>
           ))}
@@ -261,7 +391,7 @@ export default function SellerHome() {
             <a href="/legal/yasakli-urunler">{t.legal.prohibited}</a>
             <a href="/legal" className="homeLink">{t.legal.all}</a>
           </nav>
-          <div className="copy">{t.legal.copyright}</div>
+          <div className="copy">© 2025 {t.brand}</div>
         </div>
       </footer>
 
@@ -285,8 +415,6 @@ export default function SellerHome() {
         .primary{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-block}
         .danger{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer}
         .actions select{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:#fff}
-
-        /* MOBİLDE 'İlan Ara' + 'İlan Ver' alta insin */
         @media (min-width:640px){ .actionGroup{order:1} .actions{flex-wrap:nowrap} }
 
         /* HERO */
