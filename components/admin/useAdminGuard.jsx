@@ -1,7 +1,8 @@
-// /pages/admin/_guard.jsx
+// components/admin/useAdminGuard.jsx
 "use client";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 export default function useAdminGuard() {
@@ -9,14 +10,14 @@ export default function useAdminGuard() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      const u = auth.currentUser;
+    const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) { setRole(null); setReady(true); return; }
-      const snap = await getDoc(doc(db, "roles", u.uid));
-      if (alive) { setRole(snap.exists() ? snap.data().role : null); setReady(true); }
-    })();
-    return () => { alive = false; };
+      try {
+        const snap = await getDoc(doc(db, "roles", u.uid));
+        setRole(snap.exists() ? snap.data().role : null);
+      } finally { setReady(true); }
+    });
+    return () => unsub();
   }, []);
 
   return { role, ready };
