@@ -1,297 +1,222 @@
 // pages/admin/index.jsx
 "use client";
 import React from "react";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import {
-  collection, query, where, orderBy, limit,
-  getCountFromServer, getDocs
+  collection, query, where, limit, getCountFromServer, getDocs
 } from "firebase/firestore";
 
-export default function AdminHome() {
-  // Basit guard (login’de yazdığımız anahtar + cookie)
-  React.useEffect(() => {
-    try {
-      const ok = localStorage.getItem("ue_admin_auth")==="ok" || document.cookie.includes("ue_admin=1");
-      if (!ok) window.location.replace("/admin/login/");
-    } catch {}
-  }, []);
+export default function AdminHome(){
+  // local guard
+  React.useEffect(()=>{ try{
+    const ok = localStorage.getItem("ue_admin_auth")==="ok" || document.cookie.includes("ue_admin=1");
+    if(!ok) location.replace("/admin/login/");
+  }catch{} },[]);
 
-  // Sol menü
-  const NAV = [
-    {k:"home",     t:"Ön Panel"},
-    {k:"listings", t:"İlanlar"},
-    {k:"orders",   t:"Siparişler"},
-    {k:"support",  t:"Destek"},
-    {k:"payments", t:"Ödemeler"},
-    {k:"users",    t:"Kullanıcılar"},
-  ];
-  const [tab, setTab] = React.useState("home");
+  // firebase session (gerçek veri için)
+  const [fbUser, setFbUser] = React.useState(null);
+  React.useEffect(()=> onAuthStateChanged(auth, u=>setFbUser(u)), []);
 
-  // Sayılar (gerçek veriye çalışır; yetki yoksa ‘—’ gösterir)
-  const [stats, setStats] = React.useState({
-    orders:"—", pendingListings:"—", openSupport:"—", pendingPayments:"—", users:"—",
-  });
+  // sayılar
+  const [counts, setCounts] = React.useState({orders:"—", pending:"—", open:"—", payments:"—", users:"—"});
+  // kısa listeler
+  const [pendingListings, setPendingListings] = React.useState([]);
+  const [openTickets, setOpenTickets] = React.useState([]);
+  const [recentOrders, setRecentOrders] = React.useState([]);
+  const [err, setErr] = React.useState("");
 
-  // Kısa kuyruklar
-  const [pendingList, setPendingList] = React.useState([]);  // listings.pending (ilk 5)
-  const [openTickets, setOpenTickets] = React.useState([]);  // conversations.open (ilk 5)
-  const [recentOrders, setRecentOrders] = React.useState([]);// orders (son 10)
+  React.useEffect(()=>{
+    (async()=>{
+      setErr("");
+      try{
+        // counts (rules izin verirse)
+        try {
+          const o = await getCountFromServer(collection(db,"orders"));
+          const l = await getCountFromServer(query(collection(db,"listings"), where("status","==","pending")));
+          const s = await getCountFromServer(query(collection(db,"conversations"), where("status","==","open")));
+          const p = await getCountFromServer(query(collection(db,"payments"), where("status","==","pending_admin")));
+          const u = await getCountFromServer(collection(db,"users"));
+          setCounts({orders:o.data().count, pending:l.data().count, open:s.data().count, payments:p.data().count, users:u.data().count});
+        } catch { /* izin yoksa sembol kalsın */ }
 
-  React.useEffect(() => {
-    (async () => {
-      try {
-        // Sayımlar
-        const o = await getCountFromServer(collection(db,"orders"));
-        const l = await getCountFromServer(query(collection(db,"listings"), where("status","==","pending")));
-        const s = await getCountFromServer(query(collection(db,"conversations"), where("status","==","open")));
-        const p = await getCountFromServer(query(collection(db,"payments"), where("status","in",["pending","pending_admin"])));
-        const u = await getCountFromServer(collection(db,"users"));
-        setStats({
-          orders:o.data().count, pendingListings:l.data().count,
-          openSupport:s.data().count, pendingPayments:p.data().count, users:u.data().count
-        });
-      } catch { /* yetki yoksa sessizce ‘—’ kalır */ }
-
-      try {
-        // Bekleyen ilanlar (ilk 5)
-        const q1 = query(collection(db,"listings"), where("status","==","pending"), orderBy("created_at","desc"), limit(5));
-        const r1 = await getDocs(q1);
-        setPendingList(r1.docs.map(d=>({id:d.id, ...d.data()})));
-      } catch {}
-
-      try {
-        // Açık destek (ilk 5)
-        const q2 = query(collection(db,"conversations"), where("status","==","open"), orderBy("updated_at","desc"), limit(5));
-        const r2 = await getDocs(q2);
-        setOpenTickets(r2.docs.map(d=>({id:d.id, ...d.data()})));
-      } catch {}
-
-      try {
-        // Son siparişler (10)
-        const q3 = query(collection(db,"orders"), orderBy("created_at","desc"), limit(10));
-        const r3 = await getDocs(q3);
-        setRecentOrders(r3.docs.map(d=>({id:d.id, ...d.data()})));
-      } catch {}
+        // kısa listeler
+        try{
+          const L = await getDocs(query(collection(db,"listings"), where("status","==","pending"), limit(5)));
+          setPendingListings(L.docs.map(d=>({id:d.id, ...d.data()})));
+        }catch{}
+        try{
+          const C = await getDocs(query(collection(db,"conversations"), where("status","==","open"), limit(5)));
+          setOpenTickets(C.docs.map(d=>({id:d.id, ...d.data()})));
+        }catch{}
+        try{
+          const O = await getDocs(query(collection(db,"orders"), limit(10)));
+          setRecentOrders(O.docs.map(d=>({id:d.id, ...d.data()})));
+        }catch{}
+      }catch(e){ setErr(e?.message||String(e)); }
     })();
-  }, []);
-
-  function logout() {
-    try { localStorage.removeItem("ue_admin_auth"); } catch {}
-    document.cookie = "ue_admin=; Max-Age=0; Path=/; SameSite=Lax; Secure";
-    window.location.replace("/admin/login/");
-  }
+  },[]);
 
   return (
     <div className="wrap">
       <aside className="side">
         <div className="brand">R · Admin</div>
         <nav className="nav">
-          {NAV.map(x=>(
-            <button key={x.k} className={"navBtn"+(tab===x.k?" on":"")} onClick={()=>setTab(x.k)}>
-              {x.t}
-            </button>
-          ))}
+          <a className="navBtn on" href="/admin/">Ön Panel</a>
+          <a className="navBtn" href="/admin/listings">İlanlar</a>
+          <a className="navBtn" href="/admin/orders">Siparişler</a>
+          <a className="navBtn" href="/admin/support">Destek</a>
+          <a className="navBtn" href="/admin/moderation">Ödemeler</a>
+          <a className="navBtn" href="/admin/users">Kullanıcılar</a>
         </nav>
-        <button className="logout" onClick={logout}>Çıkış</button>
+        <button
+          className="logout"
+          onClick={()=>{
+            try{ localStorage.removeItem("ue_admin_auth"); }catch{}
+            document.cookie="ue_admin=; Max-Age=0; Path=/; SameSite=Lax; Secure";
+            location.href="/admin/login/";
+          }}
+        >Çıkış</button>
       </aside>
 
       <main className="main">
-        {tab==="home" && <HomeDash stats={stats} pendingList={pendingList} openTickets={openTickets} recentOrders={recentOrders} />}
-
-        {tab==="listings" && (
-          <Section title="İlanlar">
-            <p className="muted">İlan onayı, vitrine alma / düşürme ve detay işlemleri için <a href="/admin/listings">/admin/listings</a>.</p>
-          </Section>
+        {!fbUser && (
+          <div className="warn">
+            Gerçek veriyi görmek ve işlem yapmak için <a href="/login">/login</a> ile Firebase’e giriş yapın
+            (users/{'{uid}'} → <b>role: "admin"</b> olmalı).
+          </div>
         )}
 
-        {tab==="orders" && (
-          <Section title="Siparişler">
-            <p className="muted">Tüm siparişler ve durum işlemleri için <a href="/admin/orders">/admin/orders</a>.</p>
-          </Section>
-        )}
+        <h1 style={{fontWeight:800, margin:"0 0 12px"}}>Ön Panel</h1>
 
-        {tab==="support" && (
-          <Section title="Destek">
-            <p className="muted">Açık konuşmalar ve mesajlaşma için <a href="/admin/support">/admin/support</a>.</p>
-          </Section>
-        )}
+        <div className="cards">
+          <Card title="Toplam Sipariş" value={counts.orders} href="/admin/orders" />
+          <Card title="Onay Bekleyen İlan" value={counts.pending} href="/admin/listings" />
+          <Card title="Açık Destek" value={counts.open} href="/admin/support" />
+          <Card title="Bekleyen Ödeme" value={counts.payments} href="/admin/moderation" />
+          <Card title="Toplam Kullanıcı" value={counts.users} href="/admin/users" />
+        </div>
 
-        {tab==="payments" && (
-          <Section title="Ödemeler">
-            <p className="muted">Dekont onay/red ve premium/vitrin işlemleri için <a href="/admin/moderation">/admin/moderation</a>.</p>
-          </Section>
-        )}
+        {err && <div className="err">Hata: {err}</div>}
 
-        {tab==="users" && (
-          <Section title="Kullanıcılar">
-            <p className="muted">Tüm kullanıcı listesi, arama ve rol işlemleri için <a href="/admin/users">/admin/users</a>.</p>
-          </Section>
-        )}
+        <section className="block">
+          <div className="blockHd">
+            <h2>İlan Onay Kuyruğu</h2>
+            <a className="link" href="/admin/listings">Tümünü gör</a>
+          </div>
+          <Table cols={["ID","Başlık","Satıcı","Fiyat","Oluşturma","İşlem"]}>
+            {pendingListings.length===0
+              ? <Empty colSpan={6} text="Kuyruk boş."/>
+              : pendingListings.map((x)=>(
+                <tr key={x.id}>
+                  <td className="mono">{x.id}</td>
+                  <td>{x.title||"—"}</td>
+                  <td>{x.seller_uid||x.seller_id||"—"}</td>
+                  <td>{x.price ? `₺${x.price}` : "—"}</td>
+                  <td>{x.created_at||"—"}</td>
+                  <td><a className="link" href="/admin/listings">İşlem</a></td>
+                </tr>
+              ))
+            }
+          </Table>
+        </section>
+
+        <section className="block">
+          <div className="blockHd">
+            <h2>Destek Talepleri</h2>
+            <a className="link" href="/admin/support">Tümünü gör</a>
+          </div>
+          <Table cols={["ID","Konu","Kullanıcı","Son Mesaj","İşlem"]}>
+            {openTickets.length===0
+              ? <Empty colSpan={5} text="Açık talep yok."/>
+              : openTickets.map((c)=>(
+                <tr key={c.id}>
+                  <td className="mono">{c.id}</td>
+                  <td>{c.topic||"—"}</td>
+                  <td>{Array.isArray(c.participants)?c.participants.join(", "):"—"}</td>
+                  <td>{c.updated_at||"—"}</td>
+                  <td><a className="link" href="/admin/support">Aç</a></td>
+                </tr>
+              ))
+            }
+          </Table>
+        </section>
+
+        <section className="block">
+          <h2>Son Siparişler</h2>
+          <Table cols={["ID","Alıcı → Satıcı","Tutar","Durum","Tarih","Detay"]}>
+            {recentOrders.length===0
+              ? <Empty colSpan={6} text="Kayıt yok."/>
+              : recentOrders.map(o=>(
+                <tr key={o.id}>
+                  <td className="mono">{o.id}</td>
+                  <td>{o.buyer_uid||"—"} → {o.seller_uid||"—"}</td>
+                  <td>{o.amount ? `₺${o.amount}` : "—"}</td>
+                  <td>{o.status||"—"}</td>
+                  <td>{o.created_at||"—"}</td>
+                  <td><a className="link" href="/admin/orders">Gör</a></td>
+                </tr>
+              ))
+            }
+          </Table>
+        </section>
       </main>
 
-      <style jsx>{`
-        .wrap{display:grid;grid-template-columns:240px 1fr;min-height:100vh;background:#0b0b0b;color:#e5e7eb;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-        .side{border-right:1px solid #1f2937;padding:16px;display:flex;flex-direction:column;gap:12px;position:sticky;top:0;height:100vh}
-        .brand{font-weight:800;color:#fff;margin-bottom:8px}
-        .nav{display:flex;flex-direction:column;gap:6px}
-        .navBtn{all:unset;cursor:pointer;padding:10px 12px;border-radius:10px;border:1px solid #1f2937;background:#0f172a}
-        .navBtn.on{background:#111827;border-color:#374151}
-        .navBtn:hover{background:#0f172a99}
-        .logout{margin-top:auto;all:unset;cursor:pointer;padding:10px 12px;border-radius:10px;border:1px solid #ef4444;color:#fff;background:#991b1b;text-align:center}
-        .logout:hover{background:#b91c1c}
-        .main{padding:20px}
-        .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px}
-        .card{background:#0f172a;border:1px solid #1f2937;border-radius:12px;padding:12px}
-        .k{font-size:12px;color:#94a3b8}
-        .v{font-size:26px;font-weight:800;color:#fff;margin-top:2px}
-        .section{background:#0f172a;border:1px solid #1f2937;border-radius:12px;margin:16px 0}
-        .hd{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1f2937;padding:12px 14px}
-        .ttl{font-weight:700}
-        .link{font-size:13px;color:#e5e7eb;text-decoration:none;border:1px solid #374151;padding:6px 10px;border-radius:8px}
-        .tbl{width:100%;border-collapse:separate;border-spacing:0}
-        .tbl th,.tbl td{padding:10px 12px;border-bottom:1px solid #1f2937;font-size:14px}
-        .empty{padding:14px;color:#94a3b8}
-        .muted{color:#94a3b8}
-        @media(max-width:900px){.wrap{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;flex-wrap:wrap}.logout{margin-top:0}}
-      `}</style>
+      <Style />
     </div>
   );
 }
 
-function HomeDash({stats, pendingList, openTickets, recentOrders}) {
+function Card({title, value, href}) {
   return (
-    <>
-      <h1 style={{fontWeight:800, margin:"0 0 12px"}}>Ön Panel</h1>
-
-      <div className="cards">
-        <Card k="Toplam Sipariş" v={stats.orders}/>
-        <Card k="Onay Bekleyen İlan" v={stats.pendingListings}/>
-        <Card k="Açık Destek" v={stats.openSupport}/>
-        <Card k="Bekleyen Ödeme" v={stats.pendingPayments}/>
-        <Card k="Toplam Kullanıcı" v={stats.users}/>
-      </div>
-
-      <Section title="Bekleyen İşler">
-        {/* İlan onay kuyruğu */}
-        <Sub title="İlan Onay Kuyruğu" href="/admin/listings">
-          {pendingList.length===0 ? (
-            <div className="empty">Kuyruk boş.</div>
-          ) : (
-            <table className="tbl">
-              <thead><tr>
-                <th>ID</th><th>Başlık</th><th>Satıcı</th><th>Fiyat</th><th>Oluşturma</th><th>İşlem</th>
-              </tr></thead>
-              <tbody>
-                {pendingList.map(it=>(
-                  <tr key={it.id}>
-                    <td>{it.id}</td>
-                    <td>{it.title||"—"}</td>
-                    <td>{it.seller_uid||it.seller_id||"—"}</td>
-                    <td>{fmtTRY(it.price)}</td>
-                    <td>{fmtDate(it.created_at)}</td>
-                    <td>
-                      <a className="link" href={`/admin/listings?id=${it.id}`}>Onay/Gör</a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Sub>
-
-        {/* Destek talepleri */}
-        <Sub title="Destek Talepleri" href="/admin/support">
-          {openTickets.length===0 ? (
-            <div className="empty">Açık talep yok.</div>
-          ) : (
-            <table className="tbl">
-              <thead><tr>
-                <th>ID</th><th>Konu</th><th>Kullanıcı</th><th>Son Mesaj</th><th>İşlem</th>
-              </tr></thead>
-              <tbody>
-                {openTickets.map(t=>(
-                  <tr key={t.id}>
-                    <td>{t.id}</td>
-                    <td>{t.subject||"—"}</td>
-                    <td>{(t.participants||[]).join(", ")}</td>
-                    <td>{fmtDate(t.updated_at)}</td>
-                    <td><a className="link" href={`/admin/support?id=${t.id}`}>Aç</a></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </Sub>
-      </Section>
-
-      <Section title="Son Siparişler" href="/admin/orders">
-        {recentOrders.length===0 ? (
-          <div className="empty">Kayıt yok.</div>
-        ) : (
-          <table className="tbl">
-            <thead><tr>
-              <th>ID</th><th>Alıcı → Satıcı</th><th>Tutar</th><th>Durum</th><th>Tarih</th><th>Detay</th>
-            </tr></thead>
-            <tbody>
-              {recentOrders.map(o=>(
-                <tr key={o.id}>
-                  <td>{o.id}</td>
-                  <td>{o.buyer_uid||"?"} → {o.seller_uid||"?"}</td>
-                  <td>{fmtTRY(o.amount)}</td>
-                  <td>{o.status||"—"}</td>
-                  <td>{fmtDate(o.created_at)}</td>
-                  <td><a className="link" href={`/admin/orders?id=${o.id}`}>Gör</a></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Section>
-    </>
+    <a className="card" href={href}>
+      <div className="cardT">{title}</div>
+      <div className="cardV">{value}</div>
+    </a>
   );
 }
-
-function Card({k, v}) {
+function Table({cols, children}) {
   return (
-    <div className="card">
-      <div className="k">{k}</div>
-      <div className="v">{typeof v==="number" ? new Intl.NumberFormat("tr-TR").format(v) : v}</div>
+    <div className="tableWrap">
+      <table className="tbl">
+        <thead><tr>{cols.map(c=><th key={c}>{c}</th>)}</tr></thead>
+        <tbody>{children}</tbody>
+      </table>
     </div>
   );
 }
-
-function Section({title, href, children}) {
+function Empty({colSpan=1, text="—"}) {
+  return <tr><td colSpan={colSpan} className="empty">{text}</td></tr>;
+}
+function Style(){
   return (
-    <section className="section">
-      <div className="hd">
-        <div className="ttl">{title}</div>
-        {href && <a className="link" href={href}>Tümünü gör</a>}
-      </div>
-      <div style={{padding:"10px 14px"}}>{children}</div>
-    </section>
+    <style jsx>{`
+      .wrap{display:grid;grid-template-columns:240px 1fr;min-height:100vh;background:#0b0b0b;color:#e5e7eb;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+      .side{border-right:1px solid #1f2937;padding:16px;display:flex;flex-direction:column;gap:12px;position:sticky;top:0;height:100vh}
+      .brand{font-weight:800;color:#fff;margin-bottom:8px}
+      .nav{display:flex;flex-direction:column;gap:6px}
+      .navBtn{display:block;padding:10px 12px;border-radius:10px;border:1px solid #1f2937;background:#0f172a;text-decoration:none;color:#e5e7eb}
+      .navBtn.on{background:#111827;border-color:#374151}
+      .navBtn:hover{background:#0f172a99}
+      .logout{margin-top:auto;all:unset;cursor:pointer;padding:10px 12px;border-radius:10px;border:1px solid #ef4444;color:#fff;background:#991b1b;text-align:center}
+      .logout:hover{background:#b91c1c}
+      .main{padding:20px}
+      .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:0 0 16px}
+      .card{display:block;background:#111827;border:1px solid #374151;border-radius:12px;padding:12px;text-decoration:none;color:#e5e7eb}
+      .cardT{font-size:12px;color:#94a3b8}
+      .cardV{font-size:24px;font-weight:800}
+      .block{margin:18px 0}
+      .blockHd{display:flex;align-items:center;gap:10px}
+      .blockHd h2{margin:0 0 8px;font-size:16px}
+      .link{font-size:13px;color:#e5e7eb;text-decoration:none;border:1px solid #374151;padding:6px 10px;border-radius:8px;margin-left:auto}
+      .warn{background:#0f172a;border:1px solid #374151;border-radius:12px;padding:12px;margin:0 0 12px}
+      .tableWrap{overflow:auto;border:1px solid #1f2937;border-radius:12px}
+      .tbl{width:100%;border-collapse:separate;border-spacing:0}
+      .tbl th,.tbl td{padding:10px 12px;border-bottom:1px solid #1f2937;font-size:14px;vertical-align:middle}
+      .tbl thead th{position:sticky;top:0;background:#0b0b0b}
+      .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+      .empty{color:#94a3b8;text-align:center}
+      @media(max-width:900px){.wrap{grid-template-columns:1fr}.side{position:static;height:auto;flex-direction:row;flex-wrap:wrap}.logout{margin-top:0}}
+    `}</style>
   );
-}
-
-function Sub({title, href, children}) {
-  return (
-    <div className="section" style={{margin:"12px 0"}}>
-      <div className="hd">
-        <div className="ttl">{title}</div>
-        {href && <a className="link" href={href}>Tümünü gör</a>}
-      </div>
-      <div style={{padding:"10px 14px"}}>{children}</div>
-    </div>
-  );
-}
-
-function fmtDate(v){
-  try{
-    if (!v) return "—";
-    const d = typeof v==="string" ? new Date(v) : (v?.seconds ? new Date(v.seconds*1000) : new Date(v));
-    return d.toLocaleString("tr-TR");
-  }catch{ return "—"; }
-}
-function fmtTRY(v){
-  if (typeof v!=="number") return "—";
-  return new Intl.NumberFormat("tr-TR",{style:"currency",currency:"TRY",maximumFractionDigits:0}).format(v);
 }
