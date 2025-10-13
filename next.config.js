@@ -1,7 +1,3 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  output: 'export',        // static export
-  trailingSlash: true,     // /path/ -> path/index.html
-  images: { unoptimized: true }, // next/image kullanıyorsan statik olsun
-};
-module.exports = nextConfig;
+/** @type {import("next").NextConfig} */
+const nextConfig={output:"export",images:{unoptimized:true}};
+module.exports=nextConfig;
