@@ -1,578 +1,553 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 
-/**
- * ÜRETEN ELLER — PROFİL (KOYU TEMA, TEK DOSYA)
- * - Ayarlar: Avatar, Şehir, Şifre
- * - 4 dil (TR/EN/AR/DE) + RTL (AR)
- * - Mobil/Tablet/Desktop uyumlu
- * - Alt bar + legal
- * - Telefon / açık adres göstermez
- */
+/* =========================================================
+   ÜRETEN ELLER – Satıcı Profili (pages/portal/seller/profile.jsx)
+   TAM BAĞLI SÜRÜM (tüm butonlar aktif)
+   - Firebase Auth: aktif kullanıcı
+   - Firestore: users/{uid}, listings (seller_id==uid), reviews, payments, reports
+   - Storage: receipts/* dekont yükleme
+   - Vitrin ücretleri: Premium → ₺100, Standart → ₺249
+   - Premium üyelik: ₺1999 / yıl (admin onayı gerekir)
+   - Siyah legal footer ve mobil alt bar mevcut
+   - Sahte veri YOK: her şey Auth/Firestore'dan
+   ========================================================= */
 
-export default function SellerProfileDark() {
-  /* ==== Dil & Yön ==== */
-  const [lang, setLang] = useState("tr");
-  const t = texts[lang] ?? texts.tr;
-  const dir = lang === "ar" ? "rtl" : "ltr";
+/* ------------------------------ Firebase ------------------------------ */
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
-  /* ==== Profil (yerel) ==== */
-  const [profile, setProfile] = useState(() => ({
-    name: "Üreten Eller Satıcısı",
-    username: "satici123",
-    city: "",
-    about: "",
-    avatarUrl: "",
-    badges: [],        // admin verir
-    verified: false,   // admin verir
-    premium: false,    // admin verir
-    listings: [
-      { id: 1, title: "El Örgüsü Oyuncak Bebek", status: "live" },
-      { id: 2, title: "Yaprak Sarma (1 kg)", status: "pending" },
-      { id: 3, title: "Gümüş Bileklik", status: "expired" },
-      { id: 4, title: "Mantı (1 kg)", status: "live" },
-    ],
-    stats: { rating: null, ratingCount: 0 },
-  }));
+const firebaseConfig = {
+  apiKey: "AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ",
+  authDomain: "ureteneller-ecaac.firebaseapp.com",
+  projectId: "ureteneller-ecaac",
+  storageBucket: "ureteneller-ecaac.firebasestorage.app",
+  messagingSenderId: "368042877151",
+  appId: "1:368042877151:web:ee0879fc4717928079c96a",
+  measurementId: "G-BJHKN8V4RQ",
+};
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const s = localStorage.getItem("ue_profile_dark");
-        if (s) setProfile(JSON.parse(s));
-        const L = localStorage.getItem("lang") || "tr";
-        setLang(L);
-      } catch {}
-    }
-  }, []);
+function ensureFirebase() {
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+  return { app, auth, db, storage };
+}
 
-  function saveProfile(next) {
-    const merged = { ...profile, ...next };
-    setProfile(merged);
-    try { localStorage.setItem("ue_profile_dark", JSON.stringify(merged)); } catch {}
-  }
+/* ------------------------------ Utils & UI ------------------------------ */
+const cn = (...xs) => xs.filter(Boolean).join(" ");
+const TRY = new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 });
 
-  function onLangChange(e) {
-    const L = e.target.value;
-    setLang(L);
-    try { localStorage.setItem("lang", L); } catch {}
-  }
+function tsToMs(ts) {
+  if (!ts) return null;
+  if (typeof ts === "number") return ts;
+  if (typeof ts === "string") return Date.parse(ts);
+  if (ts?.seconds) return ts.seconds * 1000 + Math.floor((ts.nanoseconds || 0) / 1e6);
+  const d = new Date(ts);
+  return d.getTime();
+}
 
-  /* ==== Sekmeler (İlanlar) ==== */
-  const [tab, setTab] = useState("live"); // pending | live | expired
-  const listings = Array.isArray(profile.listings) ? profile.listings : [];
-  const filtered = listings.filter((it) =>
-    tab === "pending" ? it.status === "pending" : tab === "live" ? it.status === "live" : it.status === "expired"
+function daysLeft(listing) {
+  const now = Date.now();
+  const base =
+    (listing?.expires_at && tsToMs(listing.expires_at)) ||
+    (listing?.published_at && tsToMs(listing.published_at) + 30 * 24 * 3600 * 1000) ||
+    (listing?.created_at && tsToMs(listing.created_at) + 30 * 24 * 3600 * 1000);
+  if (!base) return null;
+  return Math.ceil((base - now) / (24 * 3600 * 1000));
+}
+
+function CopyButton({ text, label = "Kopyala", className = "" }) {
+  const [ok, setOk] = useState(false);
+  return (
+    <button
+      onClick={async () => {
+        try { await navigator.clipboard.writeText(text); setOk(true); setTimeout(()=>setOk(false), 1500); } catch(e){}
+      }}
+      className={cn("px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 active:scale-[.98]", className)}
+    >
+      {ok ? "Kopyalandı" : label}
+    </button>
   );
+}
 
-  /* ==== Ayarlar Modalı ==== */
-  const [showSettings, setShowSettings] = useState(false);
-  const [settingsTab, setSettingsTab] = useState("profile"); // profile | security | location
-  // Avatar
-  const [avatarPreview, setAvatarPreview] = useState("");
-  function onAvatarFile(e) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const url = URL.createObjectURL(f);
-    setAvatarPreview(url);
-  }
-  function saveAvatar() {
-    if (avatarPreview) {
-      saveProfile({ avatarUrl: avatarPreview });
-      alert(t.saved);
-      setAvatarPreview("");
-    }
-  }
-  // Şehir
-  const [cityDraft, setCityDraft] = useState("");
-  useEffect(() => { setCityDraft(profile.city || ""); }, [showSettings]);
-  function saveCity() {
-    saveProfile({ city: cityDraft.trim() });
-    alert(t.saved);
-  }
-  // Şifre
-  const [pw, setPw] = useState({ current: "", next: "", again: "" });
-  function changePassword(e) {
-    e.preventDefault();
-    if (!pw.current || !pw.next || !pw.again) { alert(t.fillAll); return; }
-    if (pw.next !== pw.again) { alert(t.pwNoMatch); return; }
-    if (pw.next.length < 6) { alert(t.pwTooShort); return; }
-    // Gerçek backend yok: sadece başarı uyarısı
-    setPw({ current: "", next: "", again: "" });
-    alert(t.pwChanged);
+function Badge({ children, tone = "gray" }) {
+  const palette = {
+    gray: "bg-gray-100 text-gray-700",
+    gold: "bg-amber-100 text-yellow-800 border border-yellow-300",
+    green: "bg-emerald-100 text-emerald-800 border border-emerald-200",
+  };
+  return <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", palette[tone])}>{children}</span>;
+}
+
+/* Toast */
+function useToast() {
+  const [msg, setMsg] = useState("");
+  const [open, setOpen] = useState(false);
+  const show = (m) => { setMsg(m); setOpen(true); setTimeout(()=>setOpen(false), 1800); };
+  const node = open ? (
+    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[70] bg-gray-900 text-white px-3 py-2 rounded-lg text-sm shadow">{msg}</div>
+  ) : null;
+  return { show, node };
+}
+
+/* ------------------------------ Modals ------------------------------ */
+function PaymentModal({ open, onClose, kind, isPremiumUser, listing, uid }) {
+  const { db, storage } = useMemo(() => ensureFirebase(), []);
+  const [file, setFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+  const [err, setErr] = useState("");
+
+  if (!open) return null;
+
+  const title = kind === "premium" ? "Premium Üyelik Ödemesi" : "Vitrine Taşı Ödemesi";
+  const amount = kind === "premium" ? 1999 : (isPremiumUser ? 100 : 249);
+
+  async function handleSend() {
+    setErr("");
+    if (!file) { setErr("Lütfen dekont yükleyin."); return; }
+    try {
+      setSubmitting(true);
+      const ext = (file.name?.split(".").pop() || "bin");
+      const path = `receipts/${uid}/${kind}-${Date.now()}.${ext}`;
+      const r = sRef(storage, path);
+      await uploadBytes(r, file);
+      const url = await getDownloadURL(r);
+      await addDoc(collection(db, "payments"), {
+        user_id: uid,
+        type: kind,
+        listing_id: listing?.id || null,
+        amount,
+        currency: "TRY",
+        method: "IBAN/Papara",
+        iban: "TR590082900009491868461105",
+        account_name: "Nejla Karataş",
+        receipt_url: url,
+        status: "pending_admin",
+        created_at: serverTimestamp(),
+      });
+      setDone(true);
+    } catch (e) {
+      console.error(e);
+      setErr("Kaydedilemedi. Lütfen tekrar deneyin.");
+    } finally { setSubmitting(false); }
   }
 
   return (
-    <div dir={dir} className="min-h-screen bg-gradient-to-b from-[#0f172a] via-[#0b1224] to-[#070b18] text-slate-100">
-      {/* Üst Şerit */}
-      <header className="sticky top-0 z-20 bg-[#0b1224]/80 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center gap-3">
-        {/* Avatar */}
-        <div className={`relative shrink-0 ${profile.premium ? "goldRing" : ""}`}>
-          {profile.avatarUrl ? (
-            <img src={profile.avatarUrl} alt="avatar" className="w-12 h-12 rounded-full object-cover" />
-          ) : (
-            <div className="w-12 h-12 rounded-full grid place-items-center font-black text-lg bg-slate-800 text-slate-200">
-              {initials(profile.name)}
+    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/40">
+      <div className="w-full md:max-w-2xl bg-white rounded-t-2xl md:rounded-2xl shadow-xl">
+        <div className="p-5 border-b">
+          <div className="text-lg font-semibold">{title}</div>
+          <div className="text-sm text-gray-500">Admin onayıyla aktif olacaktır.</div>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl border bg-gray-50">
+              <div className="text-sm text-gray-500 mb-2">Ödeme Bilgileri</div>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <div className="font-medium">Tutar</div>
+                  <div className="font-semibold">{TRY.format(amount)}</div>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-medium">IBAN</div>
+                    <div className="font-mono text-sm">TR590082900009491868461105</div>
+                  </div>
+                  <CopyButton text="TR590082900009491868461105" />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-medium">Hesap Adı</div>
+                    <div className="text-sm">Nejla Karataş</div>
+                  </div>
+                </div>
+                <div>
+                  <div className="font-medium">Papara</div>
+                  <div className="text-sm">IBAN ile havale/EFT yapabilirsiniz.</div>
+                </div>
+                <div className="text-xs text-gray-500">Açıklama: <span className="font-mono">URETENELLER {kind.toUpperCase()} + kullanıcı UID</span></div>
+              </div>
             </div>
+
+            <div className="p-4 rounded-xl border">
+              {done ? (
+                <div className="text-emerald-700">
+                  <div className="font-semibold mb-1">Dekont yüklendi.</div>
+                  Admin onayından sonra {kind === "premium" ? "Premium" : "Vitrin"} aktif edilecektir.
+                </div>
+              ) : (
+                <>
+                  <div className="text-sm text-gray-500 mb-2">Dekont yükleyin (PDF/JPG/PNG)</div>
+                  <input type="file" accept="image/*,application/pdf" onChange={(e)=>setFile(e.target.files?.[0]||null)} className="block w-full text-sm" />
+                  {err && <div className="text-red-600 text-sm mt-2">{err}</div>}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-5 flex items-center justify-between gap-3 border-t">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border hover:bg-gray-50">Kapat</button>
+          {!done && (
+            <button onClick={handleSend} disabled={submitting || !file} className="px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50">
+              {submitting ? "Yükleniyor…" : "Dekontu Gönder"}
+            </button>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* Başlık */}
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-extrabold truncate">{profile.name || t.seller}</h1>
-          <div className="text-slate-400 text-xs truncate">
-            @{profile.username} {profile.city ? `· ${profile.city}` : ""}
-          </div>
+function ReportModal({ open, onClose, sellerId, reporterId }) {
+  const { db } = useMemo(()=>ensureFirebase(), []);
+  const [reason, setReason] = useState("fraud");
+  const [desc, setDesc] = useState("");
+  const [sending, setSending] = useState(false);
+  const [ok, setOk] = useState(false);
+
+  if (!open) return null;
+
+  async function submit() {
+    try {
+      setSending(true);
+      await addDoc(collection(db, "reports"), {
+        seller_id: sellerId,
+        reporter_id: reporterId || null,
+        reason,
+        description: desc || null,
+        created_at: serverTimestamp(),
+        status: "open",
+      });
+      setOk(true);
+    } catch(e) {
+      console.error(e);
+    } finally { setSending(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/40">
+      <div className="w-full md:max-w-lg bg-white rounded-t-2xl md:rounded-2xl shadow-xl">
+        <div className="p-5 border-b">
+          <div className="text-lg font-semibold">Şikayet Et</div>
         </div>
-
-        {/* Dil & Ayarlar */}
-        <select
-          aria-label={t.language}
-          value={lang}
-          onChange={onLangChange}
-          className="border border-slate-700 text-slate-100 rounded-lg px-2 py-1 text-sm bg-[#0f172a]"
-        >
-          <option value="tr">TR</option>
-          <option value="en">EN</option>
-          <option value="ar">AR</option>
-          <option value="de">DE</option>
-        </select>
-
-        <button className="btnPrimary ml-2" onClick={() => { setShowSettings(true); setSettingsTab("profile"); }}>
-          {t.settings}
-        </button>
-      </header>
-
-      {/* Banner */}
-      <div className="mx-3 sm:mx-4 mt-3">
-        <div className="rounded-2xl p-4 md:p-5 bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-rose-600 text-white shadow-xl">
-          <div className="max-w-5xl mx-auto flex items-center gap-3">
-            <div className="text-lg md:text-xl font-extrabold">{t.profileBanner}</div>
-            {profile.verified && (
-              <span className="ms-auto text-[11px] font-black bg-white/20 px-2 py-1 rounded-full">{t.verified}</span>
-            )}
-            {profile.premium && (
-              <span className="text-[11px] font-black bg-white/20 px-2 py-1 rounded-full">{t.premium}</span>
-            )}
-          </div>
+        <div className="p-5 space-y-3">
+          {ok ? (
+            <div className="text-emerald-700">Şikayetiniz alındı. İncelenecektir.</div>
+          ) : (
+            <>
+              <label className="block text-sm">Sebep</label>
+              <select value={reason} onChange={(e)=>setReason(e.target.value)} className="w-full border rounded-lg px-3 py-2">
+                <option value="fraud">Dolandırıcılık şüphesi</option>
+                <option value="abuse">Hakaret / kötü davranış</option>
+                <option value="prohibited">Yasaklı ürün</option>
+                <option value="other">Diğer</option>
+              </select>
+              <label className="block text-sm mt-2">Açıklama (isteğe bağlı)</label>
+              <textarea value={desc} onChange={(e)=>setDesc(e.target.value)} className="w-full border rounded-lg px-3 py-2 min-h-[100px]" placeholder="Kısa açıklama…" />
+            </>
+          )}
+        </div>
+        <div className="p-5 flex items-center justify-between gap-3 border-t">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border hover:bg-gray-50">Kapat</button>
+          {!ok && <button onClick={submit} disabled={sending} className="px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50">Gönder</button>}
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Gövde */}
-      <main className="px-3 sm:px-4 py-4 pb-28 max-w-5xl mx-auto grid md:grid-cols-[300px,1fr] gap-6">
-        {/* Sol Kartlar */}
-        <aside className="md:sticky md:top-[76px] self-start space-y-4">
-          {/* Hakkımda */}
-          <section className="panel p-4">
-            <div className="text-sm font-bold mb-2">{t.about}</div>
-            <p className="text-slate-300 leading-6 whitespace-pre-wrap">
-              {profile.about || t.aboutPlaceholder}
-            </p>
-          </section>
+/* ------------------------------ Listing Card ------------------------------ */
+function ListingCard({ item, isOwner, onVitrine }) {
+  const dleft = daysLeft(item);
+  const expired = dleft !== null && dleft < 0;
+  const pending = item?.status === "pending";
+  return (
+    <div className="relative group rounded-xl border overflow-hidden bg-white shadow-sm">
+      {item?.vitrine && <div className="absolute left-2 top-2 z-10"><Badge tone="gold">Vitrinde</Badge></div>}
+      {pending && <div className="absolute right-2 top-2 z-10"><Badge>Onay bekliyor</Badge></div>}
+      <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
+        {item?.cover_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={item.cover_url} alt={item?.title||"ilan"} className="w-full h-full object-cover group-hover:scale-[1.02] transition" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">Görsel yok</div>
+        )}
+      </div>
+      <div className="p-3">
+        <div className="font-medium line-clamp-1">{item?.title || "Başlık"}</div>
+        <div className="text-sm text-gray-500 mt-0.5">{item?.price ? TRY.format(item.price) : ""}</div>
+        <div className="text-xs mt-2 text-gray-500">{expired ? "Süresi doldu" : dleft === null ? '' : `Süre: ${dleft} gün`}</div>
+        {isOwner && !item?.vitrine && !pending && !expired && (
+          <button onClick={()=>onVitrine(item)} className="mt-3 w-full px-3 py-2 rounded-lg border border-amber-300 text-amber-800 hover:bg-amber-50">Vitrine Taşı</button>
+        )}
+      </div>
+    </div>
+  );
+}
 
-          {/* Rozetler */}
-          <section className="panel p-4">
-            <div className="text-sm font-bold mb-2">{t.badges}</div>
-            <div className="flex flex-wrap gap-2">
-              {profile.badges?.length ? (
-                profile.badges.map((b, i) => (
-                  <span key={i} className="text-[12px] bg-slate-800/70 border border-slate-700 px-2 py-1 rounded-full">{String(b)}</span>
-                ))
-              ) : (
-                <span className="text-[12px] text-slate-400">{t.noBadges}</span>
-              )}
+/* ------------------------------ Main Page ------------------------------ */
+export default function SellerProfilePage(){
+  const { auth } = useMemo(() => ensureFirebase(), []);
+  const [uid, setUid] = useState(null);
+  const [me, setMe] = useState(null);
+  const [listings, setListings] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [tab, setTab] = useState("urunler");
+  const [payKind, setPayKind] = useState(null); // 'premium' | 'vitrine' | null
+  const [payListing, setPayListing] = useState(null);
+  const [reportOpen, setReportOpen] = useState(false);
+
+  const { show, node: toast } = useToast();
+
+  useEffect(() => {
+    const stop = onAuthStateChanged(auth, async (u) => {
+      if (!u) { setUid(null); setMe(null); setListings([]); setReviews([]); setLoading(false); return; }
+      setUid(u.uid);
+      const db = ensureFirebase().db;
+      // users/{uid}
+      const snap = await getDoc(doc(db, "users", u.uid));
+      setMe(snap.exists() ? snap.data() : { email: u.email, full_name: u.displayName, avatar_url: u.photoURL });
+      // listings
+      const qL = query(collection(db, "listings"), where("seller_id", "==", u.uid), orderBy("created_at", "desc"));
+      const unsubL = onSnapshot(qL, (qs) => {
+        const rows = []; qs.forEach((d)=> rows.push({ id: d.id, ...d.data() })); setListings(rows); setLoading(false);
+      }, ()=> setLoading(false));
+      // reviews
+      const qR = query(collection(db, "reviews"), where("seller_id", "==", u.uid), orderBy("created_at", "desc"));
+      const unsubR = onSnapshot(qR, (qs)=>{
+        const rs = []; qs.forEach((d)=> rs.push({ id: d.id, ...d.data() })); setReviews(rs);
+      });
+      return () => { unsubL(); unsubR(); };
+    });
+    return () => stop();
+  }, [auth]);
+
+  const isPremium = !!me?.premium;
+  const verified = !!me?.verified;
+
+  async function doShare(){
+    try {
+      const data = { title: "Üreten Eller", text: me?.store_name || me?.full_name || "Satıcı", url: typeof window!=="undefined" ? window.location.href : "" };
+      if (navigator.share) { await navigator.share(data); }
+      else { await navigator.clipboard.writeText(data.url); show("Bağlantı kopyalandı"); }
+    } catch(e) { /* kullanıcı iptal edebilir */ }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#faf9f7] text-gray-900">
+      {/* Topbar */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+          <Link href="/portal/seller" className="font-semibold text-amber-700 hover:text-amber-800">ÜRETEN ELLER</Link>
+          <div className="ml-auto flex items-center gap-2">
+            <Link href="/portal/seller" className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">Ana sayfaya dön</Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Header profile block */}
+      <section className="max-w-7xl mx-auto px-4 py-6">
+        <div className="flex items-start gap-5">
+          <div className={cn("relative w-28 h-28 rounded-full overflow-hidden border", isPremium ? "ring-4 ring-yellow-500" : "") }>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={me?.avatar_url || "/avatar.svg"} alt="avatar" className="w-full h-full object-cover" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-semibold truncate">{me?.full_name || me?.store_name || me?.email || "Profil"}</h1>
+              {verified && <Badge tone="green">Onaylı Satıcı</Badge>}
+              {isPremium && <Badge tone="gold">Premium</Badge>}
             </div>
-          </section>
-
-          {/* Şikayet */}
-          <section className="panel p-4">
-            <button className="w-full btnDanger" onClick={() => alert(t.reported)}>{t.report}</button>
-          </section>
-        </aside>
-
-        {/* Sağ İçerik */}
-        <section className="space-y-6">
-          {/* İlanlar Sekmesi */}
-          <div className="panel p-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <button className={`btnGhost ${tab==='pending' ? 'ring-2 ring-rose-500' : ''}`} onClick={()=>setTab('pending')}>{t.pendingListings}</button>
-              <button className={`btnGhost ${tab==='live' ? 'ring-2 ring-emerald-500' : ''}`} onClick={()=>setTab('live')}>{t.liveListings}</button>
-              <button className={`btnGhost ${tab==='expired' ? 'ring-2 ring-amber-500' : ''}`} onClick={()=>setTab('expired')}>{t.expiredListings}</button>
+            <div className="mt-1 text-sm text-gray-600 space-x-3">
+              {me?.handle && <span>@{me.handle}</span>}
+              {me?.city && <span>• {me.city}</span>}
+              {me?.created_at && <span>• Katılma: {new Date(tsToMs(me.created_at)).toLocaleDateString("tr-TR")}</span>}
             </div>
 
-            <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {filtered.length ? filtered.map((it) => (
-                <div key={it.id} className="relative panel cardSmall p-2">
-                  <div className="aspect-square rounded-lg bg-slate-800/60 border border-slate-700" />
-                  <div className="mt-2 font-semibold text-[13px] truncate text-slate-100">{it.title}</div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Link href={`/portal/seller/messages`} className="px-3 py-2 rounded-lg border hover:bg-gray-50">Mesaj Gönder</Link>
+              <button onClick={doShare} className="px-3 py-2 rounded-lg border hover:bg-gray-50">Paylaş</button>
+              <button onClick={()=>setReportOpen(true)} className="px-3 py-2 rounded-lg border hover:bg-gray-50">Şikayet Et</button>
+              <CopyButton text={uid||""} label="UID Kopyala" className="ml-2" />
+            </div>
+          </div>
+
+          {/* Right side – settings shortcuts */}
+          <div className="hidden lg:block w-[380px] shrink-0">
+            <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+              <div className="px-4 pt-4">
+                <div className="flex items-center gap-4 border-b pb-3">
+                  <Link href="/portal/seller?tab=profile" className="px-3 py-2 rounded-md border border-gray-300 text-sm hover:bg-gray-50">Profil</Link>
+                  <Link href="/portal/seller?tab=contact" className="px-3 py-2 rounded-md border border-gray-300 text-sm hover:bg-gray-50">İletişim</Link>
+                  <Link href="/portal/seller?tab=security" className="px-3 py-2 rounded-md border border-gray-300 text-sm hover:bg-gray-50">Güvenlik</Link>
+                  <Link href="/portal/seller?tab=payments" className="px-3 py-2 rounded-md border border-gray-300 text-sm hover:bg-gray-50">Ödemeler</Link>
                 </div>
-              )) : (
-                <div className="col-span-full text-slate-400 text-sm">{t.noListings}</div>
-              )}
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">Premium</div>
+                  <div className="text-sm font-medium">{isPremium ? "Aktif" : "Pasif"}</div>
+                </div>
+                <button onClick={()=>setPayKind("premium")} className="w-full mt-2 px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700">Premium'a Geç</button>
+                <div className="text-xs text-gray-500">Premium admin tarafından verilir. Ödeme dekontunu yükleyin.</div>
+                <div className="mt-3">
+                  <div className="text-sm font-medium mb-1">Mağaza Bilgileri</div>
+                  <div className="text-xs text-gray-600">Kargo & iade, çalışma saatleri ve SSS'yi hesap ayarlarından düzenleyin.</div>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Puan & Yorum Özeti */}
-          <div className="panel p-4" id="reviews">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-bold">{t.rating}</div>
-              <button className="btnGhost" onClick={()=>alert(t.showAllReviews)}>{t.reviews}</button>
+      {/* Tabs */}
+      <section className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center gap-6 border-b">
+          {[
+            {k:"urunler", t:"Ürünler"},
+            {k:"deger", t:"Değerlendirmeler"},
+            {k:"hakkinda", t:"Hakkında"},
+            {k:"kargo", t:"Kargo & iade"},
+            {k:"sss", t:"SSS"},
+          ].map(x=> (
+            <button key={x.k} onClick={()=>setTab(x.k)} className={cn("px-1 py-3", tab===x.k?"-mb-px border-b-2 border-amber-600 font-medium":"text-gray-500 hover:text-gray-800")}>{x.t}</button>
+          ))}
+        </div>
+      </section>
+
+      {/* Tab contents */}
+      <section className="max-w-7xl mx-auto px-4 py-6">
+        {tab === "urunler" && (
+          loading ? (
+            <div className="text-center text-gray-500">Yükleniyor…</div>
+          ) : listings.length === 0 ? (
+            <div className="text-center text-gray-500">Henüz ilan yok.</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {listings.map((it)=> (
+                <ListingCard key={it.id} item={it} isOwner={true} onVitrine={(l)=>{ setPayListing(l); setPayKind("vitrine"); }} />
+              ))}
             </div>
-            <div className="mt-2 flex items-center gap-2">
-              <Stars value={profile.stats.rating} />
-              <div className="text-sm text-slate-300">{profile.stats.rating ? profile.stats.rating.toFixed(1) : "—"} ({profile.stats.ratingCount})</div>
-            </div>
-            <p className="mt-2 text-[12px] text-slate-400">{t.noSelfRate}</p>
+          )
+        )}
+
+        {tab === "deger" && (
+          <div className="space-y-4">
+            {reviews.length === 0 ? (
+              <div className="text-gray-500">Henüz değerlendirme yok.</div>
+            ) : (
+              reviews.map((r)=> (
+                <div key={r.id} className="rounded-xl border bg-white p-4">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="font-medium">{r.buyer_name || "Alıcı"}</span>
+                    {r.verified && <Badge tone="green">Doğrulanmış alışveriş</Badge>}
+                    <span className="text-gray-500">• {new Date(tsToMs(r.created_at)).toLocaleDateString("tr-TR")}</span>
+                  </div>
+                  <div className="mt-1">{"★".repeat(r.rating||0)}{"☆".repeat(5-(r.rating||0))}</div>
+                  <div className="text-sm text-gray-700 mt-2 whitespace-pre-line">{r.text}</div>
+                </div>
+              ))
+            )}
           </div>
-        </section>
-      </main>
+        )}
 
-      {/* Legal Footer */}
-      <footer className="border-t border-slate-800 bg-[#060a16] text-slate-400">
-        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 flex flex-wrap gap-3 items-center text-[13px]">
-          <a className="hover:underline" href="/legal/kurumsal">{t.corporate}</a>
-          <a className="hover:underline" href="/legal/hakkimizda">{t.aboutUs}</a>
-          <a className="hover:underline" href="/legal/iletisim">{t.contact}</a>
-          <a className="hover:underline" href="/legal/gizlilik">{t.privacy}</a>
-          <a className="hover:underline" href="/legal/kullanim-sartlari">{t.terms}</a>
-          <a className="hover:underline" href="/legal/teslimat-iade">{t.shippingReturn}</a>
-          <a className="hover:underline" href="/legal/cerez-politikasi">{t.cookies}</a>
-          <span className="ml-auto opacity-80">© 2025 Üreten Eller</span>
+        {tab === "hakkinda" && (
+          <div className="rounded-xl border bg-white p-4 space-y-3">
+            <div><span className="text-sm text-gray-500">Mağaza adı</span><div className="font-medium">{me?.store_name || me?.full_name || me?.email}</div></div>
+            <div><span className="text-sm text-gray-500">Konum</span><div>{me?.city || "—"}{me?.district?`, ${me.district}`:""}</div></div>
+            <div>
+              <span className="text-sm text-gray-500">Mağaza hakkında</span>
+              <div className="whitespace-pre-line mt-1">{me?.about || "Satıcı henüz bilgi eklemedi."}</div>
+            </div>
+            {me?.store_hours && (
+              <div>
+                <span className="text-sm text-gray-500">Çalışma saatleri</span>
+                <div className="mt-1 whitespace-pre-line">{me.store_hours}</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === "kargo" && (
+          <div className="rounded-xl border bg-white p-4 space-y-3">
+            <div className="text-sm text-gray-500">Kargo süreci</div>
+            <div className="whitespace-pre-line">{me?.shipping_policy || "Satıcı henüz kargo & iade bilgisi eklemedi."}</div>
+          </div>
+        )}
+
+        {tab === "sss" && (
+          <div className="space-y-3">
+            {Array.isArray(me?.faq) && me.faq.length > 0 ? (
+              me.faq.map((qa, i)=> (
+                <details key={i} className="rounded-xl border bg-white p-4">
+                  <summary className="font-medium cursor-pointer">{qa.q}</summary>
+                  <div className="mt-2 text-sm text-gray-700 whitespace-pre-line">{qa.a}</div>
+                </details>
+              ))
+            ) : (
+              <div className="rounded-xl border bg-white p-4 text-gray-500">SSS eklenmemiş.</div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Bottom mobile tabbar */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t">
+        <div className="max-w-7xl mx-auto grid grid-cols-4 text-center">
+          <Link href="/portal/seller" className="py-2 text-sm">Ana sayfa</Link>
+          <Link href="/portal/seller/messages" className="py-2 text-sm">Mesajlar</Link>
+          <Link href="/portal/seller/notifications" className="py-2 text-sm">Bildirimler</Link>
+          <Link href="/portal/seller/profile" className="py-2 text-sm font-medium text-amber-700">Ben</Link>
+        </div>
+      </nav>
+
+      {/* Legal black footer */}
+      <footer className="mt-10 bg-black text-gray-100">
+        <div className="max-w-7xl mx-auto px-4 py-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 text-sm">
+          <div className="space-x-4 whitespace-nowrap overflow-x-auto">
+            <Link href="/legal/kurumsal" className="hover:text-white">Kurumsal</Link>
+            <Link href="/legal/hakkimizda" className="hover:text-white">Hakkımızda</Link>
+            <Link href="/legal/iletisim" className="hover:text-white">İletişim</Link>
+            <Link href="/legal/gizlilik" className="hover:text-white">Gizlilik</Link>
+            <Link href="/legal/kvkk-aydinlatma" className="hover:text-white">KVKK Aydınlatma</Link>
+          </div>
+          <div className="space-x-4 whitespace-nowrap overflow-x-auto">
+            <Link href="/legal/kullanim-sartlari" className="hover:text-white">Kullanım Şartları</Link>
+            <Link href="/legal/mesafeli-satis-sozlesmesi" className="hover:text-white">Mesafeli Satış</Link>
+            <Link href="/legal/teslimat-iade" className="hover:text-white">Teslimat & İade</Link>
+            <Link href="/legal/cerez-politikasi" className="hover:text-white">Çerez</Link>
+            <Link href="/legal/topluluk-kurallari" className="hover:text-white">Topluluk Kuralları</Link>
+            <Link href="/legal/yasakli-urunler" className="hover:text-white">Yasaklı Ürünler</Link>
+          </div>
+          <div className="text-right text-gray-400">© {new Date().getFullYear()} Üreten Eller</div>
         </div>
       </footer>
 
-      {/* Alt Navigasyon */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#0b1224]/90 backdrop-blur border-t border-slate-800 px-4 py-2 flex items-center justify-around z-20">
-        <a href="/" className="navBtn">{t.home}</a>
-        <a href="/portal/customer" className="navBtn">{t.messages}</a>
-        <a href="/portal/seller" className="navBtn">{t.notifications}</a>
-      </nav>
-
-      {/* AYARLAR MODALI */}
-      {showSettings && (
-        <Modal onClose={()=>setShowSettings(false)} title={t.settings}>
-          <div className="flex flex-wrap gap-2 text-sm mb-3">
-            <button className={`btnGhost ${settingsTab==='profile'?'ring-2 ring-indigo-500':''}`} onClick={()=>setSettingsTab('profile')}>{t.profileTab}</button>
-            <button className={`btnGhost ${settingsTab==='location'?'ring-2 ring-fuchsia-500':''}`} onClick={()=>setSettingsTab('location')}>{t.locationTab}</button>
-            <button className={`btnGhost ${settingsTab==='security'?'ring-2 ring-rose-500':''}`} onClick={()=>setSettingsTab('security')}>{t.securityTab}</button>
-          </div>
-
-          {/* Profil (Avatar) */}
-          {settingsTab === "profile" && (
-            <div className="space-y-3">
-              <div className="font-semibold">{t.changeAvatar}</div>
-              <div className="flex items-center gap-3">
-                <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-800 border border-slate-700">
-                  {avatarPreview || profile.avatarUrl ? (
-                    <img src={avatarPreview || profile.avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full grid place-items-center text-slate-400">{initials(profile.name)}</div>
-                  )}
-                </div>
-                <label className="btnGhost cursor-pointer">
-                  {t.uploadNewPhoto}
-                  <input type="file" accept="image/*" className="hidden" onChange={onAvatarFile} />
-                </label>
-                <button className="btnPrimary" onClick={saveAvatar} disabled={!avatarPreview}>{t.save}</button>
-              </div>
-            </div>
-          )}
-
-          {/* Konum (Şehir) */}
-          {settingsTab === "location" && (
-            <div className="space-y-3">
-              <div className="font-semibold">{t.changeCity}</div>
-              <input
-                value={cityDraft}
-                onChange={(e)=>setCityDraft(e.target.value)}
-                className="w-full border border-slate-700 bg-[#0f172a] text-slate-100 rounded-lg px-3 py-2"
-                placeholder={t.cityPlaceholder}
-              />
-              <div className="flex items-center justify-end">
-                <button className="btnPrimary" onClick={saveCity}>{t.save}</button>
-              </div>
-            </div>
-          )}
-
-          {/* Güvenlik (Şifre) */}
-          {settingsTab === "security" && (
-            <form className="space-y-3" onSubmit={changePassword}>
-              <div className="font-semibold">{t.changePassword}</div>
-              <label className="block">
-                <span className="text-[12px]">{t.currentPassword}</span>
-                <input type="password" value={pw.current} onChange={(e)=>setPw({...pw, current:e.target.value})}
-                  className="w-full mt-1 border border-slate-700 bg-[#0f172a] text-slate-100 rounded-lg px-3 py-2" />
-              </label>
-              <label className="block">
-                <span className="text-[12px]">{t.newPassword}</span>
-                <input type="password" value={pw.next} onChange={(e)=>setPw({...pw, next:e.target.value})}
-                  className="w-full mt-1 border border-slate-700 bg-[#0f172a] text-slate-100 rounded-lg px-3 py-2" />
-              </label>
-              <label className="block">
-                <span className="text-[12px]">{t.confirmPassword}</span>
-                <input type="password" value={pw.again} onChange={(e)=>setPw({...pw, again:e.target.value})}
-                  className="w-full mt-1 border border-slate-700 bg-[#0f172a] text-slate-100 rounded-lg px-3 py-2" />
-              </label>
-              <div className="flex items-center justify-end gap-2">
-                <button type="button" className="btnGhost" onClick={()=>setPw({current:"",next:"",again:""})}>{t.cancel}</button>
-                <button type="submit" className="btnPrimary">{t.updatePassword}</button>
-              </div>
-            </form>
-          )}
-        </Modal>
-      )}
-
-      {/* Stil */}
-      <style>{`
-        /* Butonlar */
-        .btnPrimary{border:1px solid #4f46e5;background:#4f46e5;color:#fff;border-radius:12px;padding:8px 12px;font-weight:800}
-        .btnGhost{border:1px solid #334155;background:#0b1224;color:#e2e8f0;border-radius:10px;padding:8px 10px;font-weight:700}
-        .btnDanger{border:1px solid #7f1d1d;background:#991b1b;color:#fff;border-radius:12px;padding:10px 12px;font-weight:900}
-        .navBtn{font-weight:800;padding:8px 12px;border-radius:10px;border:1px solid #334155;background:#0b1224;color:#e2e8f0}
-
-        /* Kartlar */
-        .panel{background:linear-gradient(180deg,rgba(17,24,39,.85),rgba(15,23,42,.9));border:1px solid rgba(148,163,184,.15);border-radius:16px;box-shadow:0 10px 24px -12px rgba(2,6,23,.4)}
-        .cardSmall{transition:transform .15s ease, box-shadow .15s ease}
-        .cardSmall:hover{transform:translateY(-2px);box-shadow:0 12px 24px -16px rgba(59,130,246,.35)}
-
-        /* Premium çerçeve */
-        .goldRing:before{content:"";position:absolute;inset:-3px;border-radius:9999px;padding:2px;background:conic-gradient(from 0deg,#f59e0b,#fde68a,#f59e0b);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
-      `}</style>
+      {/* Modals */}
+      <PaymentModal open={!!payKind && payKind === "premium"} onClose={()=>{ setPayKind(null); setPayListing(null); }} kind="premium" isPremiumUser={isPremium} listing={null} uid={uid} />
+      <PaymentModal open={!!payKind && payKind === "vitrine"} onClose={()=>{ setPayKind(null); setPayListing(null); }} kind="vitrine" isPremiumUser={isPremium} listing={payListing} uid={uid} />
+      <ReportModal open={reportOpen} onClose={()=>setReportOpen(false)} sellerId={uid} reporterId={uid} />
+      {toast}
     </div>
   );
 }
-
-/* ==== Modal ==== */
-function Modal({ title, onClose, children }) {
-  return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose}></div>
-      <div className="relative z-40 w-[min(640px,92vw)] panel p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-lg font-extrabold">{title}</div>
-          <button className="btnGhost" onClick={onClose}>✕</button>
-        </div>
-        <div className="mt-3 text-sm">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-/* ==== Yıldız ==== */
-function Stars({ value }) {
-  const v = typeof value === "number" ? Math.max(0, Math.min(5, value)) : 0;
-  return (
-    <div className="inline-flex items-center gap-1" aria-label="rating">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <svg key={i} width="18" height="18" viewBox="0 0 24 24" fill={i + 1 <= Math.round(v) ? "currentColor" : "none"} stroke="currentColor" className={i + 1 <= Math.round(v) ? "text-amber-400" : "text-slate-600"}>
-          <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-        </svg>
-      ))}
-    </div>
-  );
-}
-
-/* ==== Yardımcılar ==== */
-function initials(name) {
-  if (!name) return "?";
-  return name.split(" ").filter(Boolean).slice(0, 2).map((s) => s[0]).join("").toUpperCase();
-}
-
-/* ==== Metinler ==== */
-const texts = {
-  tr: {
-    seller: "Satıcı",
-    language: "Dil",
-    settings: "Ayarlar",
-    profileTab: "Profil",
-    locationTab: "Konum",
-    securityTab: "Güvenlik",
-    changeAvatar: "Profil resmi",
-    uploadNewPhoto: "Yeni fotoğraf yükle",
-    save: "Kaydet",
-    changeCity: "Şehri değiştir",
-    cityPlaceholder: "Şehir",
-    changePassword: "Şifre değiştir",
-    currentPassword: "Mevcut şifre",
-    newPassword: "Yeni şifre",
-    confirmPassword: "Yeni şifre (tekrar)",
-    updatePassword: "Şifreyi güncelle",
-    fillAll: "Lütfen tüm alanları doldurun.",
-    pwNoMatch: "Şifreler uyuşmuyor.",
-    pwTooShort: "Şifre en az 6 karakter olmalı.",
-    pwChanged: "Şifre güncellendi.",
-    saved: "Kaydedildi.",
-    profileBanner: "Satıcı Profiliniz",
-    verified: "Onaylı Satıcı",
-    premium: "Premium",
-    about: "Hakkımda",
-    aboutPlaceholder: "Kendinizi ve ürünlerinizi kısaca anlatın…",
-    badges: "Güven Rozetleri",
-    noBadges: "Rozet yok",
-    report: "Şikayet et / Bildir",
-    reported: "Şikayetiniz alındı.",
-    pendingListings: "Onay Bekleyen",
-    liveListings: "Yayında",
-    expiredListings: "Süresi Biten",
-    noListings: "Gösterilecek ilan yok.",
-    rating: "Puan",
-    reviews: "Yorumlar",
-    noSelfRate: "Kendi kendine puan verilemez.",
-    corporate: "Kurumsal",
-    aboutUs: "Hakkımızda",
-    contact: "İletişim",
-    privacy: "Gizlilik",
-    terms: "Kullanım Şartları",
-    shippingReturn: "Teslimat & İade",
-    cookies: "Çerez Politikası",
-    home: "Ana Sayfa",
-    messages: "Mesajlar",
-    notifications: "Bildirimler",
-  },
-  en: {
-    seller: "Seller",
-    language: "Language",
-    settings: "Settings",
-    profileTab: "Profile",
-    locationTab: "Location",
-    securityTab: "Security",
-    changeAvatar: "Profile photo",
-    uploadNewPhoto: "Upload new photo",
-    save: "Save",
-    changeCity: "Change city",
-    cityPlaceholder: "City",
-    changePassword: "Change password",
-    currentPassword: "Current password",
-    newPassword: "New password",
-    confirmPassword: "Confirm new password",
-    updatePassword: "Update password",
-    fillAll: "Please fill all fields.",
-    pwNoMatch: "Passwords do not match.",
-    pwTooShort: "Password must be at least 6 chars.",
-    pwChanged: "Password updated.",
-    saved: "Saved.",
-    profileBanner: "Your Seller Profile",
-    verified: "Verified Seller",
-    premium: "Premium",
-    about: "About",
-    aboutPlaceholder: "Briefly describe yourself and your products…",
-    badges: "Trust Badges",
-    noBadges: "No badges",
-    report: "Report",
-    reported: "Your report has been received.",
-    pendingListings: "Pending",
-    liveListings: "Live",
-    expiredListings: "Expired",
-    noListings: "No listings to show.",
-    rating: "Rating",
-    reviews: "Reviews",
-    noSelfRate: "Self-rating is not allowed.",
-    corporate: "Corporate",
-    aboutUs: "About Us",
-    contact: "Contact",
-    privacy: "Privacy",
-    terms: "Terms",
-    shippingReturn: "Shipping & Returns",
-    cookies: "Cookie Policy",
-    home: "Home",
-    messages: "Messages",
-    notifications: "Notifications",
-  },
-  ar: {
-    seller: "البائع",
-    language: "اللغة",
-    settings: "الإعدادات",
-    profileTab: "الملف",
-    locationTab: "الموقع",
-    securityTab: "الأمان",
-    changeAvatar: "الصورة الشخصية",
-    uploadNewPhoto: "تحميل صورة جديدة",
-    save: "حفظ",
-    changeCity: "تغيير المدينة",
-    cityPlaceholder: "المدينة",
-    changePassword: "تغيير كلمة المرور",
-    currentPassword: "كلمة المرور الحالية",
-    newPassword: "كلمة المرور الجديدة",
-    confirmPassword: "تأكيد كلمة المرور",
-    updatePassword: "تحديث كلمة المرور",
-    fillAll: "يرجى تعبئة جميع الحقول.",
-    pwNoMatch: "كلمتا المرور غير متطابقتين.",
-    pwTooShort: "يجب أن تكون كلمة المرور 6 أحرف على الأقل.",
-    pwChanged: "تم تحديث كلمة المرور.",
-    saved: "تم الحفظ.",
-    profileBanner: "ملف البائع",
-    verified: "بائع موثّق",
-    premium: "بريميوم",
-    about: "نبذة",
-    aboutPlaceholder: "عرّف نفسك ومنتجاتك بإيجاز…",
-    badges: "شارات الثقة",
-    noBadges: "لا توجد شارات",
-    report: "إبلاغ",
-    reported: "تم استلام البلاغ.",
-    pendingListings: "بانتظار الموافقة",
-    liveListings: "نشط",
-    expiredListings: "منتهي",
-    noListings: "لا توجد إعلانات.",
-    rating: "التقييم",
-    reviews: "المراجعات",
-    noSelfRate: "لا يُسمح بالتقييم الذاتي.",
-    corporate: "الشركة",
-    aboutUs: "من نحن",
-    contact: "اتصال",
-    privacy: "الخصوصية",
-    terms: "الشروط",
-    shippingReturn: "الشحن والإرجاع",
-    cookies: "سياسة الكوكيز",
-    home: "الصفحة الرئيسية",
-    messages: "الرسائل",
-    notifications: "الإشعارات",
-  },
-  de: {
-    seller: "Verkäufer",
-    language: "Sprache",
-    settings: "Einstellungen",
-    profileTab: "Profil",
-    locationTab: "Standort",
-    securityTab: "Sicherheit",
-    changeAvatar: "Profilbild",
-    uploadNewPhoto: "Neues Foto hochladen",
-    save: "Speichern",
-    changeCity: "Stadt ändern",
-    cityPlaceholder: "Stadt",
-    changePassword: "Passwort ändern",
-    currentPassword: "Aktuelles Passwort",
-    newPassword: "Neues Passwort",
-    confirmPassword: "Neues Passwort (Wdh.)",
-    updatePassword: "Passwort aktualisieren",
-    fillAll: "Bitte alle Felder ausfüllen.",
-    pwNoMatch: "Passwörter stimmen nicht überein.",
-    pwTooShort: "Mindestens 6 Zeichen.",
-    pwChanged: "Passwort aktualisiert.",
-    saved: "Gespeichert.",
-    profileBanner: "Ihr Verkäuferprofil",
-    verified: "Verifizierter Verkäufer",
-    premium: "Premium",
-    about: "Über mich",
-    aboutPlaceholder: "Beschreiben Sie sich und Ihre Produkte kurz…",
-    badges: "Vertrauensabzeichen",
-    noBadges: "Keine Abzeichen",
-    report: "Melden",
-    reported: "Deine Meldung wurde erhalten.",
-    pendingListings: "Ausstehend",
-    liveListings: "Aktiv",
-    expiredListings: "Abgelaufen",
-    noListings: "Keine Anzeigen vorhanden.",
-    rating: "Bewertung",
-    reviews: "Bewertungen",
-    noSelfRate: "Selbstbewertung ist nicht erlaubt.",
-    corporate: "Unternehmen",
-    aboutUs: "Über uns",
-    contact: "Kontakt",
-    privacy: "Datenschutz",
-    terms: "Nutzungsbedingungen",
-    shippingReturn: "Lieferung & Rückgabe",
-    cookies: "Cookie-Richtlinie",
-    home: "Startseite",
-    messages: "Nachrichten",
-    notifications: "Benachrichtigungen",
-  },
-};
