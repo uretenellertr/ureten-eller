@@ -1,22 +1,17 @@
 "use client";
-import React, { useEffect, useState, useMemo } from "react";
-import Link from "next/link";
+import React, { useEffect, useMemo, useState } from "react";
 
-/* =========================================================
-   ÜRETEN ELLER – Satıcı Profili (BİREBİR / ÇALIŞIR)
-   - Görseldeki düzen: üst bar, gri arka plan, sekmeler, sağda Premium kutusu,
-     alt siyah legal footer, mobil alt bar
-   - Tüm butonlar bağlı: Paylaş, Şikayet Et, UID Kopyala, Premium’a Geç, Vitrine Taşı
-   - Firestore okuyup yazıyor. (orderBy YOK → index hatası yok, sıralama istemci tarafında)
-   - “Onaylı Satıcı” ROZETİ: yalnızca users/{uid}.verified === true ise görünür (admin onayı olmadan görünmez)
-   - Premium görünümü: users/{uid}.premium === true ise avatar altın çerçeveli + Premium rozeti
-   - IBAN sabit: TR590082900009491868461105 (hesap adı KODDA YOK)
-   Gerekenler:
-     * Tailwind css (globals.css import edilmiş olmalı)
-     * public/avatar.svg (yoksa oluştur)
-========================================================= */
+/* ======================== Firebase ======================== */
+import { initializeApp, getApps } from "firebase/app";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import {
+  getFirestore, doc, getDoc, setDoc, addDoc, collection, serverTimestamp, updateDoc,
+} from "firebase/firestore";
+import {
+  getStorage, ref as sRef, uploadBytes, getDownloadURL,
+} from "firebase/storage";
 
-/* ------------------------------ Firebase (dinamik import) ------------------------------ */
+/* ---- Firebase init (self-contained, uses your project keys) ---- */
 const firebaseConfig = {
   apiKey: "AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ",
   authDomain: "ureteneller-ecaac.firebaseapp.com",
@@ -26,576 +21,492 @@ const firebaseConfig = {
   appId: "1:368042877151:web:ee0879fc4717928079c96a",
   measurementId: "G-BJHKN8V4RQ",
 };
+if (!getApps().length) initializeApp(firebaseConfig);
+const auth = getAuth();
+const db = getFirestore();
+const storage = getStorage();
 
-async function bootFirebase() {
-  const appMod = await import("firebase/app");
-  const { getApps, getApp, initializeApp } = appMod;
-  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+/* ======================== i18n (TR/EN/AR/DE) ======================== */
+const SUPPORTED = ["tr", "en", "ar", "de"];
+const LOCALE_LABEL = { tr: "Türkçe", en: "English", ar: "العربية", de: "Deutsch" };
 
-  const { getAuth, onAuthStateChanged } = await import("firebase/auth");
-  const auth = getAuth(app);
-
-  const fsMod = await import("firebase/firestore");
-  const db = fsMod.getFirestore(app);
-
-  const stMod = await import("firebase/storage");
-  const storage = stMod.getStorage(app);
-
-  return { app, auth, onAuthStateChanged, db, fs: fsMod, storage, st: stMod };
-}
-
-/* ------------------------------ Helpers & küçük UI parçaları ------------------------------ */
-const cn = (...xs) => xs.filter(Boolean).join(" ");
-const TRY = new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 });
-
-const tsToMs = (ts) => {
-  if (!ts) return 0;
-  if (typeof ts === "number") return ts;
-  if (typeof ts === "string") return Date.parse(ts) || 0;
-  if (ts?.seconds) return ts.seconds * 1000 + Math.floor((ts.nanoseconds || 0) / 1e6);
-  const d = new Date(ts);
-  return Number.isFinite(d.getTime()) ? d.getTime() : 0;
+const STR = {
+  tr: {
+    brand: "Üreten Eller",
+    profile: "Profil",
+    logout: "Çıkış",
+    search: "İlan Ara",
+    postAd: "İlan Ver",
+    premiumCta: "Premium Ol (₺1.999/yıl)",
+    showcaseCta: "İlanı Vitrine Al",
+    heroTitle: "Üreten Ellere Hoş Geldiniz",
+    mottos: [
+      { text: "Kadın emeği değer bulsun.", color: "#c026d3" },
+      { text: "El emeği ürünler adil fiyata.", color: "#7c3aed" },
+      { text: "Güvenli ödeme, kolay iade.", color: "#65a30d" },
+      { text: "Yerelden al, ekonomiye can ver.", color: "#ca8a04" },
+      { text: "Usta ellerden taze üretim.", color: "#0ea5e9" },
+    ],
+    showcase: "Vitrin",
+    standard: "Standart İlanlar",
+    categories: "Kategorilerimiz",
+    empty: "Henüz ilan yok.",
+    tabs: { home: "Ana Sayfa", messages: "Mesajlar", notifs: "Bildirimler" },
+    chat: { title: "Canlı Destek", helloYou: "Merhaba! Nasıl yardımcı olabilirim?", helloMe: "Merhaba 👋", placeholder: "Mesaj yazın...", send: "Gönder" },
+    legal: {
+      corporate: "Kurumsal", about: "Hakkımızda", contact: "İletişim", privacy: "Gizlilik", kvkk: "KVKK Aydınlatma",
+      terms: "Kullanım Şartları", distance: "Mesafeli Satış", delivery: "Teslimat & İade", cookie: "Çerez Politikası",
+      community: "Topluluk Kuralları", prohibited: "Yasaklı Ürünler", all: "Tüm Legal",
+    },
+  },
+  en: {
+    brand: "Üreten Eller",
+    profile: "Profile",
+    logout: "Logout",
+    search: "Search Listings",
+    postAd: "Post Listing",
+    premiumCta: "Go Premium (₺1,999/yr)",
+    showcaseCta: "Showcase This Listing",
+    heroTitle: "Welcome to Üreten Eller",
+    mottos: [
+      { text: "Let women's labor be valued.", color: "#c026d3" },
+      { text: "Handmade at fair prices.", color: "#7c3aed" },
+      { text: "Secure payment, easy returns.", color: "#65a30d" },
+      { text: "Buy local, boost the economy.", color: "#ca8a04" },
+      { text: "Fresh production from skilled hands.", color: "#0ea5e9" },
+    ],
+    showcase: "Showcase",
+    standard: "Standard Listings",
+    categories: "Our Categories",
+    empty: "No listings yet.",
+    tabs: { home: "Home", messages: "Messages", notifs: "Notifications" },
+    chat: { title: "Live Support", helloYou: "Hello! How can I help?", helloMe: "Hello 👋", placeholder: "Type a message...", send: "Send" },
+    legal: {
+      corporate: "Corporate", about: "About", contact: "Contact", privacy: "Privacy", kvkk: "PDPL (KVKK) Notice",
+      terms: "Terms of Use", distance: "Distance Sales", delivery: "Delivery & Returns", cookie: "Cookie Policy",
+      community: "Community Guidelines", prohibited: "Prohibited Items", all: "All Legal",
+    },
+  },
+  ar: {
+    brand: "Üreten Eller",
+    profile: "الملف الشخصي",
+    logout: "تسجيل الخروج",
+    search: "البحث في الإعلانات",
+    postAd: "أضف إعلانًا",
+    premiumCta: "العضوية المميزة (₺1,999/سنة)",
+    showcaseCta: "وضع الإعلان في الواجهة",
+    heroTitle: "مرحبًا بكم في Üreten Eller",
+    mottos: [
+      { text: "ليُقَدَّر عمل المرأة.", color: "#c026d3" },
+      { text: "منتجات يدوية بأسعار عادلة.", color: "#7c3aed" },
+      { text: "دفع آمن وإرجاع سهل.", color: "#65a30d" },
+      { text: "اشترِ المحليّ وانعش الاقتصاد.", color: "#ca8a04" },
+      { text: "إنتاج طازج بأيدي خبيرة.", color: "#0ea5e9" },
+    ],
+    showcase: "الواجهة المميزة",
+    standard: "إعلانات عادية",
+    categories: "فئاتنا",
+    empty: "لا يوجد إعلانات بعد.",
+    tabs: { home: "الرئيسية", messages: "الرسائل", notifs: "الإشعارات" },
+    chat: { title: "الدعم المباشر", helloYou: "مرحبًا! كيف أستطيع المساعدة؟", helloMe: "مرحبًا 👋", placeholder: "اكتب رسالة...", send: "إرسال" },
+    legal: {
+      corporate: "الشركة", about: "من نحن", contact: "اتصال", privacy: "الخصوصية", kvkk: "إشعار KVKK",
+      terms: "شروط الاستخدام", distance: "البيع عن بُعد", delivery: "التسليم والإرجاع", cookie: "سياسة ملفات تعريف الارتباط",
+      community: "إرشادات المجتمع", prohibited: "السلع المحظورة", all: "جميع الصفحات القانونية",
+    },
+  },
+  de: {
+    brand: "Üreten Eller",
+    profile: "Profil",
+    logout: "Abmelden",
+    search: "Anzeigen suchen",
+    postAd: "Anzeige aufgeben",
+    premiumCta: "Premium werden (₺1.999/Jahr)",
+    showcaseCta: "Anzeige hervorheben",
+    heroTitle: "Willkommen bei Üreten Eller",
+    mottos: [
+      { text: "Frauenarbeit soll wertgeschätzt werden.", color: "#c026d3" },
+      { text: "Handgemachtes zu fairen Preisen.", color: "#7c3aed" },
+      { text: "Sichere Zahlung, einfache Rückgabe.", color: "#65a30d" },
+      { text: "Kauf lokal, stärke die Wirtschaft.", color: "#ca8a04" },
+      { text: "Frische Produktion aus Meisterhand.", color: "#0ea5e9" },
+    ],
+    showcase: "Schaufenster",
+    standard: "Standardanzeigen",
+    categories: "Kategorien",
+    empty: "Noch keine Anzeigen.",
+    tabs: { home: "Startseite", messages: "Nachrichten", notifs: "Benachrichtigungen" },
+    chat: { title: "Live-Support", helloYou: "Hallo! Wie kann ich helfen?", helloMe: "Hallo 👋", placeholder: "Nachricht schreiben...", send: "Senden" },
+    legal: {
+      corporate: "Unternehmen", about: "Über uns", contact: "Kontakt", privacy: "Datenschutz", kvkk: "KVKK-Hinweis",
+      terms: "Nutzungsbedingungen", distance: "Fernabsatz", delivery: "Lieferung & Rückgabe", cookie: "Cookie-Richtlinie",
+      community: "Community-Richtlinien", prohibited: "Verbotene Artikel", all: "Alle Rechtstexte",
+    },
+  },
 };
 
-const daysLeft = (listing) => {
-  const now = Date.now();
-  const base =
-    (listing?.expires_at && tsToMs(listing.expires_at)) ||
-    (listing?.published_at && tsToMs(listing.published_at) + 30 * 24 * 3600 * 1000) ||
-    (listing?.created_at && tsToMs(listing.created_at) + 30 * 24 * 3600 * 1000);
-  if (!base) return null;
-  return Math.ceil((base - now) / (24 * 3600 * 1000));
+/* ======================== Pricing & IBAN ======================== */
+const PRICING = {
+  premiumYear: 1999,            // ₺
+  showcasePremium: 100,         // ₺ / 30 gün
+  showcaseStandard: 199,        // ₺ / 30 gün
+  showcaseDays: 30,
+};
+const BANK = {
+  iban: "TR590082900009491868461105",
+  papara: "", // varsa Papara ticari IBAN/numara
 };
 
-function Badge({ children, tone = "gray" }) {
-  const palette = {
-    gray: "bg-gray-100 text-gray-700",
-    gold: "bg-amber-100 text-yellow-800 border border-yellow-300",
-    green: "bg-emerald-100 text-emerald-800 border border-emerald-200",
-  };
-  return <span className={cn("px-2 py-0.5 rounded-full text-xs font-medium", palette[tone])}>{children}</span>;
-}
-
-function CopyButton({ text, label = "Kopyala", className = "" }) {
-  const [ok, setOk] = useState(false);
-  return (
-    <button
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(text || "");
-          setOk(true);
-          setTimeout(() => setOk(false), 1200);
-        } catch {}
-      }}
-      className={cn("px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50 active:scale-[.98]", className)}
-    >
-      {ok ? "Kopyalandı" : label}
-    </button>
-  );
-}
-
-/* ------------------------------ Modallar ------------------------------ */
-function PaymentModal({ open, onClose, kind, isPremiumUser, listing, uid, st, fs, db, storage }) {
+/* ======================== Payment Modal ======================== */
+function PaymentModal({
+  open, onClose, mode, user, userDoc, defaultListingNo,
+}) {
+  const [method, setMethod] = useState("eft");
   const [file, setFile] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
-  const [err, setErr] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [listingNo, setListingNo] = useState(defaultListingNo || "");
+  const [note, setNote] = useState("");
+
+  const isPremiumActive = userDoc?.premium?.status === "active";
+  const hasFreeSlot = !!userDoc?.premium?.status === "active" && userDoc?.premium?.freeShowcaseUsed !== true;
+
+  const amount = useMemo(() => {
+    if (mode === "premium") return PRICING.premiumYear;
+    // showcase:
+    if (isPremiumActive && hasFreeSlot) return 0;
+    if (isPremiumActive && !hasFreeSlot) return PRICING.showcasePremium;
+    return PRICING.showcaseStandard;
+  }, [mode, isPremiumActive, hasFreeSlot]);
+
+  useEffect(() => {
+    const uname = (userDoc?.profile?.displayName || user?.email || "").split("@")[0];
+    if (mode === "premium") {
+      setNote(`URETENELLER PRO + ${uname}`);
+    } else {
+      const ln = listingNo || "3838-000001";
+      setNote(`URETENELLER VITRIN + ${uname} + ${ln}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, user?.uid, user?.email, userDoc?.profile?.displayName, listingNo]);
+
   if (!open) return null;
 
-  const amount = kind === "premium" ? 1999 : (isPremiumUser ? 100 : 249);
-
-  async function submit() {
-    setErr("");
-    if (!file) {
-      setErr("Lütfen dekont yükleyin.");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) { alert("Lütfen giriş yapın."); return; }
+    if (!file) { alert("Dekont yüklemek zorunludur."); return; }
+    if (!note || (mode === "showcase" && !listingNo)) {
+      alert("Not/Açıklama ve (showcase için) İlan No zorunludur.");
       return;
     }
     try {
-      setBusy(true);
-      const ext = (file.name?.split(".").pop() || "bin").toLowerCase();
-      const path = `receipts/${uid}/${kind}-${Date.now()}.${ext}`;
-      const r = st.ref(storage, path);
-      await st.uploadBytes(r, file);
-      const url = await st.getDownloadURL(r);
-      await fs.addDoc(fs.collection(db, "payments"), {
-        user_id: uid,
-        type: kind, // 'premium' | 'vitrine'
-        listing_id: listing?.id || null,
+      setSubmitting(true);
+      // upload receipt
+      const ts = Date.now();
+      const path = `receipts/${user.uid}/${mode}-${ts}-${file.name.replace(/\s+/g, "_")}`;
+      const ref = sRef(storage, path);
+      await uploadBytes(ref, file);
+      const receiptUrl = await getDownloadURL(ref);
+
+      // payment doc
+      const pay = {
+        userId: user.uid,
+        type: mode,                           // "premium" | "showcase"
         amount,
-        currency: "TRY",
-        method: "IBAN/Papara",
-        iban: "TR590082900009491868461105",
-        receipt_url: url,
-        status: "pending_admin",
-        created_at: fs.serverTimestamp(),
-      });
-      setDone(true);
-    } catch (e) {
-      console.error(e);
-      setErr("Kaydedilemedi. Tekrar deneyin.");
+        method,                               // "eft" | "papara"
+        note,                                 // contains username (+ listingNo)
+        receiptUrl,
+        status: "pending",
+        targetListingNo: mode === "showcase" ? listingNo : null,
+        createdAt: serverTimestamp(),
+      };
+      const paymentsRef = collection(db, "payments");
+      await addDoc(paymentsRef, pay);
+
+      alert("Dekont gönderildi. Admin onayı sonrası bilgilendirileceksiniz.");
+      onClose();
+    } catch (err) {
+      console.error(err);
+      alert("Gönderim sırasında hata oluştu.");
     } finally {
-      setBusy(false);
+      setSubmitting(false);
     }
-  }
+  };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/40">
-      <div className="w-full md:max-w-2xl bg-white rounded-t-2xl md:rounded-2xl shadow-xl">
-        <div className="p-5 border-b">
-          <div className="text-lg font-semibold">{kind === "premium" ? "Premium Üyelik Ödemesi" : "Vitrine Taşı Ödemesi"}</div>
-          <div className="text-sm text-gray-500">Dekont admin onayıyla aktif olur.</div>
+    <div className="modalMask" role="dialog" aria-modal="true">
+      <div className="modal">
+        <div className="modalHd">
+          <div className="ttl">{mode === "premium" ? "Premium Üyelik Ödemesi" : "İlanı Vitrine Alma Ödemesi"}</div>
+          <button className="x" onClick={onClose} aria-label="Kapat">✕</button>
         </div>
-        <div className="p-5 grid md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-xl border bg-gray-50 space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <div className="font-medium">Tutar</div>
-              <div className="font-semibold">{TRY.format(amount)}</div>
-            </div>
-            <div className="flex items-center justify-between gap-3">
+
+        <div className="modalBd">
+          <div className="box">
+            <div className="row">
               <div>
-                <div className="font-medium">IBAN</div>
-                <div className="font-mono">TR590082900009491868461105</div>
+                <div className="lbl">Tutar</div>
+                <div className="val">{amount === 0 ? "ÜCRETSİZ (Premium ücretsiz slot)" : `₺${amount}`}</div>
               </div>
-              <CopyButton text="TR590082900009491868461105" />
-            </div>
-            <div className="text-xs text-gray-500">
-              Açıklama: <span className="font-mono">URETENELLER {kind.toUpperCase()} + UID</span>
-            </div>
-          </div>
-          <div className="p-4 rounded-xl border">
-            {done ? (
-              <div className="text-emerald-700">
-                Dekont yüklendi. {kind === "premium" ? "Premium" : "Vitrin"} admin onayıyla açılacaktır.
+              <div>
+                <div className="lbl">Süre</div>
+                <div className="val">{mode === "premium" ? "1 Yıl" : `${PRICING.showcaseDays} Gün`}</div>
               </div>
-            ) : (
-              <>
-                <div className="text-sm text-gray-500 mb-2">Dekont yükleyin (PDF/JPG/PNG)</div>
-                <input type="file" accept="image/*,application/pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} className="block w-full text-sm" />
-                {err && <div className="text-red-600 text-sm mt-2">{err}</div>}
-              </>
-            )}
+            </div>
+
+            <div className="sep"/>
+
+            <div className="payInfo">
+              <div className="lbl">IBAN</div>
+              <div className="iban">{BANK.iban}</div>
+              {BANK.papara ? (<>
+                <div className="lbl">Papara (ticari)</div>
+                <div className="iban">{BANK.papara}</div>
+              </>) : null}
+              <div className="hint">Açıklama alanına aşağıdaki formatı yazmayı unutmayın.</div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="form">
+              {mode === "showcase" && (
+                <label className="field">
+                  <span>İlan No (3838-xxxxxx)</span>
+                  <input
+                    required
+                    value={listingNo}
+                    onChange={(e) => setListingNo(e.target.value.trim())}
+                    placeholder="3838-000001"
+                  />
+                </label>
+              )}
+
+              <label className="field">
+                <span>Açıklama (not)</span>
+                <input required value={note} onChange={(e) => setNote(e.target.value)} />
+                <small>
+                  Premium: <code>URETENELLER PRO + kullanıcı_adı</code> • Vitrin: <code>URETENELLER VITRIN + kullanıcı_adı + ilan_no</code>
+                </small>
+              </label>
+
+              <label className="field">
+                <span>Ödeme Yöntemi</span>
+                <select value={method} onChange={(e) => setMethod(e.target.value)}>
+                  <option value="eft">EFT/Havale</option>
+                  <option value="papara">Papara</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>Dekont (PDF/JPG/PNG)</span>
+                <input required type="file" accept=".pdf,image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              </label>
+
+              <button disabled={submitting} className="btnPrimary" type="submit">
+                {submitting ? "Gönderiliyor..." : "Dekontu Gönder ve Onaya Sun"}
+              </button>
+            </form>
           </div>
-        </div>
-        <div className="p-5 flex items-center justify-between gap-3 border-t">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg border hover:bg-gray-50">Kapat</button>
-          {!done && (
-            <button onClick={submit} disabled={busy || !file} className="px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50">
-              {busy ? "Yükleniyor…" : "Dekontu Gönder"}
-            </button>
-          )}
+
+          <ul className="bullets">
+            <li>Onaylanınca: “Onaylı Satıcı” rozeti ve (Premium’da) 1 ücretsiz vitrin hakkı açılır.</li>
+            <li>Vitrin süresi bitince ilan yayında kalır, yalnızca vitrin rozeti kalkar.</li>
+          </ul>
         </div>
       </div>
+
+      <style>{`
+        .modalMask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:70}
+        .modal{width:min(680px,92vw);background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.25);overflow:hidden}
+        .modalHd{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #eee;background:#111827;color:#fff}
+        .ttl{font-weight:900}
+        .x{border:none;background:transparent;color:#fff;font-size:20px;cursor:pointer}
+        .modalBd{padding:12px}
+        .box{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fafafa}
+        .row{display:flex;gap:12px;flex-wrap:wrap}
+        .lbl{font-size:12px;color:#475569}
+        .val{font-weight:900}
+        .sep{height:1px;background:#e5e7eb;margin:12px 0}
+        .payInfo .iban{font-family:ui-monospace, SFMono-Regular, Menlo, monospace; padding:6px 8px; background:#fff;border:1px dashed #cbd5e1;border-radius:8px;margin:4px 0;display:inline-block}
+        .hint{font-size:12px;color:#64748b;margin-top:6px}
+        .form{display:grid;gap:10px;margin-top:10px}
+        .field{display:grid;gap:6px}
+        .field input,.field select{border:1px solid #e5e7eb;border-radius:10px;padding:8px;background:#fff}
+        .btnPrimary{border:1px solid #111827;background:#111827;color:#fff;border-radius:10px;padding:10px 12px;font-weight:900;cursor:pointer}
+        .bullets{margin:12px 4px 0 20px;color:#475569}
+        code{background:#eef2ff;padding:2px 4px;border-radius:6px}
+      `}</style>
     </div>
   );
 }
 
-function ReportModal({ open, onClose, fs, db, sellerId, reporterId }) {
-  const [ok, setOk] = useState(false);
-  const [reason, setReason] = useState("fraud");
-  const [desc, setDesc] = useState("");
-  if (!open) return null;
+/* ======================== Page ======================== */
+export default function SellerHome() {
+  const [lang, setLang] = useState("tr");
+  const t = useMemo(() => STR[lang], [lang]);
+  const [user, setUser] = useState(null);
+  const [userDoc, setUserDoc] = useState(null);
 
-  async function submit() {
-    try {
-      await fs.addDoc(fs.collection(db, "reports"), {
-        seller_id: sellerId,
-        reporter_id: reporterId || null,
-        reason,
-        description: desc || null,
-        status: "open",
-        created_at: fs.serverTimestamp(),
-      });
-      setOk(true);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/40">
-      <div className="w-full md:max-w-lg bg-white rounded-t-2xl md:rounded-2xl shadow-xl">
-        <div className="p-5 border-b"><div className="text-lg font-semibold">Şikayet Et</div></div>
-        <div className="p-5 space-y-3">
-          {ok ? (
-            <div className="text-emerald-700">Şikayetiniz alındı. İncelemeye alınacaktır.</div>
-          ) : (
-            <>
-              <label className="block text-sm">Sebep</label>
-              <select value={reason} onChange={(e) => setReason(e.target.value)} className="w-full border rounded-lg px-3 py-2">
-                <option value="fraud">Dolandırıcılık şüphesi</option>
-                <option value="abuse">Hakaret / kötü davranış</option>
-                <option value="prohibited">Yasaklı ürün</option>
-                <option value="other">Diğer</option>
-              </select>
-              <label className="block text-sm mt-2">Açıklama (isteğe bağlı)</label>
-              <textarea value={desc} onChange={(e) => setDesc(e.target.value)} className="w-full border rounded-lg px-3 py-2 min-h-[100px]" placeholder="Kısa açıklama…" />
-            </>
-          )}
-        </div>
-        <div className="p-5 flex items-center justify-between gap-3 border-t">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg border hover:bg-gray-50">Kapat</button>
-          {!ok && <button onClick={submit} className="px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700">Gönder</button>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------ İlan kartı ------------------------------ */
-function ListingCard({ item, isOwner, onVitrine }) {
-  const dleft = daysLeft(item);
-  const expired = dleft !== null && dleft < 0;
-  const pending = item?.status === "pending";
-  return (
-    <div className="relative group rounded-xl border overflow-hidden bg-white shadow-sm">
-      {item?.vitrine && <div className="absolute left-2 top-2 z-10"><Badge tone="gold">Vitrinde</Badge></div>}
-      {pending && <div className="absolute right-2 top-2 z-10"><Badge>Onay bekliyor</Badge></div>}
-      <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {item?.cover_url ? (
-          <img src={item.cover_url} alt={item?.title || "ilan"} className="w-full h-full object-cover group-hover:scale-[1.02] transition" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">Görsel yok</div>
-        )}
-      </div>
-      <div className="p-3">
-        <div className="font-medium line-clamp-1">{item?.title || "Başlık"}</div>
-        <div className="text-sm text-gray-500 mt-0.5">{item?.price ? TRY.format(item.price) : ""}</div>
-        <div className="text-xs mt-2 text-gray-500">{expired ? "Süresi doldu" : dleft === null ? "" : `Süre: ${dleft} gün`}</div>
-        {isOwner && !item?.vitrine && !pending && !expired && (
-          <button onClick={() => onVitrine(item)} className="mt-3 w-full px-3 py-2 rounded-lg border border-amber-300 text-amber-800 hover:bg-amber-50">
-            Vitrine Taşı
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------ SAYFA ------------------------------ */
-export default function SellerProfilePage() {
-  const [fb, setFb] = useState(null); // {auth, db, fs, storage, st, onAuthStateChanged}
-  const [uid, setUid] = useState(null);
-  const [me, setMe] = useState(null);
-  const [listings, setListings] = useState([]);
-  const [reviews, setReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const [tab, setTab] = useState("urunler"); // urunler | deger | hakkinda | kargo | sss
-  const [payKind, setPayKind] = useState(null); // "premium" | "vitrine"
-  const [payListing, setPayListing] = useState(null);
-  const [reportOpen, setReportOpen] = useState(false);
-
+  // rotating motto
+  const [motIdx, setMotIdx] = useState(0);
+  useEffect(() => setMotIdx(0), [lang]);
   useEffect(() => {
-    (async () => {
-      try {
-        const x = await bootFirebase();
-        setFb(x);
-        x.onAuthStateChanged(x.auth, async (u) => {
-          if (!u) {
-            setUid(null);
-            setMe(null);
-            setListings([]);
-            setReviews([]);
-            setLoading(false);
-            return;
-          }
-          setUid(u.uid);
-          // users
-          try {
-            const us = await x.fs.getDoc(x.fs.doc(x.db, "users", u.uid));
-            setMe(us.exists() ? us.data() : { email: u.email, full_name: u.displayName, avatar_url: u.photoURL });
-          } catch {
-            setMe({ email: u.email, full_name: u.displayName, avatar_url: u.photoURL });
-          }
-          // listings (seller_id==uid) → client sort
-          const qL = x.fs.query(x.fs.collection(x.db, "listings"), x.fs.where("seller_id", "==", u.uid));
-          const unL = x.fs.onSnapshot(
-            qL,
-            (qs) => {
-              const arr = [];
-              qs.forEach((d) => arr.push({ id: d.id, ...d.data() }));
-              arr.sort((a, b) => tsToMs(b.created_at) - tsToMs(a.created_at));
-              setListings(arr);
-              setLoading(false);
-            },
-            (err) => {
-              console.error(err);
-              setLoading(false);
-            }
-          );
-          // reviews (seller_id==uid) → client sort
-          const qR = x.fs.query(x.fs.collection(x.db, "reviews"), x.fs.where("seller_id", "==", u.uid));
-          const unR = x.fs.onSnapshot(
-            qR,
-            (qs) => {
-              const arr = [];
-              qs.forEach((d) => arr.push({ id: d.id, ...d.data() }));
-              arr.sort((a, b) => tsToMs(b.created_at) - tsToMs(a.created_at));
-              setReviews(arr);
-            },
-            (err) => console.error(err)
-          );
+    const id = setInterval(() => setMotIdx(i => (i + 1) % t.mottos.length), 5000);
+    return () => clearInterval(id);
+  }, [t]);
 
-          return () => {
-            try { unL(); } catch {}
-            try { unR(); } catch {}
+  // auth + user doc
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u || null);
+      if (u) {
+        const uref = doc(db, "users", u.uid);
+        const snap = await getDoc(uref);
+        if (snap.exists()) setUserDoc(snap.data());
+        else {
+          // minimal profile bootstrap
+          const base = {
+            role: "standard",
+            premium: { status: "none" },
+            badges: { verifiedSeller: false },
+            profile: { displayName: u.email?.split("@")[0] || "", phone: "", address: "", avatarUrl: "" },
+            createdAt: serverTimestamp(),
           };
-        });
-      } catch (e) {
-        console.error(e);
-        setLoading(false);
+          await setDoc(uref, base, { merge: true });
+          setUserDoc(base);
+        }
+      } else {
+        setUserDoc(null);
       }
-    })();
+    });
+    return () => unsub();
   }, []);
 
-  const isPremium = !!me?.premium;
-  const verified = !!me?.verified;
+  const [openPay, setOpenPay] = useState(false);
+  const [payMode, setPayMode] = useState("premium"); // "premium" | "showcase"
+  const [currentListingNo, setCurrentListingNo] = useState(""); // showcase için kullanıcı girer
 
-  async function share() {
-    try {
-      const url = typeof window !== "undefined" ? window.location.href : "";
-      if (navigator.share) {
-        await navigator.share({ title: "Üreten Eller", text: me?.store_name || me?.full_name || "Satıcı", url });
-      } else {
-        await navigator.clipboard.writeText(url);
-      }
-    } catch {}
-  }
-
-  if (uid === null && loading) {
-    return <div className="min-h-screen grid place-items-center text-gray-600">Yükleniyor…</div>;
-  }
-  if (!uid) {
-    return (
-      <div className="min-h-screen grid place-items-center">
-        <div className="text-center">
-          <div className="text-2xl font-semibold mb-2">Önce giriş yapın</div>
-          <Link className="inline-block mt-2 px-4 py-2 rounded-lg border hover:bg-gray-50" href="/login">Giriş / Kayıt</Link>
-        </div>
-      </div>
-    );
-  }
+  const currentMotto = t.mottos[motIdx];
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] text-gray-900">
-      {/* Üst bar */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
-          <Link href="/portal/seller" className="text-lg font-semibold text-amber-700 hover:text-amber-800">ÜRETEN ELLER</Link>
-          <div className="flex-1 max-w-xl">
-            <input placeholder="Ara…" className="w-full px-3 py-2 rounded-lg border bg-gray-50" />
+    <div lang={lang} dir={lang === "ar" ? "rtl" : "ltr"}>
+      <header className="topbar">
+        <a className="brand" href="/">
+          <img src="/logo.png" width={36} height={36} alt="logo" />
+          <span>{t.brand}</span>
+        </a>
+        <div className="actions">
+          <div className="userGroup">
+            <a className="ghost" href="/portal/seller/profile/" aria-label={t.profile}>{t.profile}</a>
+            <a className="danger" href="/login" aria-label={t.logout}>{t.logout}</a>
           </div>
-          <nav className="hidden md:flex items-center gap-4 text-sm text-gray-600">
-            <span>TR</span><span>EN</span>
-            <Link href="/portal/seller" className="hover:text-gray-900">Giriş</Link>
-          </nav>
+          <div className="actionGroup">
+            <a className="ghost" href="/portal/seller?tab=search" aria-label={t.search}>{t.search}</a>
+            <a className="primary" href="/portal/seller/post/" aria-label={t.postAd}>{t.postAd}</a>
+          </div>
+          <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
+            {SUPPORTED.map(k => (<option key={k} value={k}>{LOCALE_LABEL[k]}</option>))}
+          </select>
         </div>
       </header>
 
-      {/* Üst profil bloğu */}
-      <section className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex items-start gap-6">
-          <div className={cn("relative w-28 h-28 rounded-full overflow-hidden border", isPremium ? "ring-4 ring-yellow-500" : "")}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={me?.avatar_url || "/avatar.svg"} alt="avatar" className="w-full h-full object-cover" />
+      <section className="hero">
+        <h1 className="heroTitle">{t.heroTitle}</h1>
+        <div className="mottoWrap" aria-live="polite" role="status">
+          <div key={`${lang}-${motIdx}`} className="mottoLine" style={{ color: currentMotto.color }}>
+            {currentMotto.text}
           </div>
+        </div>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold truncate">{me?.store_name || me?.full_name || me?.email || "Profil"}</h1>
-              {verified && <Badge tone="green">Onaylı Satıcı</Badge>}
-              {isPremium && <Badge tone="gold">Premium</Badge>}
-            </div>
-            <div className="mt-1 text-sm text-gray-600 space-x-3">
-              {me?.handle && <span>@{me.handle}</span>}
-              {me?.city && <span>• {me.city}{me?.district ? `, ${me.district}` : ""}</span>}
-              {me?.created_at && <span>• Katılma: {new Date(tsToMs(me.created_at)).toLocaleDateString("tr-TR")}</span>}
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <Link href="/portal/seller/messages" className="px-3 py-2 rounded-lg border hover:bg-gray-50">Mesaj Gönder</Link>
-              <button onClick={share} className="px-3 py-2 rounded-lg border hover:bg-gray-50">Paylaş</button>
-              <button onClick={() => setReportOpen(true)} className="px-3 py-2 rounded-lg border hover:bg-gray-50">Şikayet Et</button>
-              <CopyButton text={uid} label="UID Kopyala" />
-            </div>
-
-            {/* Sekmeler */}
-            <div className="mt-6">
-              <div className="flex items-center gap-6 border-b">
-                {[
-                  ["urunler", "Ürünler"],
-                  ["deger", "Değerlendirmeler"],
-                  ["hakkinda", "Hakkında"],
-                  ["kargo", "Kargo & iade"],
-                  ["sss", "SSS"],
-                ].map(([k, t]) => (
-                  <button
-                    key={k}
-                    onClick={() => setTab(k)}
-                    className={cn("px-1 py-3", tab === k ? "-mb-px border-b-2 border-amber-600 font-medium" : "text-gray-500 hover:text-gray-800")}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Sağ panel – Ayarlar + Premium */}
-          <aside className="hidden lg:block w-[380px] shrink-0">
-            <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
-              <div className="px-4 pt-4">
-                <div className="flex items-center gap-4 border-b pb-3">
-                  <Link href="/portal/seller?tab=profile" className="px-3 py-2 rounded-md border border-gray-300 text-sm hover:bg-gray-50">Profil</Link>
-                  <Link href="/portal/seller?tab=contact" className="px-3 py-2 rounded-md border border-gray-300 text-sm hover:bg-gray-50">İletişim</Link>
-                  <Link href="/portal/seller?tab=security" className="px-3 py-2 rounded-md border border-gray-300 text-sm hover:bg-gray-50">Güvenlik</Link>
-                  <Link href="/portal/seller?tab=payments" className="px-3 py-2 rounded-md border border-gray-300 text-sm hover:bg-gray-50">Ödemeler</Link>
-                </div>
-              </div>
-              <div className="p-4 space-y-4">
-                {/* Premium kutusu */}
-                <div>
-                  <div className="text-sm font-medium mb-1">Premium</div>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="text-gray-600">Durum</div>
-                    <div className="font-medium">{isPremium ? "Aktif" : "Pasif"}</div>
-                  </div>
-                  <button onClick={() => setPayKind("premium")} className="w-full mt-2 px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700">Premium'a Geç</button>
-                  <div className="text-xs text-gray-500 mt-1">Premium admin tarafından verilir. Dekontu yükleyin.</div>
-                </div>
-
-                {/* Mağaza bilgileri (bilgi amaçlı) */}
-                <div className="mt-3">
-                  <div className="text-sm font-medium mb-2">Mağaza Bilgileri</div>
-                  <div className="rounded-xl border divide-y">
-                    <div className="flex items-center justify-between px-3 py-2 text-sm"><span>Hafta içi</span><span>{me?.hours_weekday || "09.00 - 16.00"}</span></div>
-                    <div className="flex items-center justify-between px-3 py-2 text-sm"><span>Hafta sonu</span><span>{me?.hours_weekend || "10.00 - 16.00"}</span></div>
-                    <div className="flex items-center justify-between px-3 py-2 text-sm"><span>Kargo süresi</span><span>{me?.shipping_days || "1-5 iş günü"}</span></div>
-                    <div className="px-3 py-2 text-sm">
-                      <div className="text-gray-500">İade politikası</div>
-                      <div className="mt-0.5">{me?.refund_policy || "Geçerlidir"}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </aside>
+        <div className="ctaRow">
+          <button
+            className="btnPrimary"
+            onClick={() => { setPayMode("premium"); setOpenPay(true); }}
+          >
+            {t.premiumCta}
+          </button>
+          <button
+            className="btnGhost"
+            onClick={() => { setPayMode("showcase"); setCurrentListingNo(""); setOpenPay(true); }}
+          >
+            {t.showcaseCta}
+          </button>
         </div>
       </section>
 
-      {/* Sekme içerikleri */}
-      <section className="max-w-7xl mx-auto px-4 pb-8">
-        {tab === "urunler" && (
-          loading ? (
-            <div className="text-center text-gray-500">Yükleniyor…</div>
-          ) : listings.length === 0 ? (
-            <div className="text-gray-500">Henüz ilan yok.</div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {listings.map((it) => (
-                <ListingCard
-                  key={it.id}
-                  item={it}
-                  isOwner={true}
-                  onVitrine={(l) => {
-                    setPayListing(l);
-                    setPayKind("vitrine");
-                  }}
-                />
-              ))}
-            </div>
-          )
-        )}
-
-        {tab === "deger" && (
-          <div className="space-y-4">
-            {reviews.length === 0 ? (
-              <div className="text-gray-500">Henüz değerlendirme yok.</div>
-            ) : (
-              reviews.map((r) => (
-                <div key={r.id} className="rounded-xl border bg-white p-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-medium">{r.buyer_name || "Alıcı"}</span>
-                    {r.verified && <Badge tone="green">Doğrulanmış alışveriş</Badge>}
-                    <span className="text-gray-500">• {new Date(tsToMs(r.created_at)).toLocaleDateString("tr-TR")}</span>
-                  </div>
-                  <div className="mt-1">{"★".repeat(r.rating || 0)}{"☆".repeat(5 - (r.rating || 0))}</div>
-                  <div className="text-sm text-gray-700 mt-2 whitespace-pre-line">{r.text}</div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {tab === "hakkinda" && (
-          <div className="rounded-xl border bg-white p-4 space-y-3">
-            <div><span className="text-sm text-gray-500">Mağaza adı</span><div className="font-medium">{me?.store_name || me?.full_name || me?.email}</div></div>
-            {(me?.city || me?.district) && <div><span className="text-sm text-gray-500">Konum</span><div>{me?.city}{me?.district ? `, ${me.district}` : ""}</div></div>}
-            {me?.about && <div><span className="text-sm text-gray-500">Mağaza hakkında</span><div className="whitespace-pre-line mt-1">{me.about}</div></div>}
-            {me?.store_hours && <div><span className="text-sm text-gray-500">Çalışma saatleri</span><div className="whitespace-pre-line mt-1">{me.store_hours}</div></div>}
-          </div>
-        )}
-
-        {tab === "kargo" && (
-          <div className="rounded-xl border bg-white p-4 space-y-3">
-            <div className="text-sm text-gray-500">Kargo & iade</div>
-            <div className="whitespace-pre-line">{me?.shipping_policy || "Satıcı henüz kargo & iade bilgisi eklemedi."}</div>
-          </div>
-        )}
-
-        {tab === "sss" && (
-          <div className="space-y-3">
-            {Array.isArray(me?.faq) && me.faq.length > 0 ? (
-              me.faq.map((qa, i) => (
-                <details key={i} className="rounded-xl border bg-white p-4">
-                  <summary className="font-medium cursor-pointer">{qa.q}</summary>
-                  <div className="mt-2 text-sm text-gray-700 whitespace-pre-line">{qa.a}</div>
-                </details>
-              ))
-            ) : (
-              <div className="rounded-xl border bg-white p-4 text-gray-500">SSS eklenmemiş.</div>
-            )}
-          </div>
-        )}
+      <section className="section">
+        <div className="sectionHead"><h2>✨ {t.showcase}</h2></div>
+        <div className="grid ads"><div className="empty">{t.empty}</div></div>
       </section>
 
-      {/* Alt mobil bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t">
-        <div className="max-w-7xl mx-auto grid grid-cols-4 text-center">
-          <Link href="/portal/seller" className="py-2 text-sm">Ana sayfa</Link>
-          <Link href="/portal/seller/messages" className="py-2 text-sm">Mesajlar</Link>
-          <Link href="/portal/seller/notifications" className="py-2 text-sm">Bildirimler</Link>
-          <Link href="/portal/seller/profile" className="py-2 text-sm font-medium text-amber-700">Ben</Link>
-        </div>
+      <section className="section">
+        <div className="sectionHead"><h2>🧺 {t.standard}</h2></div>
+        <div className="grid ads"><div className="empty">{t.empty}</div></div>
+      </section>
+
+      <nav className="bottombar" aria-label="Bottom Navigation">
+        <a className="tab active" href="/portal/seller" aria-label={t.tabs.home}><span className="tIc">🏠</span><span>{t.tabs.home}</span></a>
+        <a className="tab" href="/portal/seller?tab=messages" aria-label={t.tabs.messages}><span className="tIc">💬</span><span>{t.tabs.messages}</span></a>
+        <a className="tab" href="/portal/seller?tab=notifications" aria-label={t.tabs.notifs}><span className="tIc">🔔</span><span>{t.tabs.notifs}</span></a>
       </nav>
 
-      {/* Siyah legal footer */}
-      <footer className="mt-10 bg-black text-gray-100">
-        <div className="max-w-7xl mx-auto px-4 py-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 text-sm">
-          <div className="space-x-4 whitespace-nowrap overflow-x-auto">
-            <Link href="/legal/kurumsal" className="hover:text-white">Kurumsal</Link>
-            <Link href="/legal/hakkimizda" className="hover:text-white">Hakkımızda</Link>
-            <Link href="/legal/iletisim" className="hover:text-white">İletişim</Link>
-            <Link href="/legal/gizlilik" className="hover:text-white">Gizlilik</Link>
-            <Link href="/legal/kvkk-aydinlatma" className="hover:text-white">KVKK Aydınlatma</Link>
-          </div>
-          <div className="space-x-4 whitespace-nowrap overflow-x-auto">
-            <Link href="/legal/kullanim-sartlari" className="hover:text-white">Kullanım Şartları</Link>
-            <Link href="/legal/mesafeli-satis-sozlesmesi" className="hover:text-white">Mesafeli Satış</Link>
-            <Link href="/legal/teslimat-iade" className="hover:text-white">Teslimat & İade</Link>
-            <Link href="/legal/cerez-politikasi" className="hover:text-white">Çerez</Link>
-            <Link href="/legal/topluluk-kurallari" className="hover:text-white">Topluluk Kuralları</Link>
-            <Link href="/legal/yasakli-urunler" className="hover:text-white">Yasaklı Ürünler</Link>
-          </div>
-          <div className="text-right text-gray-400">© {new Date().getFullYear()} Üreten Eller</div>
-        </div>
-      </footer>
+      {/* Payment Modal */}
+      <PaymentModal
+        open={openPay}
+        onClose={() => setOpenPay(false)}
+        mode={payMode}
+        user={user}
+        userDoc={userDoc}
+        defaultListingNo={currentListingNo}
+      />
 
-      {/* MODALLAR */}
-      <PaymentModal open={payKind === "premium"} onClose={() => { setPayKind(null); setPayListing(null); }} kind="premium" isPremiumUser={isPremium} listing={null} uid={uid} {...fb} />
-      <PaymentModal open={payKind === "vitrine"} onClose={() => { setPayKind(null); setPayListing(null); }} kind="vitrine" isPremiumUser={isPremium} listing={payListing} uid={uid} {...fb} />
-      <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} sellerId={uid} reporterId={uid} {...fb} />
+      <style>{`
+        :root{ --ink:#0f172a; --muted:#475569; --line:rgba(0,0,0,.08); }
+        html,body{height:100%}
+        body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--ink);
+          background: radial-gradient(1200px 600px at 10% -10%, #ffe4e6, transparent),
+                      radial-gradient(900px 500px at 90% -10%, #e0e7ff, transparent),
+                      linear-gradient(120deg,#ff80ab,#a78bfa,#60a5fa,#34d399);
+          background-attachment:fixed;}
+
+        .topbar{position:sticky;top:0;z-index:50;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;
+          padding:10px 14px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+        .brand{display:flex;align-items:center;gap:8px;font-weight:900;text-decoration:none;color:inherit}
+        .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+        .userGroup{display:flex;gap:8px;order:1}
+        .actionGroup{display:flex;gap:8px;order:2}
+        .ghost,.primary,.danger{border:1px solid #111827;background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+        .primary,.danger{background:#111827;color:#fff}
+        .actions select{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:#fff}
+        @media (min-width:640px){ .actionGroup{order:1} .actions{flex-wrap:nowrap} }
+
+        .hero{display:grid;place-items:center;text-align:center;gap:10px;max-width:1100px;margin:12px auto 0;padding:12px 16px}
+        .heroTitle{margin:0;font-size:42px;line-height:1.15;letter-spacing:.2px;text-shadow:0 8px 28px rgba(0,0,0,.15)}
+        @media (max-width:520px){ .heroTitle{font-size:34px} }
+        .mottoWrap{min-height:28px;margin-top:6px}
+        .mottoLine{margin:0;font-weight:700;animation:fadeIn .35s ease}
+        @keyframes fadeIn{from{opacity:0; transform: translateY(4px)} to{opacity:1; transform:none}}
+        .ctaRow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+        .btnPrimary,.btnGhost{border:1px solid #111827;border-radius:12px;padding:10px 14px;font-weight:900;cursor:pointer}
+        .btnPrimary{background:#111827;color:#fff}
+        .btnGhost{background:#fff}
+
+        .section{max-width:1100px;margin:12px auto;padding:0 16px}
+        .sectionHead{display:flex;align-items:center;justify-content:space-between;margin:8px 0}
+        .grid.ads{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+        .empty{padding:18px;border:1px dashed #e5e7eb;border-radius:14px;text-align:center;color:#475569}
+
+        .bottombar{position:sticky;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px;
+          background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+        .tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:10px;border:1px solid transparent;background:transparent;cursor:pointer;font-weight:700;text-decoration:none;color:inherit}
+        .tab.active{border-color:#111827;background:#111827;color:#fff}
+        .tIc{font-size:16px}
+      `}</style>
     </div>
   );
 }
+
+/* ======================== NOT: İlan numarası şablonu ========================
+   Yeni ilan oluştururken (pages/portal/seller/post.jsx) için öneri:
+   - listingNo formatı: "3838-" + 6 haneli sayı (ör: 3838-000001)
+   - payment modalı vitrin seçeneğinde bu "listingNo" alanını kullanıcıdan alıyoruz.
+   - İstersen post.jsx dosyasına atomik sayaç örneğini ayrıca eklerim.
+======================================================================== */
