@@ -131,7 +131,7 @@ a:hover{opacity:.9}
   .lg\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}
   .lg\:hidden{display:none}
   .lg\:block{display:block}
-  .w-\[380px]{width:380px}
+  .w-380{width:380px}
 }
 
 /* Header – sticky + blur benzeri */
