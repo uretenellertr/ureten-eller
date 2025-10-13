@@ -2,7 +2,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Head from "next/head";
 
 /* =========================================================
    ÜRETEN ELLER – Satıcı Profili (4 dil + Premium + Vitrin + Ayarlar)
@@ -370,10 +369,6 @@ export default function SellerProfile() {
 
   return (
     <div lang={lang} dir={isRTL(lang) ? "rtl" : "ltr"}>
-      <Head>
-        <link rel="stylesheet" href="/ue.css" />
-        <title>{t.brand} • {t.navProfile}</title>
-      </Head>
 
       {/* Header */}
       <header className="hdr">

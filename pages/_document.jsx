@@ -11,9 +11,6 @@ export default function Document() {
         <link rel="icon" href="/favicon.png" />
         <title>Üreten Eller</title>
 
-        {/* ---- Harici CSS (statik /ue.css) ---- */}
-        <link rel="preload" href="/ue.css" as="style" />
-        <link rel="stylesheet" href="/ue.css" />
       </Head>
 
       <body className="bg-[#faf9f7] text-gray-900 antialiased">
