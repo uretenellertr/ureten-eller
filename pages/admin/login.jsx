@@ -3,7 +3,7 @@
 import React from "react";
 
 // Gizli bilgiler düz yazıyla tutulmuyor (SHA-256 hash karşılaştırması)
-const EMAIL_HASH = "759aab30683e02d18dc45a31635847142d26ae99822aba6f513d9fcc563fdac3"; // "ozkank603@gmaiiil.com"
+const EMAIL_HASH = "759aab30683e02d18dc45a31635847142d26ae99822aba6f513d9fcc563fdac3"; // "ozkank603@gmail.com"
 const PASS_HASH  = "b565f52af3a7b15fccf6dfba9dea75327b290b115fdb2f49389592e9aa0a75dc"; // "Nejla3844"
 
 async function sha256Hex(s) {
