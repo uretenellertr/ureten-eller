@@ -1,43 +1,136 @@
 "use client";
 import React from "react";
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection, query, where, orderBy, limit,
+  getCountFromServer, getDocs, doc, getDoc
+} from "firebase/firestore";
 
 export default function AdminHome(){
-  // Yerel "giriş" bilgisi (giriş yapmasan da UI görünsün)
+  const [ready, setReady] = React.useState(false);
   const [isAdmin, setIsAdmin] = React.useState(false);
+
+  const [cards, setCards] = React.useState({
+    orders: "—",
+    pendingListings: "—",
+    openSupport: "—",
+    paymentsPending: "—",     // kurallar izin vermezse “—” kalır
+    usersTotal: "—",
+  });
+
+  const [pendingListings, setPendingListings] = React.useState([]);
+  const [openTickets, setOpenTickets] = React.useState([]);
+  const [lastOrders, setLastOrders] = React.useState([]);
+
+  // Firebase Auth → users/{uid}.role == "admin" kontrolü
   React.useEffect(()=>{
-    try{
-      const ok = (localStorage.getItem("ue_admin_auth")==="ok") || document.cookie.includes("ue_admin=1");
-      setIsAdmin(!!ok);
-    }catch{}
+    const unsub = onAuthStateChanged(auth, async (u)=>{
+      if (!u){ setIsAdmin(false); setReady(true); return; }
+      try{
+        const snap = await getDoc(doc(db,"users",u.uid));
+        const role = snap.exists() ? snap.data()?.role : null;
+        setIsAdmin(role === "admin");
+      }catch{
+        setIsAdmin(false);
+      }finally{
+        setReady(true);
+      }
+    });
+    return ()=>unsub();
   },[]);
 
-  // Sahte özet veriler (Firestore sorgusu YOK; UI göstermek için)
-  const stats = [
-    { title: "Toplam Sipariş", value: "—" },
-    { title: "Onay Bekleyen İlan", value: "—" },
-    { title: "Açık Destek", value: "—" },
-    { title: "Bekleyen Ödeme", value: "—" },
-    { title: "Yeni Kullanıcı (7g)", value: "—" },
-  ];
+  // Sadece admin ise: sayaçlar + tablolar
+  React.useEffect(()=>{
+    if (!ready || !isAdmin) return;
+    let alive = true;
+    (async ()=>{
+      try{
+        const [o, l, s] = await Promise.all([
+          getCountFromServer(collection(db,"orders")),
+          getCountFromServer(query(collection(db,"listings"), where("status","==","pending"))),
+          getCountFromServer(query(collection(db,"conversations"), where("status","==","open"))),
+        ]);
 
-  const pendingListings = [
-    { id: "LST-001", title: "El Örgüsü Oyuncak", seller: "satici123", price: "₺450", created_at: "—" },
-    { id: "LST-002", title: "Gümüş Bileklik", seller: "silverhand", price: "₺950", created_at: "—" },
-  ];
-  const openTickets = [
-    { id: "TCK-1001", subject: "Ödeme sorunu", user: "mehmet", last: "—" },
-    { id: "TCK-1002", subject: "Kargo gecikmesi", user: "ayse", last: "—" },
-  ];
-  const lastOrders = [
-    { id: "ORD-5001", from: "alici → satici123", amount: "₺750", status: "paid", date: "—" },
-    { id: "ORD-5002", from: "veli → fatma", amount: "₺1.250", status: "delivered", date: "—" },
-  ];
+        // users toplam (kuralda list izni gerekebilir)
+        let usersCount = "—";
+        try{
+          const u = await getCountFromServer(collection(db,"users"));
+          usersCount = u.data().count ?? "—";
+        }catch{ /* rules izin vermiyorsa “—” kalır */ }
+
+        // payments bekleyen (opsiyonel: rules yoksa “—” kalsın)
+        let payCount = "—";
+        try{
+          const p = await getCountFromServer(query(collection(db,"payments"), where("status","==","pending_admin")));
+          payCount = p.data().count ?? "—";
+        }catch{}
+
+        if (!alive) return;
+        setCards({
+          orders: o.data().count,
+          pendingListings: l.data().count,
+          openSupport: s.data().count,
+          paymentsPending: payCount,
+          usersTotal: usersCount,
+        });
+      }catch{}
+
+      try{
+        // İlan onay kuyruğu
+        const qL = query(
+          collection(db,"listings"),
+          where("status","==","pending"),
+          orderBy("created_at","desc"),
+          limit(5)
+        );
+        const qsL = await getDocs(qL);
+        const rowsL = [];
+        qsL.forEach(d => rowsL.push({ id:d.id, ...d.data() }));
+        setPendingListings(rowsL);
+      }catch{}
+
+      try{
+        // Açık destek talepleri
+        const qC = query(
+          collection(db,"conversations"),
+          where("status","==","open"),
+          orderBy("updated_at","desc"),
+          limit(5)
+        );
+        const qsC = await getDocs(qC);
+        const rowsC = [];
+        qsC.forEach(d => rowsC.push({ id:d.id, ...d.data() }));
+        setOpenTickets(rowsC);
+      }catch{}
+
+      try{
+        // Son siparişler
+        const qO = query(
+          collection(db,"orders"),
+          orderBy("created_at","desc"),
+          limit(10)
+        );
+        const qsO = await getDocs(qO);
+        const rowsO = [];
+        qsO.forEach(d => rowsO.push({ id:d.id, ...d.data() }));
+        setLastOrders(rowsO);
+      }catch{}
+    })();
+    return ()=>{ alive=false; };
+  },[ready,isAdmin]);
+
+  if (!ready) return null;
 
   return (
     <div style={styles.page}>
       <header style={styles.header}>
         <div style={styles.brand}>ÜRETEN ELLER · <b>Admin</b></div>
-        {!isAdmin && <div style={styles.badge}>Görüntüleme modu</div>}
+        {!isAdmin && (
+          <a href="/login?next=/admin/" style={styles.badge}>
+            Gerçek veri için giriş yap
+          </a>
+        )}
       </header>
 
       <main style={styles.main}>
@@ -45,12 +138,11 @@ export default function AdminHome(){
         <section>
           <h1 style={styles.h1}>Ön Panel</h1>
           <div style={styles.grid}>
-            {stats.map((c,i)=>(
-              <div key={i} style={styles.card}>
-                <div style={styles.cardTitle}>{c.title}</div>
-                <div style={styles.cardValue}>{c.value}</div>
-              </div>
-            ))}
+            <StatCard title="Toplam Sipariş" value={cards.orders}/>
+            <StatCard title="Onay Bekleyen İlan" value={cards.pendingListings}/>
+            <StatCard title="Açık Destek" value={cards.openSupport}/>
+            <StatCard title="Bekleyen Ödeme" value={cards.paymentsPending}/>
+            <StatCard title="Toplam Kullanıcı" value={cards.usersTotal}/>
           </div>
         </section>
 
@@ -62,7 +154,7 @@ export default function AdminHome(){
             <div style={styles.tableCard}>
               <div style={styles.tableHead}>
                 <div style={styles.tableTitle}>İlan Onay Kuyruğu</div>
-                <a href="#" style={styles.link}>Tümünü gör</a>
+                <a href="/admin/listings" style={styles.link}>Tümünü gör</a>
               </div>
               <table style={styles.table}>
                 <thead>
@@ -72,16 +164,21 @@ export default function AdminHome(){
                   {pendingListings.map(row=>(
                     <tr key={row.id}>
                       <td>{row.id}</td>
-                      <td>{row.title}</td>
-                      <td>{row.seller}</td>
-                      <td>{row.price}</td>
-                      <td>{row.created_at}</td>
+                      <td>{row.title || "—"}</td>
+                      <td>{row.seller_uid || row.seller_id || "—"}</td>
+                      <td>{row.price != null ? formatTRY(row.price) : "—"}</td>
+                      <td>{fmtDate(row.created_at)}</td>
                       <td>
-                        <button style={styles.btnApprove}>Onayla</button>
-                        <button style={styles.btnReject}>Reddet</button>
+                        <div style={styles.stackLeft}>
+                          <button style={styles.btnApprove}>Onayla</button>
+                          <button style={styles.btnReject}>Reddet</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
+                  {!pendingListings.length && (
+                    <tr><td colSpan={6} style={styles.empty}>Kuyruk boş.</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -90,7 +187,7 @@ export default function AdminHome(){
             <div style={styles.tableCard}>
               <div style={styles.tableHead}>
                 <div style={styles.tableTitle}>Destek Talepleri</div>
-                <a href="#" style={styles.link}>Tümünü gör</a>
+                <a href="/admin/support" style={styles.link}>Tümünü gör</a>
               </div>
               <table style={styles.table}>
                 <thead>
@@ -100,12 +197,19 @@ export default function AdminHome(){
                   {openTickets.map(row=>(
                     <tr key={row.id}>
                       <td>{row.id}</td>
-                      <td>{row.subject}</td>
-                      <td>{row.user}</td>
-                      <td>{row.last}</td>
-                      <td><button style={styles.btnGhost}>Aç</button></td>
+                      <td>{row.subject || "—"}</td>
+                      <td>{(row.participants && row.participants.join?.(", ")) || "—"}</td>
+                      <td>{fmtDate(row.updated_at)}</td>
+                      <td>
+                        <div style={styles.stackLeft}>
+                          <a href={`/admin/support?id=${row.id}`} style={styles.btnGhost}>Aç</a>
+                        </div>
+                      </td>
                     </tr>
                   ))}
+                  {!openTickets.length && (
+                    <tr><td colSpan={5} style={styles.empty}>Açık talep yok.</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -124,13 +228,20 @@ export default function AdminHome(){
                 {lastOrders.map(row=>(
                   <tr key={row.id}>
                     <td>{row.id}</td>
-                    <td>{row.from}</td>
-                    <td>{row.amount}</td>
-                    <td>{row.status}</td>
-                    <td>{row.date}</td>
-                    <td><button style={styles.btnGhost}>Gör</button></td>
+                    <td>{(row.buyer_uid||"—")+" → "+(row.seller_uid||"—")}</td>
+                    <td>{row.amount != null ? formatTRY(row.amount) : "—"}</td>
+                    <td>{row.status || "—"}</td>
+                    <td>{fmtDate(row.created_at)}</td>
+                    <td>
+                      <div style={styles.stackLeft}>
+                        <a href={`/admin/orders?id=${row.id}`} style={styles.btnGhost}>Gör</a>
+                      </div>
+                    </td>
                   </tr>
                 ))}
+                {!lastOrders.length && (
+                  <tr><td colSpan={6} style={styles.empty}>Kayıt yok.</td></tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -140,11 +251,20 @@ export default function AdminHome(){
   );
 }
 
+function StatCard({title,value}){
+  return (
+    <div style={styles.card}>
+      <div style={styles.cardTitle}>{title}</div>
+      <div style={styles.cardValue}>{value}</div>
+    </div>
+  );
+}
+
 const styles = {
   page: { minHeight:"100vh", background:"#0b0b0b", color:"#e5e7eb", fontFamily:"system-ui,-apple-system,Segoe UI,Roboto,Arial", paddingBottom:24 },
   header:{ position:"sticky", top:0, zIndex:10, display:"flex", alignItems:"center", gap:12, padding:"14px 18px", background:"#0b0b0b", borderBottom:"1px solid #1f2937" },
   brand:{ fontWeight:800, letterSpacing:.3 },
-  badge:{ marginLeft:"auto", fontSize:12, border:"1px solid #374151", padding:"4px 8px", borderRadius:999, color:"#9ca3af" },
+  badge:{ marginLeft:"auto", fontSize:12, border:"1px solid #374151", padding:"4px 8px", borderRadius:999, color:"#9ca3af", textDecoration:"none" },
   main:{ maxWidth:1200, margin:"0 auto", padding:"20px" },
   h1:{ fontSize:22, fontWeight:800, margin:"0 0 12px" },
   grid:{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px,1fr))", gap:12 },
@@ -158,7 +278,23 @@ const styles = {
   tableTitle:{ fontWeight:700 },
   link:{ color:"#93c5fd", textDecoration:"none" },
   table:{ width:"100%", borderCollapse:"collapse" },
-  btnApprove:{ padding:"6px 10px", borderRadius:8, border:"1px solid #065f46", background:"#065f46", color:"#fff", cursor:"pointer", marginRight:6 },
+  empty:{ padding:"10px 12px", color:"#9ca3af", textAlign:"center" },
+  stackLeft:{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:6 }, /* ← butonlar solda alt alta */
+  btnApprove:{ padding:"6px 10px", borderRadius:8, border:"1px solid #065f46", background:"#065f46", color:"#fff", cursor:"pointer" },
   btnReject:{ padding:"6px 10px", borderRadius:8, border:"1px solid #7f1d1d", background:"#7f1d1d", color:"#fff", cursor:"pointer" },
-  btnGhost:{ padding:"6px 10px", borderRadius:8, border:"1px solid #374151", background:"transparent", color:"#e5e7eb", cursor:"pointer" },
+  btnGhost:{ padding:"6px 10px", borderRadius:8, border:"1px solid #374151", background:"transparent", color:"#e5e7eb", textDecoration:"none" },
 };
+
+const TRY_FMT = new Intl.NumberFormat("tr-TR",{style:"currency",currency:"TRY", maximumFractionDigits:0});
+function formatTRY(v){ try{ return TRY_FMT.format(Number(v)); }catch{ return "₺"+String(v); } }
+function tsToMs(ts){
+  if (!ts) return null;
+  if (typeof ts === "number") return ts;
+  if (typeof ts === "string") return Date.parse(ts);
+  if (ts?.seconds) return ts.seconds*1000 + Math.floor((ts.nanoseconds||0)/1e6);
+  const d = new Date(ts); return d.getTime();
+}
+function fmtDate(ts){
+  const ms = tsToMs(ts); if (!ms) return "—";
+  try{ return new Date(ms).toLocaleString("tr-TR"); }catch{ return "—"; }
+}
