@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="tr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Üreten Eller • Hukuki / Legal</title>
+<style>
+:root{--bg:#0b0b0c;--fg:#ececf1;--muted:#b5b5bd;--acc:#22c55e;--card:#141418;--bd:#272733}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+.wrap{max-width:1200px;margin:0 auto;padding:24px}
+.top{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+.lang{background:var(--card);border:1px solid var(--bd);color:var(--fg);padding:8px 10px;border-radius:10px}
+.grid{display:grid;grid-template-columns:280px 1fr;gap:16px}
+.nav{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:8px}
+.nav a{display:block;color:var(--fg);text-decoration:none;padding:10px 12px;border-radius:10px}
+.nav a:hover{background:#1d1d24}
+.nav a.active{background:var(--acc);color:#031507}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:18px}
+h1{font-size:20px;margin:0 0 6px}
+h2{font-size:16px;margin:18px 0 8px;color:#d9d9df}
+p,li{color:#d6d6dc}
+small,.muted{color:var(--muted)}
+kbd.badge{background:#222;padding:2px 6px;border:1px solid #333;border-radius:6px}
+footer{margin-top:24px;font-size:12px;color:var(--muted);text-align:center}
+.table{width:100%;border-collapse:collapse}
+.table td{border-top:1px solid var(--bd);padding:6px 0;vertical-align:top}
+.notice{border-left:3px solid var(--acc);padding:10px 12px;background:#101914;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div><strong>Üreten Eller</strong> <span class="muted">• Hukuki Bilgiler / Legal</span></div>
+    <select id="lang" class="lang" aria-label="Language">
+      <option value="tr">Türkçe</option>
+      <option value="en">English</option>
+      <option value="ar">العربية</option>
+      <option value="de">Deutsch</option>
+    </select>
+  </div>
+
+  <div class="grid">
+    <nav class="nav" id="nav"></nav>
+    <main id="view" class="card" role="main" aria-live="polite"></main>
+  </div>
+
+  <footer>© <span id="y"></span> Üreten Eller • <span class="muted">www.xn--reteneller-8db.com</span></footer>
+</div>
+
+<script>
+document.getElementById("y").textContent = new Date().getFullYear();
+
+/* ==== Sabit Satıcı Bilgileri (vergide yer alanlar) ==== */
+const SELLER = {
+  brand: "Üreten Eller",
+  owner: "Nejla Koç",
+  taxOffice: "Silivri Vergi Dairesi Müdürlüğü",
+  taxNo: "<VERGI_NO>",                // ← buraya numaranı aynen yaz
+  mersis: "—",                        // varsa yaz
+  address: "<Açık Adres>",            // vergi levhasındaki işyeri adresi
+  email: "<eposta@ornek.com>",        // aktif e-posta
+  phone: "0544 198 38 44",
+  website: "https://www.xn--reteneller-8db.com/",
+  nace: "47.91.14",
+  activityTr: "Radyo, TV, posta veya internet üzerinden yapılan perakende ticaret",
+  taxTypeTr: "Yıllık Gelir Vergisi",
+  startDate: "17/09/2025"
+};
+
+/* ==== Navigasyon başlıkları ==== */
+const NAV = {
+  tr: [
+    ["imprint","İletişim / İmpressum"],
+    ["distance","Mesafeli Satış + Ön Bilgilendirme"],
+    ["delivery","Teslimat – İade – İptal"],
+    ["privacy","Gizlilik + KVKK Aydınlatma"],
+    ["cookies","Çerez Politikası"],
+    ["terms","Kullanım Şartları"],
+    ["prohibited","Yasaklı Ürünler"],
+    ["community","Topluluk Kuralları"]
+  ],
+  en: [
+    ["imprint","Imprint / Contact"],
+    ["distance","Distance Sales & Pre-Information"],
+    ["delivery","Delivery – Returns – Cancellation"],
+    ["privacy","Privacy & Data Notice"],
+    ["cookies","Cookie Policy"],
+    ["terms","Terms of Use"],
+    ["prohibited","Prohibited Items"],
+    ["community","Community Guidelines"]
+  ],
+  ar: [
+    ["imprint","بيانات التواصل / المطبوعة"],
+    ["distance","عقد البيع عن بُعد + نموذج المعلومات المسبقة"],
+    ["delivery","التسليم – الإرجاع – الإلغاء"],
+    ["privacy","الخصوصية وإشعار معالجة البيانات"],
+    ["cookies","سياسة الكوكيز"],
+    ["terms","شروط الاستخدام"],
+    ["prohibited","المنتجات المحظورة"],
+    ["community","إرشادات المجتمع"]
+  ],
+  de: [
+    ["imprint","Impressum / Kontakt"],
+    ["distance","Fernabsatzvertrag & Vorabinformationen"],
+    ["delivery","Lieferung – Rückgabe – Widerruf"],
+    ["privacy","Datenschutz & Hinweis"],
+    ["cookies","Cookie-Richtlinie"],
+    ["terms","Nutzungsbedingungen"],
+    ["prohibited","Verbotene Produkte"],
+    ["community","Community-Richtlinien"]
+  ]
+};
+
+/* ==== İçerikler (çok dilli) ==== */
+const TXT = {
+  imprint: {
+    tr: `
+      <h1>İletişim / İmpressum</h1>
+      <table class="table">
+        <tr><td><strong>Marka</strong></td><td>${SELLER.brand}</td></tr>
+        <tr><td><strong>Ad–Soyad / Ünvan</strong></td><td>${SELLER.owner}</td></tr>
+        <tr><td><strong>Vergi Dairesi</strong></td><td>${SELLER.taxOffice}</td></tr>
+        <tr><td><strong>Vergi Kimlik No</strong></td><td>${SELLER.taxNo}</td></tr>
+        <tr><td><strong>MERSİS</strong></td><td>${SELLER.mersis}</td></tr>
+        <tr><td><strong>Faaliyet Kodu (NACE)</strong></td><td>${SELLER.nace} – ${SELLER.activityTr}</td></tr>
+        <tr><td><strong>Vergi Türü</strong></td><td>${SELLER.taxTypeTr}</td></tr>
+        <tr><td><strong>İşe Başlama Tarihi</strong></td><td>${SELLER.startDate}</td></tr>
+        <tr><td><strong>Adres</strong></td><td>${SELLER.address}</td></tr>
+        <tr><td><strong>Telefon</strong></td><td>${SELLER.phone}</td></tr>
+        <tr><td><strong>E-posta</strong></td><td>${SELLER.email}</td></tr>
+        <tr><td><strong>Web</strong></td><td>${SELLER.website}</td></tr>
+      </table>
+      <p class="muted">Bu sayfadaki bilgiler PayTR ve iyzico gerekliliklerini karşılamak üzere düzenlenmiştir.</p>
+    `,
+    en: `
+      <h1>Imprint / Contact</h1>
+      <p><strong>Brand:</strong> ${SELLER.brand} • <strong>Owner:</strong> ${SELLER.owner}</p>
+      <p><strong>Tax Office:</strong> ${SELLER.taxOffice} • <strong>Tax ID:</strong> ${SELLER.taxNo}</p>
+      <p><strong>NACE:</strong> ${SELLER.nace} – Online retail; <strong>Start Date:</strong> ${SELLER.startDate}</p>
+      <p><strong>Address:</strong> ${SELLER.address}<br>
+         <strong>Phone:</strong> ${SELLER.phone} • <strong>Email:</strong> ${SELLER.email}<br>
+         <strong>Website:</strong> ${SELLER.website}</p>
+    `,
+    ar: `
+      <h1>بيانات التواصل / المطبوعة</h1>
+      <p><strong>العلامة:</strong> ${SELLER.brand} — <strong>المالك:</strong> ${SELLER.owner}</p>
+      <p><strong>دائرة الضرائب:</strong> ${SELLER.taxOffice} — <strong>رقم الضريبة:</strong> ${SELLER.taxNo}</p>
+      <p><strong>رمز النشاط (NACE):</strong> ${SELLER.nace} — تجارة تجزئة عبر الإنترنت — <strong>تاريخ بدء العمل:</strong> ${SELLER.startDate}</p>
+      <p><strong>العنوان:</strong> ${SELLER.address}<br>
+         <strong>الهاتف:</strong> ${SELLER.phone} — <strong>البريد:</strong> ${SELLER.email}<br>
+         <strong>الموقع:</strong> ${SELLER.website}</p>
+    `,
+    de: `
+      <h1>Impressum / Kontakt</h1>
+      <p><strong>Marke:</strong> ${SELLER.brand} • <strong>Inhaber/in:</strong> ${SELLER.owner}</p>
+      <p><strong>Finanzamt:</strong> ${SELLER.taxOffice} • <strong>Steuer-ID:</strong> ${SELLER.taxNo}</p>
+      <p><strong>NACE:</strong> ${SELLER.nace} – Online-Einzelhandel • <strong>Beginn:</strong> ${SELLER.startDate}</p>
+      <p><strong>Adresse:</strong> ${SELLER.address}<br>
+         <strong>Telefon:</strong> ${SELLER.phone} • <strong>E-Mail:</strong> ${SELLER.email}<br>
+         <strong>Web:</strong> ${SELLER.website}</p>
+    `
+  },
+
+  distance: {
+    tr: `
+      <h1>Mesafeli Satış Sözleşmesi & Ön Bilgilendirme</h1>
+      <div class="notice"><strong>Satıcı:</strong> ${SELLER.owner} (${SELLER.brand}) — ${SELLER.taxOffice} / Vergi No: ${SELLER.taxNo}</div>
+      <h2>1. Taraflar</h2>
+      <p>İşbu sözleşme, ${SELLER.website} üzerinden yapılan siparişlerde ${SELLER.owner} (Satıcı) ile hizmet/ürünü satın alan gerçek/tüzel kişi (Alıcı) arasında düzenlenir.</p>
+      <h2>2. Konu</h2>
+      <p>El emeği ürünler ve/veya ev yapımı gıda ürünlerinin mesafeli satışına ilişkin 6502 sayılı TKHK ve Mesafeli Sözleşmeler Yönetmeliği uyarınca hak ve yükümlülükler.</p>
+      <h2>3. Ürün / Hizmet</h2>
+      <p>Ürün nitelikleri, fiyat, vergi, kargo/teslimat bilgileri sipariş özetinde yer alır. Soğuk zincir gerektiren veya kişiye özel ürünlerde cayma istisnaları uygulanır.</p>
+      <h2>4. Ödeme</h2>
+      <p>Ödeme alt yapısı PayTR / iyzico ile sağlanabilir. 3D Secure ve KVKK güvenceleri geçerlidir.</p>
+      <h2>5. Cayma Hakkı</h2>
+      <p>Mesafeli Sözleşmeler Yönetmeliği m.15 uyarınca gıda, çabuk bozulabilen; kişiye özel üretilen; hijyen nedeniyle iadesi uygun olmayan ürünlerde cayma hakkı bulunmaz.</p>
+      <h2>6. Uyuşmazlık</h2>
+      <p>Yetkili merci Tüketici Hakem Heyetleri ve Tüketici Mahkemeleridir. Satıcı iletişimi: ${SELLER.email}, ${SELLER.phone}</p>
+    `,
+    en: `
+      <h1>Distance Sales Contract & Pre-Information</h1>
+      <p>Seller: ${SELLER.owner} (${SELLER.brand}) — Tax Office: ${SELLER.taxOffice} / Tax ID: ${SELLER.taxNo}</p>
+      <p>Scope, products, pricing, delivery, and right of withdrawal are governed by consumer law. Perishable or custom-made items may be exempt from withdrawal.</p>
+    `,
+    ar: `
+      <h1>عقد البيع عن بُعد ونموذج المعلومات المسبقة</h1>
+      <p>البائع: ${SELLER.owner} (${SELLER.brand}) — دائرة الضرائب: ${SELLER.taxOffice} / رقم الضريبة: ${SELLER.taxNo}</p>
+      <p>تسري أحكام المستهلك. المنتجات القابلة للتلف أو الخاصة بالمستهلك قد تُستثنى من حق الإرجاع.</p>
+    `,
+    de: `
+      <h1>Fernabsatzvertrag & Vorabinformationen</h1>
+      <p>Verkäufer: ${SELLER.owner} (${SELLER.brand}) — Finanzamt: ${SELLER.taxOffice} / Steuer-ID: ${SELLER.taxNo}</p>
+      <p>Für verderbliche oder personalisierte Waren kann das Widerrufsrecht ausgeschlossen sein.</p>
+    `
+  },
+
+  delivery: {
+    tr: `
+      <h1>Teslimat – İade – İptal</h1>
+      <ul>
+        <li>Teslimat yöntemi ve süresi sipariş sırasında belirtilir.</li>
+        <li>Gıda ve kişiye özel ürünlerde iade kabul edilmez; kusurlu ürünlerde bedel iadesi/yenisi gönderilir.</li>
+        <li>İptal talepleri üretime başlamadan önce yapılmalıdır.</li>
+      </ul>
+    `,
+    en: `<h1>Delivery – Returns – Cancellation</h1><p>Timelines are shown at checkout. No returns for perishables or personalized goods; defects are replaced or refunded.</p>`,
+    ar: `<h1>التسليم – الإرجاع – الإلغاء</h1><p>تُعرض المدة عند الدفع. لا إرجاع للمواد القابلة للتلف أو المخصصة؛ تُستبدل السلع المعيبة أو يُرد ثمنها.</p>`,
+    de: `<h1>Lieferung – Rückgabe – Widerruf</h1><p>Fristen an der Kasse. Keine Rückgabe für verderbliche oder personalisierte Artikel; Mängel werden ersetzt/erstattet.</p>`
+  },
+
+  privacy: {
+    tr: `
+      <h1>Gizlilik Politikası & KVKK Aydınlatma</h1>
+      <p>Veri Sorumlusu: ${SELLER.owner} (${SELLER.brand}) • İletişim: ${SELLER.email}, ${SELLER.phone}</p>
+      <p>6698 sayılı KVKK uyarınca kimlik, iletişim, işlem bilgileri; sipariş/ödeme süreçleri ve müşteri hizmetleri için işlenir. PayTR/iyzico ödemelerinde kart verileri ödeme kuruluşunca işlenir, tarafımızca saklanmaz.</p>
+      <p>Haklarınız (KVKK m.11): Bilgi alma, düzeltme, silme, itiraz. Başvuru: ${SELLER.email}</p>
+    `,
+    en: `
+      <h1>Privacy & Data Notice</h1>
+      <p>Controller: ${SELLER.owner} (${SELLER.brand}). Payment card data is processed by PayTR/iyzico, not stored by us.</p>
+    `,
+    ar: `<h1>الخصوصية وإشعار البيانات</h1><p>المسؤول عن المعالجة: ${SELLER.owner} (${SELLER.brand}). بيانات البطاقة تُعالج لدى PayTR/iyzico فقط.</p>`,
+    de: `<h1>Datenschutz & Hinweis</h1><p>Verantwortlicher: ${SELLER.owner} (${SELLER.brand}). Kartendaten werden bei PayTR/iyzico verarbeitet, nicht von uns gespeichert.</p>`
+  },
+
+  cookies: {
+    tr: `<h1>Çerez Politikası</h1><p>Zorunlu, performans ve pazarlama çerezleri kullanılabilir. Tarayıcı ayarlarınızdan yönetebilirsiniz.</p>`,
+    en: `<h1>Cookie Policy</h1><p>We may use essential, performance and marketing cookies. Manage via your browser.</p>`,
+    ar: `<h1>سياسة الكوكيز</h1><p>قد نستخدم كوكيز أساسية وأداء وتسويق. يمكنك التحكم عبر المتصفح.</p>`,
+    de: `<h1>Cookie-Richtlinie</h1><p>Essenzielle, Performance- und Marketing-Cookies können eingesetzt werden. Verwaltung im Browser.</p>`
+  },
+
+  terms: {
+    tr: `<h1>Kullanım Şartları</h1><p>Siteyi hukuka uygun, dürüst ve iyi niyet kurallarına uygun kullanmayı kabul edersiniz. İhlalde hesaplar sonlandırılabilir.</p>`,
+    en: `<h1>Terms of Use</h1><p>You agree to use the site lawfully and in good faith. Accounts may be terminated for violations.</p>`,
+    ar: `<h1>شروط الاستخدام</h1><p>تتعهد باستخدام الموقع بشكل قانوني وبحسن نية. قد تُنهى الحسابات عند المخالفة.</p>`,
+    de: `<h1>Nutzungsbedingungen</h1><p>Sie verpflichten sich zur rechtmäßigen und redlichen Nutzung. Bei Verstößen kann das Konto beendet werden.</p>`
+  },
+
+  prohibited: {
+    tr: `<h1>Yasaklı Ürünler</h1><p>Uyuşturucu, silah, tütün, alkol, canlı hayvan, reçeteli ilaç, fikri/sınai hak ihlali ürünleri ve yürürlükteki mevzuata aykırı tüm içerikler yasaktır.</p>`,
+    en: `<h1>Prohibited Items</h1><p>No drugs, weapons, tobacco, alcohol, live animals, prescription meds, IP-infringing or illegal items.</p>`,
+    ar: `<h1>المنتجات المحظورة</h1><p>ممنوع: المخدرات، الأسلحة، التبغ، الكحول، الحيوانات الحية، الأدوية الموصوفة، وكل ما يخالف القوانين وحقوق الملكية.</p>`,
+    de: `<h1>Verbotene Produkte</h1><p>Keine Drogen, Waffen, Tabak, Alkohol, lebende Tiere, verschreibungspflichtige Medikamente oder rechtswidrige/urheberrechtsverletzende Waren.</p>`
+  },
+
+  community: {
+    tr: `<h1>Topluluk Kuralları</h1><ul><li>Saygı ve dürüstlük esastır.</li><li>Sahte/yanıltıcı ilan yasaktır.</li><li>Kişisel verileri izinsiz paylaşmayın.</li></ul>`,
+    en: `<h1>Community Guidelines</h1><ul><li>Be respectful and honest.</li><li>No fake/misleading listings.</li><li>No sharing others’ personal data.</li></ul>`,
+    ar: `<h1>إرشادات المجتمع</h1><ul><li>الاحترام والصدق.</li><li>ممنوع الإعلانات المضللة.</li><li>لا تشارك بيانات شخصية دون إذن.</li></ul>`,
+    de: `<h1>Community-Richtlinien</h1><ul><li>Respekt & Ehrlichkeit.</li><li>Keine irreführenden Angebote.</li><li>Keine Weitergabe personenbezogener Daten.</li></ul>`
+  }
+};
+
+/* ==== Basit router ==== */
+const navEl = document.getElementById("nav");
+const viewEl = document.getElementById("view");
+const sel = document.getElementById("lang");
+let L = localStorage.getItem("legal_lang") || "tr";
+sel.value = L;
+
+function renderNav(){
+  navEl.innerHTML = NAV[L].map(([k,t])=>{
+    const active = (location.hash.replace("#","")||"imprint")===k ? "active":"";
+    return `<a href="#${k}" class="${active}">${t}</a>`;
+  }).join("");
+}
+
+function renderPage(){
+  const key = location.hash.replace("#","") || "imprint";
+  const html = (TXT[key] && TXT[key][L]) ? TXT[key][L] : `<p class="muted">No content.</p>`;
+  viewEl.innerHTML = html;
+  // aktif sınıfı güncelle
+  [...navEl.querySelectorAll("a")].forEach(a=>{
+    a.classList.toggle("active", a.getAttribute("href")==="#"+key);
+  });
+}
+
+sel.addEventListener("change", ()=>{
+  L = sel.value;
+  document.documentElement.lang = L;
+  document.documentElement.dir = (L==="ar") ? "rtl" : "ltr";
+  localStorage.setItem("legal_lang", L);
+  renderNav(); renderPage();
+});
+
+window.addEventListener("hashchange", renderPage);
+
+// ilk yük
+document.documentElement.dir = (L==="ar") ? "rtl" : "ltr";
+renderNav(); renderPage();
+</script>
+</body>
+</html>
