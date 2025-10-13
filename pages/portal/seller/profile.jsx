@@ -68,6 +68,7 @@ export default function SellerProfile() {
   const [uid, setUid] = useState(null);
   const [me, setMe] = useState(null); // users/{uid}
   const [listings, setListings] = useState([]);
+  const [activeTab, setActiveTab] = useState("urunler");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
@@ -118,10 +119,12 @@ export default function SellerProfile() {
         const qy = query(
           collection(db, "listings"),
           where("seller_id", "==", u.uid),
-          orderBy("created_at", "desc")
-        );
+          where("seller_id", "==", u.uid)
+        ); // orderBy kaldırıldı (indeks gerektirmesin diye)
         const lsn = await getDocs(qy);
-        const arr = lsn.docs.map((d) => ({ id: d.id, ...d.data() }));
+        let arr = lsn.docs.map((d) => ({ id: d.id, ...d.data() }));
+        // istemci tarafı sıralama (yeniden indeks istemesin)
+        arr.sort((a,b)=> new Date(b.created_at||0) - new Date(a.created_at||0));
         setListings(arr);
         setLoading(false);
       } catch (e) {
@@ -222,7 +225,7 @@ export default function SellerProfile() {
     setShowPay(null);
   }
 
-  if (loading) return <div style={{ padding: 16 }}>Yükleniyor…</div>;
+  if (loading) return <div style={{ padding: 16 }}>Yükleniyor… {err && <small style={{color:'crimson'}}>Hata: {err}</small>}</div>;
   if (!uid) return (
     <div style={{ padding: 16 }}>
       Giriş yapmalısınız. <Link href="/login">Giriş</Link>
@@ -311,34 +314,54 @@ export default function SellerProfile() {
       {/* İlanlar */}
       <section className="listings">
         <div className="tabs2">
-          <button className="on">Ürünler</button>
-          <button>Değerlendirmeler</button>
-          <button>Hakkında</button>
-          <button>Kargo & İade</button>
-          <button>$$$</button>
+          <button className={activeTab==='urunler'?'on':''} onClick={()=>setActiveTab('urunler')}>Ürünler</button>
+          <button className={activeTab==='deger'?'on':''} onClick={()=>setActiveTab('deger')}>Değerlendirmeler</button>
+          <button className={activeTab==='hakkinda'?'on':''} onClick={()=>setActiveTab('hakkinda')}>Hakkında</button>
+          <button className={activeTab==='kargo'?'on':''} onClick={()=>setActiveTab('kargo')}>Kargo & İade</button>
+          <button className={activeTab==='para'?'on':''} onClick={()=>setActiveTab('para')}>$$$</button>
         </div>
 
-        <div className="grid">
-          {listings.length === 0 && <div className="empty">Henüz ilan yok.</div>}
-          {listings.map((it, i) => (
-            <article key={it.id} className="card">
-              <div className="thumb" style={{ backgroundImage: `url(${it.images?.[0] || "/logo.png"})` }}>
-                {it.featured && <span className="badge">Vitrin</span>}
-              </div>
-              <div className="body">
-                <div className="title">{it.title || "İlan"}</div>
-                <div className="meta">
-                  <span>İlan No: {3838 + i}</span>
-                  <span>Yayında</span>
+        {activeTab==='urunler' && (
+          <div className="grid">
+            {listings.length === 0 && <div className="empty">Henüz ilan yok.</div>}
+            {listings.map((it, i) => (
+              <article key={it.id} className="card">
+                <div className="thumb" style={{ backgroundImage: `url(${it.images?.[0] || "/logo.png"})` }}>
+                  {it.featured && <span className="badge">Vitrin</span>}
                 </div>
-                <div className="act">
-                  <button className="btn ghost" onClick={() => openShowcaseModal(it.id)}>Vitrine Al</button>
-                  <button className="btn">Görüntüle</button>
+                <div className="body">
+                  <div className="title">{it.title || "İlan"}</div>
+                  <div className="meta">
+                    <span>İlan No: {3838 + i}</span>
+                    <span>Yayında</span>
+                  </div>
+                  <div className="act">
+                    <button className="btn ghost" onClick={() => openShowcaseModal(it.id)}>Vitrine Al</button>
+                    <button className="btn">Görüntüle</button>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        )}
+        {activeTab==='deger' && (<div className="empty">Değerlendirme yok.</div>)}
+        {activeTab==='hakkinda' && (<div className="empty">Satıcı hakkında bilgi eklenmemiş.</div>)}
+        {activeTab==='kargo' && (
+          <table className="tbl" style={{background:'#fff',borderRadius:12}}>
+            <tbody>
+              <tr><td>Kargo süresi</td><td>1.5 – 3 iş günü</td></tr>
+              <tr><td>İade politikası</td><td>14 gün</td></tr>
+            </tbody>
+          </table>
+        )}
+        {activeTab==='para' && (
+          <div className="payBox" style={{background:'#fff',borderRadius:12}}>
+            <div className="row"><b>Premium</b><span>₺{PREMIUM_PRICE}</span></div>
+            <div className="row"><b>Vitrin (Premium)</b><span>₺{SHOWCASE_PRICE_PREMIUM}</span></div>
+            <div className="row"><b>Vitrin (Standart)</b><span>₺{SHOWCASE_PRICE_STANDARD}</span></div>
+            <div className="sub">Ödeme için Premium/Vitrine Al butonlarını kullanın.</div>
+          </div>
+        )}
       </section>
 
       {/* Alt – Legal */}
@@ -406,11 +429,12 @@ export default function SellerProfile() {
                   <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={3} />
                 </label>
                 <label>Avatar
-                  <input type="file" accept="image/*" onChange={(e) => setAvatarFile(e.target.files?.[0] || null)} />
+                  <input id="avatarInput" type="file" accept="image/*" onChange={(e) => setAvatarFile(e.target.files?.[0] || null)} />
                 </label>
                 <div className="rowBtns">
                   <button className="btn" onClick={handleAvatarSave} type="button">Kaydet</button>
                 </div>
+                <div className="sub">"Kaydet"e basmadan yükleme başlamaz.</div>
               </div>
 
               <div className="form">
@@ -421,6 +445,7 @@ export default function SellerProfile() {
                   <button className="btn ghost" onClick={handlePasswordChange} type="button">Şifreyi Güncelle</button>
                 </div>
                 <div className="sub">Şifre güncelleme başarısız olursa tekrar giriş yapmanız istenebilir.</div>
+              </div>
               </div>
             </div>
           </div>
