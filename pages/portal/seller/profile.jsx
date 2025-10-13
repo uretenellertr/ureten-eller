@@ -1,28 +1,28 @@
 // pages/portal/seller/profile.jsx
 "use client";
+
+/**
+ * ÜRETEN ELLER – Satıcı Profili (client-only, SSR yok)
+ * - 4 dil: tr/en/ar/de
+ * - Premium: ₺1999; onay sonrası altın çerçeve, rozet
+ * - Vitrin: Premium 1 ücretsiz; ek vitrin Premium=₺100 / Standart=₺199
+ * - Ödeme modal: IBAN + Papara, dekont yükleme (receipts/{uid}/...)
+ * - Ayarlar: telefon, adres, avatar (avatars/{uid}.jpg)
+ * - Şifre güncelleme: mevcut + yeni (2 kez), göz butonları
+ * - İlanlar: listings (seller_id==uid); ilan no: 3838 + index
+ */
+
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
-/* =========================================================
-   ÜRETEN ELLER – Satıcı Profili (4 dil + Premium + Vitrin + Ayarlar)
-   - Auth: Firebase e-posta/şifre varsayımı
-   - Firestore: users/{uid}, listings (seller_id==uid), payments
-   - Storage: avatars/{uid}.jpg , receipts/{uid}/...
-   - Premium: ₺1999 (dekont → admin onayı); onay sonrası altın çerçeve + rozet
-   - Vitrin: Premium=₺100 (1 ücretsiz hak), Standart=₺199
-   - Şifre değiştir: mevcut şifre + yeni şifre (2 kez), göz ikonu ile görünürlük
-   - İlan No görsel: 3838 + sıra (istemci tarafı)
-   - Sıralama: istemci tarafı (orderBy yok → index gerekmez)
-   ========================================================= */
-
-/* ------------------------------ Firebase ------------------------------ */
+// Firebase
 import { initializeApp, getApps, getApp } from "firebase/app";
 import {
   getAuth,
   onAuthStateChanged,
-  updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
+  updatePassword,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -37,6 +37,7 @@ import {
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+// ---- Firebase Config (senden gelen) ----
 const firebaseConfig = {
   apiKey: "AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ",
   authDomain: "ureteneller-ecaac.firebaseapp.com",
@@ -46,19 +47,24 @@ const firebaseConfig = {
   appId: "1:368042877151:web:ee0879fc4717928079c96a",
   measurementId: "G-BJHKN8V4RQ",
 };
-function ensureApp() {
+
+function app() {
   return getApps().length ? getApp() : initializeApp(firebaseConfig);
 }
+const appInstance = app();
+const auth = getAuth(appInstance);
+const db = getFirestore(appInstance);
+const storage = getStorage(appInstance);
 
-/* ------------------------------- Sabitler ------------------------------ */
+// ---- Sabitler ----
 const IBAN = "TR590082900009491868461105";
 const ACCOUNT_NAME = "Nejla Karataş";
-const PAPARA = "Papara Ticari";
+const PAPARA = "Papara (ticari)";
 const PREMIUM_PRICE = 1999;
 const SHOWCASE_PRICE_PREMIUM = 100;
 const SHOWCASE_PRICE_STANDARD = 199;
 
-/* ------------------------------ Çok Dilli Metinler --------------------- */
+// ---- Dil Kaynakları ----
 const STR = {
   tr: {
     brand: "Üreten Eller",
@@ -86,7 +92,10 @@ const STR = {
     pwdNow: "Mevcut Şifre", pwdNew: "Yeni Şifre", pwdNew2: "Yeni Şifre (tekrar)", updatePwd: "Şifreyi Güncelle",
     show: "Göster", hide: "Gizle",
     mustLogin: "Giriş yapmalısınız.", joined: "Katılım", city: "Şehir", showcase: "Vitrin",
-    legal: ["Kurumsal","Hakkımızda","İletişim","Gizlilik","KVKK","Kullanım Şartları","Mesafeli Satış","Teslimat & İade","Çerez","Topluluk","Yasaklı Ürünler"],
+    approvedSeller: "Onaylı Satıcı",
+    hours: { wd: "09.00 – 16.00", we: "10.00 – 16.00" },
+    shipWindow: "1.5 – 3 iş günü",
+    retPolicy: "Geçerlidir",
   },
   en: {
     brand: "Üreten Eller",
@@ -114,7 +123,10 @@ const STR = {
     pwdNow: "Current Password", pwdNew: "New Password", pwdNew2: "New Password (repeat)", updatePwd: "Update Password",
     show: "Show", hide: "Hide",
     mustLogin: "You must sign in.", joined: "Joined", city: "City", showcase: "Showcase",
-    legal: ["Corporate","About","Contact","Privacy","PDPL (KVKK)","Terms","Distance Sales","Delivery & Returns","Cookie","Community","Prohibited Items"],
+    approvedSeller: "Verified Seller",
+    hours: { wd: "09.00 – 16.00", we: "10.00 – 16.00" },
+    shipWindow: "1.5 – 3 business days",
+    retPolicy: "Applicable",
   },
   ar: {
     brand: "Üreten Eller",
@@ -122,31 +134,34 @@ const STR = {
     navPost: "أضف إعلانًا",
     navProfile: "الملف الشخصي",
     sellerSettings: "إعدادات البائع",
-    tabs: { urunler: "المنتجات", deger: "المراجعات", hakkinda: "حول", kargo: "الشحن والإرجاع", para: "$$$" },
-    msg: "أرسل رسالة", follow: "متابعة", share: "مشاركة", report: "إبلاغ",
+    tabs: { urunler: "المنتجات", deger: "التقييمات", hakkinda: "حول", kargo: "الشحن والإرجاع", para: "$$$" },
+    msg: "إرسال رسالة", follow: "متابعة", share: "مشاركة", report: "إبلاغ",
     premium: "بريميوم",
     goPremium: "الترقية إلى بريميوم",
-    premiumHint: "يُفعَّل بريميوم بعد موافقة المشرف.",
-    premiumActive: (left) => `بريميوم مفعّل. حق الواجهة المجانية: ${left ? "1" : "0"}`,
+    premiumHint: "يتم التفعيل بعد موافقة المشرف.",
+    premiumActive: (left) => `البريميوم مفعل. حق الواجهة المجانية: ${left ? "1" : "0"}`,
     useShowcase: "استخدم حق الواجهة",
     storeInfo: "معلومات المتجر",
-    wd: "أيام الأسبوع", we: "نهاية الأسبوع", ship: "وقت الشحن", ret: "سياسة الإرجاع",
+    wd: "أيام الأسبوع", we: "عطلة الأسبوع", ship: "مدة الشحن", ret: "سياسة الإرجاع",
     none: "لا توجد إعلانات بعد.",
-    view: "عرض", takeShowcase: "تمييز",
+    view: "عرض", takeShowcase: "إبراز",
     payTitle: "بيانات الدفع", process: "العملية", price: "المبلغ", freeRight: "حق مجاني",
     iban: "IBAN", accName: "اسم الحساب", papara: "Papara",
-    payNote: "بعد التحويل البنكي/التحويل الإلكتروني، ارفع الإيصال. اكتب اسم المستخدم في الملاحظة.",
-    uploadReceipt: "ارفع الإيصال",
+    payNote: "بعد التحويل، ارفع إيصال الدفع. اكتب اسم المستخدم في الملاحظة.",
+    uploadReceipt: "رفع الإيصال",
     settingsTitle: "الإعدادات", phone: "الهاتف", address: "العنوان", avatar: "الصورة",
     save: "حفظ", saveHint: "لن يبدأ الرفع حتى تضغط حفظ.",
-    pwdNow: "كلمة المرور الحالية", pwdNew: "كلمة مرور جديدة", pwdNew2: "تأكيد كلمة المرور الجديدة", updatePwd: "تحديث كلمة المرور",
+    pwdNow: "كلمة المرور الحالية", pwdNew: "كلمة مرور جديدة", pwdNew2: "تأكيد كلمة المرور", updatePwd: "تحديث كلمة المرور",
     show: "إظهار", hide: "إخفاء",
-    mustLogin: "يجب تسجيل الدخول.", joined: "الانضمام", city: "المدينة", showcase: "الواجهة",
-    legal: ["الشركة","من نحن","اتصال","الخصوصية","اشعار KVKK","الشروط","البيع عن بُعد","التسليم والإرجاع","ملفات تعريف الارتباط","إرشادات المجتمع","سلع محظورة"],
+    mustLogin: "يجب أن تسجّل الدخول.", joined: "انضم", city: "المدينة", showcase: "الواجهة",
+    approvedSeller: "بائع موثوق",
+    hours: { wd: "09.00 – 16.00", we: "10.00 – 16.00" },
+    shipWindow: "1.5 – 3 أيام عمل",
+    retPolicy: "سارية",
   },
   de: {
     brand: "Üreten Eller",
-    navHome: "Startseite",
+    navHome: "Start",
     navPost: "Anzeige aufgeben",
     navProfile: "Profil",
     sellerSettings: "Verkäufer-Einstellungen",
@@ -155,254 +170,300 @@ const STR = {
     premium: "Premium",
     goPremium: "Zu Premium wechseln",
     premiumHint: "Premium wird nach Admin-Freigabe aktiviert.",
-    premiumActive: (left) => `Premium aktiv. Kostenloses Schaufensterrecht: ${left ? "1" : "0"}`,
-    useShowcase: "Schaufensterrecht nutzen",
+    premiumActive: (left) => `Premium aktiv. Kostenloses Schaufenster-Recht: ${left ? "1" : "0"}`,
+    useShowcase: "Schaufenster-Recht nutzen",
     storeInfo: "Shop-Infos",
-    wd: "Wochentage", we: "Wochenende", ship: "Versandzeit", ret: "Rückgaberichtlinie",
+    wd: "Wochentage", we: "Wochenende", ship: "Versandzeit", ret: "Rückgabe",
     none: "Noch keine Anzeigen.",
     view: "Ansehen", takeShowcase: "Hervorheben",
     payTitle: "Zahlungsdaten", process: "Vorgang", price: "Betrag", freeRight: "Gratisrecht",
-    iban: "IBAN", accName: "Kontoinhaber", papara: "Papara",
-    payNote: "Nach Überweisung Beleg hochladen. Schreibe deinen Benutzernamen in die Notiz.",
+    iban: "IBAN", accName: "Kontoname", papara: "Papara",
+    payNote: "Nach Überweisung den Beleg hochladen. Nutzernamen in die Notiz schreiben.",
     uploadReceipt: "Beleg hochladen",
     settingsTitle: "Einstellungen", phone: "Telefon", address: "Adresse", avatar: "Avatar",
-    save: "Speichern", saveHint: "Upload startet erst nach „Speichern”.",
-    pwdNow: "Aktuelles Passwort", pwdNew: "Neues Passwort", pwdNew2: "Neues Passwort (Wiederholung)", updatePwd: "Passwort aktualisieren",
+    save: "Speichern", saveHint: "Upload startet erst nach „Speichern“.",
+    pwdNow: "Aktuelles Passwort", pwdNew: "Neues Passwort", pwdNew2: "Neues Passwort (Wiederholen)", updatePwd: "Passwort aktualisieren",
     show: "Anzeigen", hide: "Verbergen",
-    mustLogin: "Bitte anmelden.", joined: "Beigetreten", city: "Stadt", showcase: "Schaufenster",
-    legal: ["Unternehmen","Über uns","Kontakt","Datenschutz","KVKK","Nutzungsbedingungen","Fernabsatz","Lieferung & Rückgabe","Cookies","Community","Verbotene Artikel"],
+    mustLogin: "Bitte anmelden.", joined: "Beitritt", city: "Stadt", showcase: "Schaufenster",
+    approvedSeller: "Verifizierte/r Verkäufer/in",
+    hours: { wd: "09.00 – 16.00", we: "10.00 – 16.00" },
+    shipWindow: "1.5 – 3 Werktage",
+    retPolicy: "Gültig",
   },
 };
 
 const SUPPORTED = ["tr", "en", "ar", "de"];
+const LOCALE_LABEL = { tr: "Türkçe", en: "English", ar: "العربية", de: "Deutsch" };
+const isRTL = (l) => l === "ar";
 
-/* ------------------------------ Helpers ------------------------------ */
-const fmtDate = (s) => (s ? new Date(s).toLocaleDateString() : "");
-const cls = (...a) => a.filter(Boolean).join(" ");
-const isRTL = (lang) => lang === "ar";
+// ---- Yardımcılar ----
+function adNo(i) {
+  // 3838 + index
+  return 3838 + i;
+}
 
-/* ------------------------------- Component ---------------------------- */
-export default function SellerProfile() {
-  const app = useMemo(() => ensureApp(), []);
-  const auth = useMemo(() => getAuth(app), [app]);
-  const db = useMemo(() => getFirestore(app), [app]);
-  const st = useMemo(() => getStorage(app), [app]);
-
+export default function SellerProfilePage() {
   const [lang, setLang] = useState("tr");
   const t = useMemo(() => STR[lang], [lang]);
 
-  const [uid, setUid] = useState(null);
-  const [me, setMe] = useState(null);
-  const [listings, setListings] = useState([]);
+  // auth / user
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
 
-  const [activeTab, setActiveTab] = useState("urunler");
+  // Firestore user doc
+  const [profile, setProfile] = useState(null);
+  const [listings, setListings] = useState([]);
+  const [isPremium, setIsPremium] = useState(false);
+  const [premiumApproved, setPremiumApproved] = useState(false);
+  const [freeShowcaseLeft, setFreeShowcaseLeft] = useState(0);
 
-  const [showPay, setShowPay] = useState(null); // {type:'premium'|'showcase', listingId?, price}
-  const [showSettings, setShowSettings] = useState(false);
-
-  // settings
+  // Ayarlar formu
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [avatarURL, setAvatarURL] = useState("");
   const [avatarFile, setAvatarFile] = useState(null);
 
-  // password change
-  const [pwdNow, setPwdNow] = useState("");
+  // Şifre formu
+  const [pwdOld, setPwdOld] = useState("");
   const [pwdNew, setPwdNew] = useState("");
   const [pwdNew2, setPwdNew2] = useState("");
-  const [visNow, setVisNow] = useState(false);
+  const [visOld, setVisOld] = useState(false);
   const [visNew, setVisNew] = useState(false);
   const [visNew2, setVisNew2] = useState(false);
 
+  // Sekmeler
+  const [activeTab, setActiveTab] = useState("urunler");
+
+  // Modal
+  const [openPay, setOpenPay] = useState(false);
+  const [payKind, setPayKind] = useState("premium"); // premium | showcase
+  const [receipt, setReceipt] = useState(null);
+
+  // Toast (basit)
+  const [msg, setMsg] = useState("");
+
+  // ---- Auth takip ----
   useEffect(() => {
     const off = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
       if (!u) {
-        setUid(null);
-        setMe(null);
-        setListings([]);
         setLoading(false);
         return;
       }
-      setUid(u.uid);
-      try {
-        // users/{uid}
-        const uref = doc(db, "users", u.uid);
-        let snap = await getDoc(uref);
-        if (!snap.exists()) {
-          await setDoc(uref, {
-            email: u.email || "",
-            displayName: u.displayName || "Üreten Eller Satıcısı",
-            username: u.email ? u.email.split("@")[0] : "user" + u.uid.slice(0, 6),
-            city: "",
-            phone: "",
-            address: "",
-            avatarUrl: "/avatar.svg",
-            joinedAt: new Date().toISOString(),
-            premium: { active: false, since: null, freeShowcaseUsed: false, approved: false },
-            stats: { listings: 0, rating: 0, responseHours: 1 },
-          });
-          snap = await getDoc(uref);
-        }
-        const userDoc = { id: u.uid, ...snap.data() };
-        setMe(userDoc);
-        setPhone(userDoc.phone || "");
-        setAddress(userDoc.address || "");
+      // users/{uid}
+      const uref = doc(db, "users", u.uid);
+      const snap = await getDoc(uref);
+      let data = snap.exists() ? snap.data() : null;
 
-        // listings
-        const qy = query(collection(db, "listings"), where("seller_id", "==", u.uid));
-        const lsn = await getDocs(qy);
-        let arr = lsn.docs.map((d) => ({ id: d.id, ...d.data() }));
-        arr.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-        setListings(arr);
-        setLoading(false);
-      } catch (e) {
-        setErr(String(e?.message || e));
-        setLoading(false);
+      if (!data) {
+        data = {
+          uid: u.uid,
+          email: u.email || "",
+          username: u.email ? u.email.split("@")[0] : "",
+          city: "",
+          joinedAt: Date.now(),
+          phone: "",
+          address: "",
+          premium: false,
+          premiumApproved: false,
+          freeShowcaseLeft: 0,
+          avatarURL: "",
+        };
+        await setDoc(uref, data, { merge: true });
       }
+
+      setProfile(data);
+      setIsPremium(!!data.premium);
+      setPremiumApproved(!!data.premiumApproved);
+      setFreeShowcaseLeft(Number(data.freeShowcaseLeft || 0));
+      setPhone(data.phone || "");
+      setAddress(data.address || "");
+      setAvatarURL(data.avatarURL || "");
+
+      // listings
+      const q = query(collection(db, "listings"), where("seller_id", "==", u.uid));
+      const qs = await getDocs(q);
+      const arr = [];
+      qs.forEach((d) => arr.push({ id: d.id, ...d.data() }));
+      setListings(arr);
+
+      setLoading(false);
     });
     return () => off();
-  }, [auth, db]);
+  }, []);
 
-  const isPremium = !!me?.premium?.approved && !!me?.premium?.active;
-  const freeShowcaseLeft = isPremium && !me?.premium?.freeShowcaseUsed;
-
-  async function handleAvatarSave() {
+  // ---- Ayarlar Kaydet ----
+  async function saveSettings() {
+    if (!user) return;
+    const uref = doc(db, "users", user.uid);
+    const updates = { phone, address };
     try {
-      if (!uid) return;
-      let avatarUrl = me?.avatarUrl || "/avatar.svg";
       if (avatarFile) {
-        const rf = ref(st, `avatars/${uid}.jpg`);
-        await uploadBytes(rf, avatarFile);
-        avatarUrl = await getDownloadURL(rf);
+        const sref = ref(storage, `avatars/${user.uid}.jpg`);
+        await uploadBytes(sref, avatarFile);
+        const url = await getDownloadURL(sref);
+        updates.avatarURL = url;
+        setAvatarURL(url);
       }
-      await updateDoc(doc(db, "users", uid), {
-        phone: phone || "",
-        address: address || "",
-        avatarUrl,
-      });
-      const snap = await getDoc(doc(db, "users", uid));
-      setMe({ id: uid, ...snap.data() });
+      await updateDoc(uref, updates);
+      setMsg("✔ Ayarlar kaydedildi.");
       setAvatarFile(null);
-      alert(lang === "tr" ? "Bilgiler kaydedildi." : lang === "ar" ? "تم الحفظ." : lang === "de" ? "Gespeichert." : "Saved.");
     } catch (e) {
-      alert("Hata / Error: " + (e?.message || e));
+      setMsg("Hata: " + e.message);
     }
   }
 
-  async function handlePasswordChange() {
-    try {
-      if (!auth.currentUser?.email) {
-        alert("Oturum türü desteklenmiyor (email yok).");
-        return;
-      }
-      if (!pwdNow || !pwdNew || !pwdNew2) {
-        alert("Şifre alanları eksik.");
-        return;
-      }
-      if (pwdNew !== pwdNew2) {
-        alert("Yeni şifreler aynı değil.");
-        return;
-      }
-      const cred = EmailAuthProvider.credential(auth.currentUser.email, pwdNow);
-      await reauthenticateWithCredential(auth.currentUser, cred);
-      await updatePassword(auth.currentUser, pwdNew);
-      setPwdNow(""); setPwdNew(""); setPwdNew2("");
-      alert(lang === "tr" ? "Şifre güncellendi." : lang === "ar" ? "تم تحديث كلمة المرور." : lang === "de" ? "Passwort aktualisiert." : "Password updated.");
-    } catch (e) {
-      alert((lang === "tr" ? "Şifre güncellenemedi: " : "Password update failed: ") + (e?.message || e));
-    }
-  }
-
-  async function uploadReceipt(file, payload) {
-    if (!uid || !file) return;
-    const rf = ref(st, `receipts/${uid}/${Date.now()}_${file.name}`);
-    await uploadBytes(rf, file);
-    const url = await getDownloadURL(rf);
-
-    const payRef = doc(collection(db, "payments"));
-    await setDoc(payRef, {
-      user_id: uid,
-      type: payload.type, // premium | showcase
-      listing_id: payload.listingId || null,
-      amount: payload.amount,
-      currency: "TRY",
-      created_at: new Date().toISOString(),
-      status: "pending",
-      username: me?.username || "",
-      receipt_url: url,
-      note: payload.note || "",
-    });
-    return url;
-  }
-
-  function openPremiumModal() {
-    setShowPay({ type: "premium", price: PREMIUM_PRICE });
-  }
-  function openShowcaseModal(listingId) {
-    const price = isPremium ? (freeShowcaseLeft ? 0 : SHOWCASE_PRICE_PREMIUM) : SHOWCASE_PRICE_STANDARD;
-    setShowPay({ type: "showcase", listingId, price });
-  }
-  async function submitPayment(e) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const file = fd.get("receipt");
-    if (!file || !file.name) {
-      alert(lang === "tr" ? "Dekont yükleyin." : "Upload a receipt.");
+  // ---- Şifre Güncelle ----
+  async function changePassword() {
+    if (!user) return;
+    if (!pwdOld || !pwdNew || !pwdNew2) {
+      setMsg("Lütfen tüm şifre alanlarını doldurun.");
       return;
     }
-    const username = me?.username || "";
-    const note = `${showPay.type.toUpperCase()} • user:${username}`;
-    await uploadReceipt(file, { type: showPay.type, listingId: showPay.listingId, amount: showPay.price, note });
-
-    if (showPay.type === "showcase" && freeShowcaseLeft && showPay.price === 0) {
-      await updateDoc(doc(db, "users", uid), { "premium.freeShowcaseUsed": true });
-      const snap = await getDoc(doc(db, "users", uid));
-      setMe({ id: uid, ...snap.data() });
+    if (pwdNew.length < 6) {
+      setMsg("Yeni şifre en az 6 karakter olmalı.");
+      return;
     }
-    alert(lang === "tr" ? "Dekont yüklendi. Onay bekliyor." : lang === "ar" ? "تم رفع الإيصال. بانتظار الموافقة." : lang === "de" ? "Beleg hochgeladen. Wartet auf Freigabe." : "Receipt uploaded. Pending approval.");
-    setShowPay(null);
+    if (pwdNew !== pwdNew2) {
+      setMsg("Yeni şifreler aynı değil.");
+      return;
+    }
+    try {
+      const cred = EmailAuthProvider.credential(user.email || "", pwdOld);
+      await reauthenticateWithCredential(user, cred);
+      await updatePassword(user, pwdNew);
+      setMsg("✔ Şifre güncellendi.");
+      setPwdOld(""); setPwdNew(""); setPwdNew2("");
+    } catch (e) {
+      setMsg("Şifre güncelleme hatası: " + e.message);
+    }
   }
 
-  if (loading) return <div style={{ padding: 16 }}>Loading… {err && <small style={{ color: "crimson" }}>Error: {err}</small>}</div>;
-  if (!uid) return <div style={{ padding: 16 }}>{t.mustLogin} <Link href="/login">Login</Link></div>;
+  // ---- Premium butonları ----
+  function openPremiumModal() {
+    setPayKind("premium");
+    setOpenPay(true);
+  }
+  function openShowcaseModal() {
+    setPayKind("showcase");
+    setOpenPay(true);
+  }
+
+  // ---- Dekont Yükle ----
+  async function uploadReceipt() {
+    if (!user || !receipt) return;
+    try {
+      const name = `${Date.now()}_${receipt.name}`;
+      const sref = ref(storage, `receipts/${user.uid}/${name}`);
+      await uploadBytes(sref, receipt);
+      const url = await getDownloadURL(sref);
+      // payments koleksiyonu: admin görsün diye
+      await setDoc(doc(collection(db, "payments")), {
+        uid: user.uid,
+        kind: payKind,
+        amount:
+          payKind === "premium"
+            ? PREMIUM_PRICE
+            : isPremium
+            ? SHOWCASE_PRICE_PREMIUM
+            : SHOWCASE_PRICE_STANDARD,
+        receiptURL: url,
+        createdAt: Date.now(),
+        username: profile?.username || "",
+      });
+      setMsg("✔ Dekont yüklendi. Admin onayını bekleyin.");
+      setOpenPay(false);
+      setReceipt(null);
+    } catch (e) {
+      setMsg("Dekont yükleme hatası: " + e.message);
+    }
+  }
+
+  // ---- Vitrin hakkını kullan (sadece premium + onaylı) ----
+  async function useFreeShowcase() {
+    if (!user || !premiumApproved || freeShowcaseLeft <= 0) return;
+    try {
+      const uref = doc(db, "users", user.uid);
+      await updateDoc(uref, { freeShowcaseLeft: freeShowcaseLeft - 1 });
+      setFreeShowcaseLeft((x) => Math.max(0, x - 1));
+      setMsg("✔ Ücretsiz vitrin hakkı kullanıldı.");
+    } catch (e) {
+      setMsg("Hata: " + e.message);
+    }
+  }
+
+  // ---- Basit UI yardımcısı ----
+  function FieldLabel({ label, children }) {
+    return (
+      <label className="form">
+        <div style={{ fontWeight: 800, marginBottom: 6 }}>{label}</div>
+        {children}
+      </label>
+    );
+  }
+
+  // ---- Yükleme / Giriş yok ----
+  if (loading) {
+    return (
+      <div className="listings" style={{ paddingTop: 24 }}>
+        <div className="empty">Yükleniyor...</div>
+      </div>
+    );
+  }
+  if (!user) {
+    return (
+      <div className="listings" style={{ paddingTop: 24 }}>
+        <div className="empty">{t.mustLogin}</div>
+        <div style={{ marginTop: 10 }}>
+          <Link className="btn" href="/login">
+            Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const username = profile?.username || (user.email ? user.email.split("@")[0] : "user");
+  const city = profile?.city || "-";
+  const joined = profile?.joinedAt ? new Date(profile.joinedAt).toLocaleDateString() : "-";
+  const avatar = avatarURL || "/avatar.svg";
+
+  const gold = premiumApproved;
+  const dir = isRTL(lang) ? "rtl" : "ltr";
 
   return (
-    <div lang={lang} dir={isRTL(lang) ? "rtl" : "ltr"}>
-
+    <div lang={lang} dir={dir}>
       {/* Header */}
       <header className="hdr">
         <Link className="brand" href="/">
-          <img src="/logo.png" width={36} height={36} alt="logo" />
-          <strong>{t.brand.toUpperCase()}</strong>
+          <img src="/logo.png" width={28} height={28} alt="logo" />
+          <strong>{t.brand}</strong>
         </Link>
         <nav className="hdrNav">
-          <Link href="/portal/seller/">{t.navHome}</Link>
-          <Link href="/portal/seller/post/">{t.navPost}</Link>
-          <Link href="/portal/seller/profile/" className="active">{t.navProfile}</Link>
+          <Link href="/" className="ghost">{t.navHome}</Link>
+          <Link href="/portal/seller/post" className="ghost">{t.navPost}</Link>
+          <Link href="/portal/seller/profile" className="ghost active">{t.navProfile}</Link>
           <select aria-label="Language" value={lang} onChange={(e) => setLang(e.target.value)}>
-            {SUPPORTED.map((k) => <option key={k} value={k}>{k.toUpperCase()}</option>)}
+            {SUPPORTED.map((k) => (
+              <option key={k} value={k}>{LOCALE_LABEL[k]}</option>
+            ))}
           </select>
         </nav>
       </header>
 
-      {/* Profile Card */}
-      <section className={cls("profileCard", isPremium && "gold")}>
+      {/* Profil kartı */}
+      <section className={`profileCard ${gold ? "gold" : ""}`}>
         <div className="left">
-          <div
-            className={cls("avatarWrap", isPremium && "gold")}
-            style={{ backgroundImage: `url(${me?.avatarUrl || "/avatar.svg"})` }}
-          />
+          <div className={`avatarWrap ${gold ? "gold" : ""}`} style={{ backgroundImage: `url(${avatar})` }} />
           <div className="info">
             <div className="name">
-              {me?.displayName || (lang === "en" ? "Seller" : lang === "ar" ? "البائع" : lang === "de" ? "Verkäufer:in" : "Satıcı")}
-              {isPremium && <span className="badge" title="Verified">✔</span>}
+              <span>@{username}</span>
+              {gold && <span className="badge">★ {t.approvedSeller}</span>}
             </div>
-            <div className="user">@{me?.username}</div>
+            <div className="user">{t.city}: {city}</div>
             <div className="meta">
-              <span>{me?.city || t.city}</span>
-              <span>{t.joined}: {fmtDate(me?.joinedAt)}</span>
-              <span>{t.showcase}: {listings.filter((l) => l.featured).length}</span>
+              <span>{t.joined}: {joined}</span>
+              <span>{t.showcase}: {freeShowcaseLeft}</span>
             </div>
             <div className="quick">
               <button className="ghost">{t.msg}</button>
@@ -415,65 +476,72 @@ export default function SellerProfile() {
 
         <div className="right">
           <h3>{t.sellerSettings}</h3>
-          <div className="tabs">
-            <button className="tab active">Profil</button>
-            <button className="tab" onClick={() => setShowSettings(true)}>{t.settingsTitle}</button>
-          </div>
-
           <div className="premium">
             <div className="ttl">{t.premium}</div>
-            {isPremium ? (
-              <div className="pRow">
-                <div>{t.premiumActive(freeShowcaseLeft)}</div>
-                <button className="btn" onClick={() => openShowcaseModal(null)}>{t.useShowcase}</button>
-              </div>
-            ) : (
-              <div className="pRow">
-                <button className="btn" onClick={openPremiumModal}>{t.goPremium}</button>
-                <div className="hint">{t.premiumHint}</div>
-              </div>
-            )}
+            <div className="pRow">
+              {!isPremium && (
+                <>
+                  <button className="btn big" onClick={openPremiumModal}>{t.goPremium}</button>
+                  <span className="hint">{t.premiumHint}</span>
+                </>
+              )}
+              {isPremium && (
+                <>
+                  <span className="hint">{t.premiumActive(freeShowcaseLeft > 0)}</span>
+                  {premiumApproved && freeShowcaseLeft > 0 && (
+                    <button className="btn" onClick={useFreeShowcase}>{t.useShowcase}</button>
+                  )}
+                  <button className="btn ghost" onClick={openShowcaseModal}>{t.takeShowcase}</button>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="shop">
             <div className="ttl">{t.storeInfo}</div>
-            <table className="tbl"><tbody>
-              <tr><td>{t.wd}</td><td>09.00 – 16.00</td></tr>
-              <tr><td>{t.we}</td><td>10.00 – 16.00</td></tr>
-              <tr><td>{t.ship}</td><td>1.5 – 3</td></tr>
-              <tr><td>{t.ret}</td><td>14</td></tr>
-            </tbody></table>
+            <table className="tbl">
+              <tbody>
+                <tr><td>{t.wd}</td><td>{t.hours.wd}</td></tr>
+                <tr><td>{t.we}</td><td>{t.hours.we}</td></tr>
+                <tr><td>{t.ship}</td><td>{t.shipWindow}</td></tr>
+                <tr><td>{t.ret}</td><td>{t.retPolicy}</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
 
-      {/* Tabs */}
+      {/* Sekmeler */}
       <section className="listings">
         <div className="tabs2">
-          <button className={activeTab === "urunler" ? "on" : ""} onClick={() => setActiveTab("urunler")}>{t.tabs.urunler}</button>
-          <button className={activeTab === "deger" ? "on" : ""} onClick={() => setActiveTab("deger")}>{t.tabs.deger}</button>
-          <button className={activeTab === "hakkinda" ? "on" : ""} onClick={() => setActiveTab("hakkinda")}>{t.tabs.hakkinda}</button>
-          <button className={activeTab === "kargo" ? "on" : ""} onClick={() => setActiveTab("kargo")}>{t.tabs.kargo}</button>
-          <button className={activeTab === "para" ? "on" : ""} onClick={() => setActiveTab("para")}>{t.tabs.para}</button>
+          {["urunler","deger","hakkinda","kargo","para"].map((k) => (
+            <button
+              key={k}
+              className={activeTab===k ? "on" : ""}
+              onClick={() => setActiveTab(k)}
+            >
+              {t.tabs[k]}
+            </button>
+          ))}
         </div>
 
         {activeTab === "urunler" && (
           <div className="grid">
             {listings.length === 0 && <div className="empty">{t.none}</div>}
-            {listings.map((it, i) => (
-              <article key={it.id} className="card">
-                <div className="thumb" style={{ backgroundImage: `url(${it.images?.[0] || "/logo.png"})` }}>
-                  {it.featured && <span className="badge">★</span>}
+            {listings.map((ad, i) => (
+              <article key={ad.id} className="card">
+                <div className="thumb" style={{ backgroundImage: `url(${ad.image || "/avatar.svg"})` }}>
+                  <span className="badge">#{adNo(i)}</span>
                 </div>
                 <div className="body">
-                  <div className="title">{it.title || "—"}</div>
+                  <h3 className="title">{ad.title || "İlan"}</h3>
                   <div className="meta">
-                    <span>#{3838 + i}</span>
-                    <span>{it.price ? `₺${it.price}` : ""}</span>
+                    <span>{(ad.price || 0) + " ₺"}</span>
+                    <span>{ad.city || city || "-"}</span>
                   </div>
                   <div className="act">
-                    <button className="btn ghost" onClick={() => openShowcaseModal(it.id)}>{t.takeShowcase}</button>
-                    <button className="btn">{t.view}</button>
+                    <Link href={`/ad/${ad.id}`} className="btn">{t.view}</Link>
+                    <button className="btn ghost" onClick={openShowcaseModal}>{t.takeShowcase}</button>
                   </div>
                 </div>
               </article>
@@ -481,138 +549,142 @@ export default function SellerProfile() {
           </div>
         )}
 
-        {activeTab === "deger" && (<div className="empty">—</div>)}
-        {activeTab === "hakkinda" && (<div className="empty">—</div>)}
-        {activeTab === "kargo" && (
-          <table className="tbl" style={{ background: "#fff", borderRadius: 12 }}>
-            <tbody>
-              <tr><td>{t.ship}</td><td>1.5 – 3</td></tr>
-              <tr><td>{t.ret}</td><td>14</td></tr>
-            </tbody>
-          </table>
+        {activeTab === "deger" && (
+          <div className="empty">Henüz değerlendirme yok.</div>
         )}
+
+        {activeTab === "hakkinda" && (
+          <div className="form">
+            <div className="sub">Satıcı hakkında kısa bilgi alanı (profil dokümanından genişletilebilir).</div>
+          </div>
+        )}
+
+        {activeTab === "kargo" && (
+          <div className="form">
+            <div className="sub">{t.ship}: {t.shipWindow} — {t.ret}: {t.retPolicy}</div>
+          </div>
+        )}
+
         {activeTab === "para" && (
-          <div className="payBox" style={{ background: "#fff", borderRadius: 12 }}>
-            <div className="row"><b>{t.premium}</b><span>₺{PREMIUM_PRICE}</span></div>
-            <div className="row"><b>Vitrin (Premium)</b><span>₺{SHOWCASE_PRICE_PREMIUM}</span></div>
-            <div className="row"><b>Vitrin (Standart)</b><span>₺{SHOWCASE_PRICE_STANDARD}</span></div>
+          <div className="form">
+            <div className="sub">Premium: ₺{PREMIUM_PRICE} — Showcase: Premium ₺{SHOWCASE_PRICE_PREMIUM}, Standart ₺{SHOWCASE_PRICE_STANDARD}</div>
+            <div className="rowBtns" style={{ marginTop: 8 }}>
+              {!isPremium && <button className="btn" onClick={openPremiumModal}>{t.goPremium}</button>}
+              <button className="btn ghost" onClick={openShowcaseModal}>{t.takeShowcase}</button>
+            </div>
           </div>
         )}
       </section>
 
-      {/* Footer */}
-      <footer className="legal">
-        <div className="inner">
-          <nav className="links">
-            <Link href="/legal/kurumsal">{t.legal[0]}</Link>
-            <Link href="/legal/hakkimizda">{t.legal[1]}</Link>
-            <Link href="/legal/iletisim">{t.legal[2]}</Link>
-            <Link href="/legal/gizlilik">{t.legal[3]}</Link>
-            <Link href="/legal/kvkk-aydinlatma">{t.legal[4]}</Link>
-            <Link href="/legal/kullanim-sartlari">{t.legal[5]}</Link>
-            <Link href="/legal/mesafeli-satis-sozlesmesi">{t.legal[6]}</Link>
-            <Link href="/legal/teslimat-iade">{t.legal[7]}</Link>
-            <Link href="/legal/cerez-politikasi">{t.legal[8]}</Link>
-            <Link href="/legal/topluluk-kurallari">{t.legal[9]}</Link>
-            <Link href="/legal/yasakli-urunler">{t.legal[10]}</Link>
-          </nav>
-          <div className="copy">© 2025 {t.brand}</div>
-        </div>
-      </footer>
+      {/* Ayarlar */}
+      <section className="listings" style={{ marginTop: 8 }}>
+        <h3 style={{ margin: "8px 0" }}>{t.settingsTitle}</h3>
+        <div className="grid">
+          <div className="form">
+            <FieldLabel label={t.avatar}>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <img src={avatar} alt="avatar" width={64} height={64} style={{ borderRadius: 12, border: "1px solid var(--line)" }} />
+                <input type="file" accept="image/*" onChange={(e) => setAvatarFile(e.target.files?.[0] || null)} />
+              </div>
+            </FieldLabel>
+            <FieldLabel label={t.phone}>
+              <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+90..." />
+            </FieldLabel>
+            <FieldLabel label={t.address}>
+              <textarea rows={3} value={address} onChange={(e) => setAddress(e.target.value)} />
+            </FieldLabel>
+            <div className="rowBtns">
+              <button className="btn" onClick={saveSettings}>{t.save}</button>
+              <span className="sub">{t.saveHint}</span>
+            </div>
+          </div>
 
-      {/* ÖDEME MODAL */}
-      {showPay && (
-        <div className="modal" role="dialog" aria-modal="true">
-          <div className="sheet">
+          <div className="form">
+            <FieldLabel label={t.pwdNow}>
+              <div className="pwdRow">
+                <input type={visOld ? "text" : "password"} value={pwdOld} onChange={(e) => setPwdOld(e.target.value)} />
+                <button className="eye" onClick={() => setVisOld((v) => !v)}>{visOld ? t.hide : t.show}</button>
+              </div>
+            </FieldLabel>
+            <FieldLabel label={t.pwdNew}>
+              <div className="pwdRow">
+                <input type={visNew ? "text" : "password"} value={pwdNew} onChange={(e) => setPwdNew(e.target.value)} />
+                <button className="eye" onClick={() => setVisNew((v) => !v)}>{visNew ? t.hide : t.show}</button>
+              </div>
+            </FieldLabel>
+            <FieldLabel label={t.pwdNew2}>
+              <div className="pwdRow">
+                <input type={visNew2 ? "text" : "password"} value={pwdNew2} onChange={(e) => setPwdNew2(e.target.value)} />
+                <button className="eye" onClick={() => setVisNew2((v) => !v)}>{visNew2 ? t.hide : t.show}</button>
+              </div>
+            </FieldLabel>
+            <div className="rowBtns">
+              <button className="btn" onClick={changePassword}>{t.updatePwd}</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Ödeme Modal */}
+      {openPay && (
+        <div className="modal" onClick={() => setOpenPay(false)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
             <div className="mHd">
               <div className="mTtl">{t.payTitle}</div>
-              <button className="x" onClick={() => setShowPay(null)}>✕</button>
+              <button className="x" onClick={() => setOpenPay(false)}>✕</button>
             </div>
             <div className="mBd">
               <div className="payBox">
-                <div className="row"><b>{t.process}</b><span>{showPay.type === "premium" ? t.premium : "Vitrin"}</span></div>
-                <div className="row"><b>{t.price}</b><span>{showPay.price === 0 ? t.freeRight : `₺${showPay.price}`}</span></div>
-                <div className="row"><b>{t.iban}</b><span className="mono">{IBAN}</span></div>
-                <div className="row"><b>{t.accName}</b><span>{ACCOUNT_NAME}</span></div>
-                <div className="row"><b>{t.papara}</b><span>{PAPARA}</span></div>
-                <div className="sub">{t.payNote}</div>
+                <div className="row"><strong>{t.process}</strong><span className="mono">{payKind === "premium" ? "Premium" : "Showcase"}</span></div>
+                <div className="row"><strong>{t.price}</strong><span className="mono">
+                  {payKind === "premium"
+                    ? `₺${PREMIUM_PRICE}`
+                    : isPremium ? `₺${SHOWCASE_PRICE_PREMIUM}` : `₺${SHOWCASE_PRICE_STANDARD}`}
+                </span></div>
+                <div className="row"><strong>{t.iban}</strong><span className="mono">{IBAN}</span></div>
+                <div className="row"><strong>{t.accName}</strong><span className="mono">{ACCOUNT_NAME}</span></div>
+                <div className="row"><strong>{t.papara}</strong><span className="mono">TR590082900009491868461105 – {ACCOUNT_NAME} – {PAPARA}</span></div>
+                <div className="sub" style={{ marginTop: 6 }}>{t.payNote}</div>
               </div>
-              <form className="receipt" onSubmit={submitPayment}>
-                <input name="receipt" type="file" accept="image/*,application/pdf" required />
-                <button className="btn big" type="submit">{t.uploadReceipt}</button>
-              </form>
+              <div className="receipt">
+                <input type="file" accept="image/*,application/pdf" onChange={(e) => setReceipt(e.target.files?.[0] || null)} />
+                <button className="btn" onClick={uploadReceipt}>{t.uploadReceipt}</button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* AYARLAR MODAL */}
-      {showSettings && (
-        <div className="modal" role="dialog" aria-modal="true">
-          <div className="sheet">
-            <div className="mHd">
-              <div className="mTtl">{t.settingsTitle}</div>
-              <button className="x" onClick={() => setShowSettings(false)}>✕</button>
-            </div>
-            <div className="mBd">
-              {/* Profil Bilgileri */}
-              <div className="form">
-                <label>{t.phone}
-                  <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xx…" />
-                </label>
-                <label>{t.address}
-                  <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={3} />
-                </label>
-                <label>{t.avatar}
-                  <input type="file" accept="image/*" onChange={(e) => setAvatarFile(e.target.files?.[0] || null)} />
-                </label>
-                <div className="rowBtns">
-                  <button className="btn" onClick={handleAvatarSave} type="button">{t.save}</button>
-                </div>
-                <div className="sub">{t.saveHint}</div>
-              </div>
-
-              {/* Şifre Değiştir */}
-              <div className="form">
-                <label>{t.pwdNow}
-                  <div className="pwdRow">
-                    <input
-                      type={visNow ? "text" : "password"}
-                      value={pwdNow}
-                      onChange={(e) => setPwdNow(e.target.value)}
-                      placeholder="•••••••"
-                    />
-                    <button type="button" className="eye" onClick={() => setVisNow(v => !v)}>{visNow ? t.hide : t.show}</button>
-                  </div>
-                </label>
-                <label>{t.pwdNew}
-                  <div className="pwdRow">
-                    <input
-                      type={visNew ? "text" : "password"}
-                      value={pwdNew}
-                      onChange={(e) => setPwdNew(e.target.value)}
-                      placeholder="•••••••"
-                    />
-                    <button type="button" className="eye" onClick={() => setVisNew(v => !v)}>{visNew ? t.hide : t.show}</button>
-                  </div>
-                </label>
-                <label>{t.pwdNew2}
-                  <div className="pwdRow">
-                    <input
-                      type={visNew2 ? "text" : "password"}
-                      value={pwdNew2}
-                      onChange={(e) => setPwdNew2(e.target.value)}
-                      placeholder="•••••••"
-                    />
-                    <button type="button" className="eye" onClick={() => setVisNew2(v => !v)}>{visNew2 ? t.hide : t.show}</button>
-                  </div>
-                </label>
-                <div className="rowBtns">
-                  <button className="btn ghost" onClick={handlePasswordChange} type="button">{t.updatePwd}</button>
-                </div>
-              </div>
-            </div>
+      {/* Footer legal */}
+      <footer className="legal">
+        <div className="inner">
+          <div className="links">
+            <Link href="/legal/kurumsal">Kurumsal</Link>
+            <Link href="/legal/hakkimizda">Hakkımızda</Link>
+            <Link href="/legal/iletisim">İletişim</Link>
+            <Link href="/legal/gizlilik">Gizlilik</Link>
+            <Link href="/legal/kvkk-aydinlatma">KVKK</Link>
+            <Link href="/legal/kullanim-sartlari">Kullanım Şartları</Link>
+            <Link href="/legal/mesafeli-satis-sozlesmesi">Mesafeli Satış</Link>
+            <Link href="/legal/teslimat-iade">Teslimat & İade</Link>
+            <Link href="/legal/cerez-politikasi">Çerez</Link>
+            <Link href="/legal/topluluk-kurallari">Topluluk</Link>
+            <Link href="/legal/yasakli-urunler">Yasaklı Ürünler</Link>
           </div>
+          <div className="copy">© 2025 {t.brand}</div>
+        </div>
+      </footer>
+
+      {/* küçük toast */}
+      {msg && (
+        <div style={{
+          position: "fixed", bottom: 16, left: "50%", transform: "translateX(-50%)",
+          background: "#111827", color: "#fff", border: "1px solid #000", padding: "8px 12px",
+          borderRadius: 12, zIndex: 80
+        }}
+        onClick={() => setMsg("")}
+        >
+          {msg}
         </div>
       )}
     </div>
