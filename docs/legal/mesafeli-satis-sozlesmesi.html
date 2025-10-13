@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="tr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesafeli Satış Sözleşmesi – Üreten Eller</title>
+<style>
+  :root{--bg:#0b0b0c;--fg:#ececf1;--muted:#b5b5bd;--card:#141418;--bd:#272733;--acc:#22c55e}
+  *{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px}
+  .top{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+  select{background:var(--card);border:1px solid var(--bd);color:var(--fg);padding:8px 10px;border-radius:10px}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:20px}
+  h1{font-size:22px;margin:0 0 8px} h2{font-size:17px;margin:18px 0 8px;color:#d9d9df}
+  p,li{color:#d6d6dc} .muted{color:var(--muted)}
+  .notice{border-left:3px solid var(--acc);padding:10px 12px;background:#101914;border-radius:8px}
+  .footer{margin-top:22px;font-size:13px;color:var(--muted)}
+  .footer a{color:#c8c8ff;text-decoration:none;margin-right:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><strong>Üreten Eller</strong> • <span class="muted">Mesafeli Satış Sözleşmesi</span></div>
+    <select id="lang" aria-label="Language">
+      <option value="tr">Türkçe</option>
+      <option value="en">English</option>
+      <option value="ar">العربية</option>
+      <option value="de">Deutsch</option>
+    </select>
+  </div>
+
+  <div id="view" class="card"></div>
+
+  <div class="footer">
+    <!-- İstersen diğer tek-dosya sayfalarına da aynı yapıyla link verirsin -->
+    <a href="/legal/gizlilik-politikasi.html">Gizlilik</a>
+    <a href="/legal/kvkk-aydinlatma.html">KVKK Aydınlatma</a>
+    <a href="/legal/cerez-politikasi.html">Çerez</a>
+    <a href="/legal/kullanim-sartlari.html">Kullanım Şartları</a>
+    <a href="/legal/on-bilgilendirme-formu.html">Ön Bilgilendirme</a>
+    <a href="/legal/teslimat-iade-iptal.html">Teslimat–İade–İptal</a>
+    <a href="/legal/yasakli-urunler.html">Yasaklı Ürünler</a>
+    <a href="/legal/topluluk-kurallari.html">Topluluk Kuralları</a>
+    <a href="/legal/iletisim-impressum.html">İletişim/İmpressum</a>
+  </div>
+</div>
+
+<script>
+const SELLER = {
+  brand: "Üreten Eller",
+  owner: "Nejla Koç",
+  taxOffice: "Silivri Vergi Dairesi Müdürlüğü",
+  taxNo: "«VERGI_NO»",                 // burayı doldur
+  address: "«AÇIK_ADRES»",             // burayı doldur
+  email: "«EPOSTA»",                   // burayı doldur
+  phone: "0544 198 38 44",
+  website: "https://www.xn--reteneller-8db.com/",
+  nace: "47.91.14",
+  startDate: "17/09/2025"
+};
+
+const T = {
+  tr: `
+    <h1>Mesafeli Satış Sözleşmesi</h1>
+    <div class="notice"><strong>Satıcı:</strong> ${SELLER.owner} (${SELLER.brand}) — ${SELLER.taxOffice} / Vergi No: ${SELLER.taxNo} — Tel: ${SELLER.phone} — E-posta: ${SELLER.email}</div>
+    <h2>1. Taraflar ve Konu</h2>
+    <p>Bu sözleşme, ${SELLER.website} üzerinden verilen siparişlerde 6502 sayılı TKHK ve Mesafeli Sözleşmeler Yönetmeliği uyarınca tarafların hak ve yükümlülüklerini düzenler.</p>
+    <h2>2. Ürün/Bedel/Ödeme</h2>
+    <p>Ürün nitelikleri, vergiler dâhil toplam fiyat ve teslimat bedelleri sipariş özetinde yer alır. Ödeme PayTR/iyzico altyapılarıyla alınabilir; kart verileri ödeme kuruluşunca işlenir, satıcı tarafından saklanmaz.</p>
+    <h2>3. Teslimat</h2>
+    <p>Teslimat yöntemi ve süresi ödeme sayfasında belirtilir. Alıcının adres/teslim almama nedenli gecikmelerden satıcı sorumlu değildir.</p>
+    <h2>4. Cayma Hakkı</h2>
+    <p>Yönetmelik m.15 gereğince gıda/çabuk bozulabilen, hijyen sebebiyle iadesi uygun olmayan ve kişiye özel üretilen ürünlerde cayma hakkı yoktur. Diğer ürünlerde 14 gün içinde iade mümkündür.</p>
+    <h2>5. İade Süreci</h2>
+    <p>İade talebinizi ${SELLER.email} adresine iletebilirsiniz. Onay sonrası kargo bilgileri paylaşılır.</p>
+    <h2>6. Uyuşmazlık</h2>
+    <p>Yetkili merci Alıcının yerleşim yerindeki Tüketici Hakem Heyetleri ve Tüketici Mahkemeleridir.</p>
+    <p class="muted">Adres: ${SELLER.address}</p>
+  `,
+  en: `
+    <h1>Distance Sales Contract</h1>
+    <div class="notice"><strong>Seller:</strong> ${SELLER.owner} (${SELLER.brand}) — Tax Office: ${SELLER.taxOffice} / Tax ID: ${SELLER.taxNo} — Tel: ${SELLER.phone} — Email: ${SELLER.email}</div>
+    <h2>1. Parties & Scope</h2>
+    <p>This contract governs orders placed via ${SELLER.website} under consumer law and the Distance Sales Regulation.</p>
+    <h2>2. Product/Price/Payment</h2>
+    <p>Features, total price incl. taxes and delivery fees appear at checkout. Payments may be processed by PayTR/iyzico; card data is handled by the payment provider, not stored by the Seller.</p>
+    <h2>3. Delivery</h2>
+    <p>Method and timeline are shown at checkout. Delays caused by incorrect address or absence of the buyer are not the Seller’s responsibility.</p>
+    <h2>4. Right of Withdrawal</h2>
+    <p>No withdrawal for perishable, hygiene-sensitive or customized goods. Otherwise, returns are possible within 14 days.</p>
+    <h2>5. Returns</h2>
+    <p>Contact ${SELLER.email}. Once approved, we will share return instructions.</p>
+    <h2>6. Disputes</h2>
+    <p>Competent authorities are the Consumer Arbitration Committees and Courts at the buyer’s domicile.</p>
+    <p class="muted">Address: ${SELLER.address}</p>
+  `,
+  ar: `
+    <h1>عقد البيع عن بُعد</h1>
+    <div class="notice"><strong>البائع:</strong> ${SELLER.owner} (${SELLER.brand}) — دائرة الضرائب: ${SELLER.taxOffice} / رقم الضريبة: ${SELLER.taxNo} — هاتف: ${SELLER.phone} — بريد: ${SELLER.email}</div>
+    <h2>1) الأطراف والنطاق</h2>
+    <p>يحكم هذا العقد الطلبات عبر ${SELLER.website} وفق قانون المستهلك ولائحة البيع عن بُعد.</p>
+    <h2>2) المنتج/السعر/الدفع</h2>
+    <p>المواصفات والسعر الشامل والرسوم تظهر عند الدفع. تتم المعالجة عبر PayTR/iyzico ولا نخزّن بيانات البطاقة.</p>
+    <h2>3) التسليم</h2>
+    <p>طريقة ومدة التسليم تُذكر عند الدفع. التأخير بسبب العنوان الخاطئ أو غياب المشتري ليس مسؤوليتنا.</p>
+    <h2>4) حق الانسحاب</h2>
+    <p>لا يطبق على السلع القابلة للتلف أو المخصصة أو ذات اعتبارات النظافة. بخلاف ذلك، الإرجاع خلال 14 يومًا.</p>
+    <h2>5) الإرجاع</h2>
+    <p>راسلنا على ${SELLER.email}. بعد الموافقة تُرسل تعليمات الإرجاع.</p>
+    <h2>6) النزاعات</h2>
+    <p>الجهات المختصة: لجان وهيئات ومحاكم حماية المستهلك في موطن المشتري.</p>
+    <p class="muted">العنوان: ${SELLER.address}</p>
+  `,
+  de: `
+    <h1>Fernabsatzvertrag</h1>
+    <div class="notice"><strong>Verkäufer/in:</strong> ${SELLER.owner} (${SELLER.brand}) — Finanzamt: ${SELLER.taxOffice} / Steuer-ID: ${SELLER.taxNo} — Tel.: ${SELLER.phone} — E-Mail: ${SELLER.email}</div>
+    <h2>1. Parteien & Gegenstand</h2>
+    <p>Dieser Vertrag gilt für Bestellungen über ${SELLER.website} gemäß Verbraucherrecht und Fernabsatzverordnung.</p>
+    <h2>2. Produkt/Preis/Zahlung</h2>
+    <p>Merkmale, Gesamtpreis inkl. Steuern und Lieferkosten werden an der Kasse angezeigt. Zahlungen über PayTR/iyzico; Kartendaten werden vom Zahlungsdienst verarbeitet.</p>
+    <h2>3. Lieferung</h2>
+    <p>Methode und Fristen an der Kasse. Verzögerungen durch falsche Adresse oder Abwesenheit liegen nicht in unserer Verantwortung.</p>
+    <h2>4. Widerrufsrecht</h2>
+    <p>Kein Widerruf bei verderblichen, hygiene-sensiblen oder personalisierten Waren. Andernfalls 14 Tage Rückgabe.</p>
+    <h2>5. Rückgaben</h2>
+    <p>Kontakt: ${SELLER.email}. Nach Freigabe senden wir Rücksendehinweise.</p>
+    <h2>6. Streitbeilegung</h2>
+    <p>Zuständig sind die Verbraucher-Schiedsstellen und -Gerichte am Wohnsitz des Käufers.</p>
+    <p class="muted">Adresse: ${SELLER.address}</p>
+  `
+};
+
+const sel = document.getElementById("lang");
+const view = document.getElementById("view");
+let L = localStorage.getItem("legal_lang") || "tr";
+sel.value = L;
+function render(){
+  document.documentElement.lang = L;
+  document.documentElement.dir  = (L==="ar") ? "rtl" : "ltr";
+  view.innerHTML = T[L] || T.tr;
+}
+sel.addEventListener("change", ()=>{ L=sel.value; localStorage.setItem("legal_lang",L); render(); });
+render();
+</script>
+</body>
+</html>
