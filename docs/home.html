@@ -619,7 +619,11 @@
   const btnLogout = document.getElementById('btnLogout');
   if(btnLogout){ btnLogout.addEventListener('click', ()=>{ try{ /* Firebase mevcutsa signOut burada olabilir */ }catch(_){} location.href='/docs/auth.html'; }); }
   
-  // Profil akışı
+  <script>
+  // NEDEN: /home.html vs /docs/home.html tutarsızlığını tek sabitle çözüyoruz.
+  const HOME = '/docs/home.html';
+
+  // Profil panelini aç (girişsiz kullanıcı için)
   function __openProfile(){
     const bd  = document.getElementById('backdrop');
     const box = document.getElementById('authBox');
@@ -628,39 +632,44 @@
       box.style.display = 'block';
       box.classList.add('center');
       box.setAttribute('aria-hidden','false');
+    }
   }
 
+  // #profile hash’i ile gelindiyse girişsiz kullanıcıda paneli aç
   function __maybeOpenProfileFromHash(){
     if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
       __openProfile();
     }
   }
 
-  // Sayfa yüklenince #profile ile gelindiyse ve girişli değilsen aç
+  // Sayfa yüklenince ve hash değişince kontrol
   window.addEventListener('load', __maybeOpenProfileFromHash);
-  // Her hash değişiminde de kontrol et (garanti)
   window.addEventListener('hashchange', __maybeOpenProfileFromHash);
 
-  // Profil butonu: girişliysen sadece URL, girişsizsen panel
-  const __btnProf = document.getElementById('btnProfile');
-  if (__btnProf){
-    __btnProf.addEventListener('click', function(e){
+  // Profil butonu: girişli → HOME#profile, girişsiz → URL + panel
+  (function bindProfileBtn(){
+    const btn = document.getElementById('btnProfile');
+    if (!btn) return;
+
+    // href’i tutarlı yap
+    btn.setAttribute('href', HOME + '#profile');
+
+    btn.addEventListener('click', function(e){
       e.preventDefault();
       if (localStorage.getItem('ue_uid')) {
-        // Girişli: profiline git
         location.href = HOME + '#profile';
       } else {
-        // Girişsiz: URL + panel
         if (location.pathname + location.hash !== HOME + '#profile') {
-          location.href = HOME + '#profile'; // Yönlendirme sonrası load/hashchange paneli açar
+          // Farklı sayfadaysa önce oraya git; load/hashchange paneli açar
+          location.href = HOME + '#profile';
         } else {
+          // Aynı sayfadaysa direkt aç
           location.hash = '#profile';
           __openProfile();
         }
       }
     });
-  }
-  </script>
-
-  </body>
+  })();
+</script>
+</body>
 </html>
