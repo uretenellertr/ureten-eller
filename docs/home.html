@@ -634,15 +634,15 @@
     if (location.hash === '#profile') __openProfile();
   });
 
-  // Profil butonu: sayfayı bırakma, #profile yap ve aç
-  const __btnProf = document.getElementById('btnProfile');
-  if (__btnProf){
-    __btnProf.addEventListener('click', function(e){
-      e.preventDefault();
-      location.hash = '#profile';
-      __openProfile();
-    });
-  }
+  // Profil butonu: direkt profil bölümüne git
+const __btnProf = document.getElementById('btnProfile');
+if (__btnProf){
+  __btnProf.addEventListener('click', function(e){
+    e.preventDefault();
+    location.href = '/docs/home.html#profile';
+  });
+}
+
 </script>
 </body>
 </html>
