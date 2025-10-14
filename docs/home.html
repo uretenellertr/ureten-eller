@@ -160,7 +160,7 @@
       <div class="spacer"></div>
       <div class="actions">
         <a class="btn small premium" href="#" id="btnPremium">Premium</a>
-        <a class="btn small profile" href="/docs/home.html#profile" id="btnProfile">👤 Profil</a>
+        <a class="btn small profile" href="/home.html#profile" id="btnProfile">👤 Profil</a>
         <a class="btn small primary" href="/ilanver.html" id="btnPost">İlan Ver</a>
         <button class="btn small logout" id="btnLogout">Çıkış</button>
       </div>
@@ -298,9 +298,9 @@
 
   <!-- Bottom fixed bar -->
   <nav class="bottomBar" role="navigation" aria-label="Alt menü">
-    <a class="bItem" href="/docs/home.html" aria-current="page"><span class="ico">🏠</span><span class="txt" id="navHomeTxt">Ana Sayfa</span></a>
-    <a class="bItem" href="/docs/home.html#messages"><span class="ico">💬</span><span class="txt" id="navMsgTxt">Mesajlar</span></a>
-    <a class="bItem" href="/docs/home.html#notifications"><span class="ico">🔔</span><span class="txt" id="navNotifTxt">Bildirimler</span></a>
+    <a class="bItem" href="/home.html" aria-current="page"><span class="ico">🏠</span><span class="txt" id="navHomeTxt">Ana Sayfa</span></a>
+    <a class="bItem" href="/home.html#messages"><span class="ico">💬</span><span class="txt" id="navMsgTxt">Mesajlar</span></a>
+    <a class="bItem" href="/home.html#notifications"><span class="ico">🔔</span><span class="txt" id="navNotifTxt">Bildirimler</span></a>
   </nav>
 
   <!-- Live chat bubble + panel -->
@@ -313,7 +313,7 @@
   <div id="toast" class="toast" hidden>Kopyalandı</div>
   <script>
   // === YOL TUTARLILIĞI ===
-  const HOME = '/docs/home.html'; // NEDEN: Her yerde aynı yolu kullanmak için tek sabit
+  const HOME = '/home.html'; // NEDEN: Her yerde aynı yolu kullanmak için tek sabit
 
   const $=(s)=>document.querySelector(s);
   const $$=(s)=>Array.from(document.querySelectorAll(s));
@@ -618,8 +618,6 @@
   // Logout: auth ekranına yönlendir
   const btnLogout = document.getElementById('btnLogout');
   if(btnLogout){ btnLogout.addEventListener('click', ()=>{ try{ /* Firebase mevcutsa signOut burada olabilir */ }catch(_){} location.href='/docs/auth.html'; }); }
-  
-  // NEDEN: /home.html vs /docs/home.html tutarsızlığını tek sabitle çözüyoruz.
 
   function __openProfile(){
     const bd  = document.getElementById('backdrop');
