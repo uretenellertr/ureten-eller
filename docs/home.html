@@ -619,18 +619,20 @@
   
   <!-- Profil butonu: girişliysen sadece URL'i #profile yap; girişsizsen paneli aç -->
 <script>
-  const __btnProf = document.getElementById('btnProfile');
-
-  function __openProfile(){
-    const bd = document.getElementById('backdrop');
-    const box = document.getElementById('authBox');
-    if (bd) bd.style.display = 'block';
-    if (box){
-      box.style.display = 'block';
-      box.classList.add('center');
-      box.setAttribute('aria-hidden','false');
+  // Profil butonu: girişliysen profil paneli, değilse giriş paneli
+const __btnProf = document.getElementById('btnProfile');
+if (__btnProf){
+  __btnProf.addEventListener('click', function(e){
+    e.preventDefault();
+    if (localStorage.getItem('ue_uid')) {
+      location.hash = '#profile';
+      __openProfile();
+    } else {
+      location.hash = '#profile';
+      __openProfile();
     }
-  }
+  });
+}
 
   // Sayfa yüklenince #profile ile gelindiyse ve girişsizsen paneli aç
   window.addEventListener('load', function(){
