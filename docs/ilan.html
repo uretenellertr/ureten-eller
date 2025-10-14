@@ -506,7 +506,7 @@
 
     // ===== SUBMIT =====
     document.getElementById('listingForm').addEventListener('submit', async (e)=>{
-      e.preventDefault();
+      e.__noPreventDefault__;
       const t = window.__t||i18n.tr;
       const user = auth.currentUser; if(!user){ document.getElementById('msg').textContent = t.errors.auth; return; }
       document.getElementById('msg').textContent = '';
