@@ -160,7 +160,7 @@
       <div class="spacer"></div>
       <div class="actions">
         <a class="btn small premium" href="#" id="btnPremium">Premium</a>
-        <a class="btn small profile" href="/home.html#profile" id="btnProfile">👤 Profil</a>
+        <a class="btn small profile" href="#profile" id="btnProfile">👤 Profil</a>
         <a class="btn small primary" href="/ilanver.html" id="btnPost">İlan Ver</a>
         <button class="btn small logout" id="btnLogout">Çıkış</button>
       </div>
@@ -615,6 +615,33 @@
   // Logout: auth ekranına yönlendir
   const btnLogout = document.getElementById('btnLogout');
   if(btnLogout){ btnLogout.addEventListener('click', ()=>{ try{ /* Firebase mevcutsa signOut burada olabilir */ }catch(_){} location.href='/docs/auth.html'; }); }
-  </script>
+  
+  // Profil tıklanınca kutuyu aç
+  function __openProfile(){
+    const bd = document.getElementById('backdrop');
+    const box = document.getElementById('authBox');
+    if (bd) bd.style.display = 'block';
+    if (box){
+      box.style.display = 'block';
+      box.classList.add('center');
+      box.setAttribute('aria-hidden','false');
+    }
+  }
+
+  // #profile ile gelinirse otomatik aç
+  window.addEventListener('load', function(){
+    if (location.hash === '#profile') __openProfile();
+  });
+
+  // Profil butonu: sayfayı bırakma, #profile yap ve aç
+  const __btnProf = document.getElementById('btnProfile');
+  if (__btnProf){
+    __btnProf.addEventListener('click', function(e){
+      e.preventDefault();
+      location.hash = '#profile';
+      __openProfile();
+    });
+  }
+</script>
 </body>
 </html>
