@@ -160,7 +160,7 @@
       <div class="spacer"></div>
       <div class="actions">
         <a class="btn small premium" href="#" id="btnPremium">Premium</a>
-        <a class="btn small profile" href="/home.html#profile" id="btnProfile">👤 Profil</a>
+        <a class="btn small profile" href="#profile" id="btnProfile">👤 Profil</a>
         <a class="btn small primary" href="/ilanver.html" id="btnPost">İlan Ver</a>
         <button class="btn small logout" id="btnLogout">Çıkış</button>
       </div>
@@ -627,14 +627,10 @@
 
   // ---- PROFIL AKIŞI ----
   (function(){
-    const PATH_HOME = '/docs/home.html'; // bu sayfa
     const btn  = document.getElementById('btnProfile');
     const box  = document.getElementById('authBox');
     const bd   = document.getElementById('backdrop');
-    const prof = document.getElementById('profile');
     const isIn = () => !!localStorage.getItem('ue_uid');
-
-    if (prof) prof.style.scrollMarginTop = '80px'; // sabit header varsa hizalama
 
     function openProfilePanel(){
       if (bd)  bd.style.display = 'block';
@@ -657,40 +653,28 @@
     window.addEventListener('load', function(){
       if (location.hash === '#profile'){
         if (!isIn()){
-          // girişsiz: paneli otomatik aç, aşağı zıplama olmasın
           openProfilePanel();
+          // olası otomatik kaymayı iptal et
           setTimeout(()=>{ window.scrollTo({top:0,left:0,behavior:'instant'}); }, 0);
         } else {
-          // girişli: sayfayı üste sabitle, panel kapalı kalsın
           closeProfilePanel();
           setTimeout(()=>{ window.scrollTo({top:0,left:0,behavior:'instant'}); }, 0);
         }
       }
     });
 
-    // Profil butonu tıklaması
+    // Profil butonu
     if (btn){
       btn.addEventListener('click', function(e){
-        const loggedIn = isIn();
+        e.preventDefault();                 // tam yol isteği olmasın
+        history.replaceState(null,'','#profile'); // sadece hash değişsin
 
-        if (!loggedIn){
-          // GİRİŞSİZ: kaydırma yok, panel aç. URL #profile olsun ama scroll tetikleme.
-          e.preventDefault();
-          if (location.hash !== '#profile'){
-            history.pushState(null, '', PATH_HOME + '#profile');
-          }
-          openProfilePanel();
-          return;
+        if (!isIn()){
+          openProfilePanel();               // girişsiz: panel aç
+        } else {
+          closeProfilePanel();              // girişli: panel kapalı kalsın
+          window.scrollTo({ top: 0, behavior: 'instant' }); // sayfa zıplamasın
         }
-
-        // GİRİŞLİ: hiçbir yere kaydırma, panel kapalı kalsın, URL #profile görünsün.
-        e.preventDefault();
-        closeProfilePanel();
-        if (location.pathname + location.hash !== PATH_HOME + '#profile'){
-          history.replaceState(null, '', PATH_HOME + '#profile');
-        }
-        // garanti: üste sabitle
-        window.scrollTo({ top: 0, behavior: 'instant' });
       });
     }
   })();
