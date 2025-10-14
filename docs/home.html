@@ -620,49 +620,40 @@
   if(btnLogout){ btnLogout.addEventListener('click', ()=>{ try{ /* Firebase mevcutsa signOut burada olabilir */ }catch(_){} location.href='/docs/auth.html'; }); }
   
   // NEDEN: /home.html vs /docs/home.html tutarsızlığını tek sabitle çözüyoruz.
-  const HOME = '/docs/home.html';
 
-  // Profil panelini aç (girişsiz kullanıcı için)
+  const HOME = '/home.html';
+
   function __openProfile(){
     const bd  = document.getElementById('backdrop');
     const box = document.getElementById('authBox');
-    if (bd)  bd.style.display = 'block';
+    if (bd) bd.style.display = 'block';
     if (box){
       box.style.display = 'block';
       box.classList.add('center');
       box.setAttribute('aria-hidden','false');
-    }
+    } // <-- BU KAPANIŞ EKSİKTİ
   }
 
-  // #profile hash’i ile gelindiyse girişsiz kullanıcıda paneli aç
   function __maybeOpenProfileFromHash(){
     if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
       __openProfile();
     }
   }
-
-  // Sayfa yüklenince ve hash değişince kontrol
   window.addEventListener('load', __maybeOpenProfileFromHash);
   window.addEventListener('hashchange', __maybeOpenProfileFromHash);
 
-  // Profil butonu: girişli → HOME#profile, girişsiz → URL + panel
   (function bindProfileBtn(){
     const btn = document.getElementById('btnProfile');
     if (!btn) return;
-
-    // href’i tutarlı yap
     btn.setAttribute('href', HOME + '#profile');
-
     btn.addEventListener('click', function(e){
       e.preventDefault();
       if (localStorage.getItem('ue_uid')) {
         location.href = HOME + '#profile';
       } else {
         if (location.pathname + location.hash !== HOME + '#profile') {
-          // Farklı sayfadaysa önce oraya git; load/hashchange paneli açar
           location.href = HOME + '#profile';
         } else {
-          // Aynı sayfadaysa direkt aç
           location.hash = '#profile';
           __openProfile();
         }
