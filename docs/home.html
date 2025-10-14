@@ -622,7 +622,7 @@
     });
   }
 
-// --- PROFIL AKIŞI ---
+// ---- PROFIL AKIŞI ----
 function __openProfile(){
   const bd  = document.getElementById('backdrop');
   const box = document.getElementById('authBox');
@@ -634,10 +634,19 @@ function __openProfile(){
   }
 }
 
-// Sayfa #profile ile gelmiş VE girişsizsen panel otomatik açılsın
+// #profile ile geldiyse:
 window.addEventListener('load', function(){
-  if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
+  const loggedIn = !!localStorage.getItem('ue_uid');
+
+  // Girişsiz: paneli otomatik aç
+  if (location.hash === '#profile' && !loggedIn) {
     __openProfile();
+  }
+
+  // Girişli: aşağıya zıpladıysa hemen yukarı al
+  if (location.hash === '#profile' && loggedIn) {
+    // hash kalsın ama scroll'u en üste çek
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }
 });
 
@@ -650,19 +659,21 @@ if (__btnProf){
     if (!loggedIn){
       // Girişsiz: URL'yi #profile yap ve paneli aç
       e.preventDefault();
-      if (location.hash !== '#profile') location.hash = '#profile';
+      if (location.hash !== '#profile') history.replaceState(null, '', location.pathname + '#profile');
       __openProfile();
       return;
     }
 
-    // Girişli: aynı sayfadaysak hash scroll'u biz tetikleyelim
-    const samePage = (location.pathname === '/home.html' || location.pathname === '/docs/home.html');
-    if (samePage && location.hash === '#profile'){
-      e.preventDefault();
-      const target = document.getElementById('profile');
-      if (target){ target.scrollIntoView({ behavior:'smooth', block:'start' }); }
-    }
-    // Değilse tarayıcının normal davranmasına izin ver (preventDefault yok)
+    // Girişli: aşağıya kaymasın — sadece URL'de #profile görünsün
+    e.preventDefault();
+    history.replaceState(null, '', location.pathname + '#profile'); // URL'yi güncelle
+    // panel kapalı kalsın, sayfa yerinde kalsın
+    const box = document.getElementById('authBox');
+    const bd  = document.getElementById('backdrop');
+    if (box){ box.style.display='none'; box.setAttribute('aria-hidden','true'); box.classList.remove('center'); }
+    if (bd){ bd.style.display='none'; }
+    // garanti olsun diye en üste sabitle
+    window.scrollTo({ top: 0, behavior: 'instant' });
   });
 }
 </script>
