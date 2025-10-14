@@ -2,472 +2,363 @@
 <html lang="tr" dir="ltr">
 <head>
   <base href="/" />
-  <style>body.hidden{opacity:0;visibility:hidden}</style>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Üreten Eller – El emeği pazar yeri</title>
-  <meta name="description" content="El emeği ürünler ve ev yapımı lezzetler için güvenli pazar yeri." />
+  <title>Giriş • Üreten Eller</title>
+  <meta name="description" content="Üreten Eller'e giriş yapın veya kayıt olun. Google ile giriş, e‑posta doğrulama, şifre sıfırlama." />
   <link rel="icon" href="/assets/icons/favicon-32x32.png" />
   <style>
-    :root{ --brand:#25a18e; --brand2:#f59e0b; --brand3:#8b5cf6; --dark:#0b0b0b; --ink:#e5e7eb; --accent:#22d3ee; }
+    :root{
+      --bg1:#0b1220; --bg2:#0a0f1c; --ink:#e5e7eb; --muted:#9ca3af; --accent:#22d3ee;
+      --c1:#10b981; --c2:#f59e0b; --c3:#8b5cf6; --c4:#06b6d4; --c5:#ef4444;
+      --brd:#1f2937; --card:#0e172a; --card2:#0b1326;
+    }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;background:#0a0f1c;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,'Noto Sans',sans-serif;max-width:100%;overflow-x:hidden}
-    a{color:inherit;text-decoration:none}
-    img{max-width:100%;height:auto;display:block}
+    html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 20% -10%,#10213f22,transparent),linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,'Noto Sans',sans-serif}
+    a{color:inherit}
 
-    /* Topbar */
-    .topbar{position:sticky;top:0;z-index:60;backdrop-filter:saturate(160%) blur(8px);background:linear-gradient(90deg,#0b1220ee,#0b1220cc 60%,#0b122000);border-bottom:1px solid #111827}
-    .topwrap{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;max-width:1200px;margin:0 auto;flex-wrap:wrap}
-    .logo{display:flex;gap:.5rem;align-items:center;font-weight:800;letter-spacing:.2px;min-width:0}
-    .logo .dot{width:10px;height:10px;border-radius:999px;background:conic-gradient(from 0deg,var(--brand),var(--brand2),var(--brand3),var(--brand));}
-    .logo-img{width:28px;height:28px;object-fit:contain}
-    .spacer{flex:1 1 100%}
-    @media(min-width:640px){.spacer{flex:1}}
-    .btn{padding:.55rem .9rem;border:1px solid #1f2937;border-radius:999px;background:linear-gradient(180deg,#111827,#0b1220);color:#e5e7eb;font-weight:600;cursor:pointer;flex:0 1 auto;white-space:nowrap}
-    .btn:hover{border-color:#334155;transform:translateY(-1px)}
-    .btn.primary{background:linear-gradient(180deg,var(--brand),#128473);border-color:#0e766e}
-    .btn.gold{background:linear-gradient(180deg,#facc15,#f59e0b);color:#111827;border-color:#a16207}
-
-    /* Language */
-    .lang{display:flex;align-items:center;gap:.5rem;border:1px solid #1f2937;border-radius:999px;padding:.35rem .6rem}
-    .lang select{background:transparent;border:none;color:var(--ink);font-weight:600;outline:none}
+    /* Top */
+    .wrap{max-width:1600px;margin:0 auto;padding:1rem}
+    .top{display:flex;align-items:center;gap:.75rem}
+    .logo{display:flex;align-items:center;gap:.5rem;font-weight:900;letter-spacing:.2px}
+    .logo img{width:32px;height:32px}
+    .spacer{flex:1}
 
     /* Hero */
-    .hero{max-width:900px;margin:0 auto;padding:1.25rem 1rem 0;text-align:center}
-    .hero h1{margin:.25rem 0 0;font-size:clamp(30px,5.2vw,56px);line-height:1.15}
-    .hero .tag{margin:.35rem 0 0;color:#cbd5e1;font-size:clamp(16px,2.4vw,22px)}
-    .slogan{margin:.35rem 0 0;height:1.9em;color:var(--accent);font-weight:800;font-size:clamp(16px,2.6vw,24px)}
+    .hero{text-align:center;margin:1rem auto 0;max-width:900px}
+    .hero h1{font-size:clamp(32px,5vw,58px);margin:.2rem 0 0}
+    .hero .tag{color:#cbd5e1;font-size:clamp(16px,2.6vw,22px)}
+    .ticker{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin:.6rem auto 0}
+    .tick{font-weight:800;border:1px solid var(--brd);border-radius:999px;padding:.28rem .6rem}
 
-    /* Sections */
-    .section{max-width:1200px;margin:1rem auto;padding:0 1rem}
-    .sechead{display:flex;align-items:center;justify-content:space-between;margin:.75rem 0 .5rem;gap:.5rem;flex-wrap:wrap}
-    .sechead h2{margin:0;font-size:clamp(18px,2.2vw,26px)}
-    .sechead .mini{color:#9ca3af;font-size:.9rem}
+    /* Content grid */
+    .grid{display:grid;gap:1rem;margin:1.25rem auto;grid-template-columns:1fr}
+    .grid.two{grid-template-columns:1.1fr .9fr}
 
-    /* Grids */
-    .grid{display:grid;gap:.85rem}
-    .grid.cards{grid-template-columns:repeat(2,minmax(0,1fr))}
-    @media(min-width:640px){.grid.cards{grid-template-columns:repeat(3,1fr)}}
-    @media(min-width:900px){.grid.cards{grid-template-columns:repeat(6,1fr)}}
+    /* Category cards */
+    .cards{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));align-items:stretch}
+    /* removed fixed 3-col rule so auto-fill works at all widths */
+    /* removed fixed 4-col rule so auto-fill works wider */
+    .card{position:relative;border:1px solid var(--brd);border-radius:16px;padding:.8rem;background:linear-gradient(145deg,var(--card),var(--card2));overflow:hidden}
+    .card .title{font-weight:900}
+    .chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem}
+    .chip{font-size:.72rem;border:1px solid var(--brd);border-radius:999px;padding:.18rem .45rem;background:#0a162c}
+    .halo{position:absolute;inset:-25%;filter:blur(36px);opacity:.18;z-index:-1}
 
-    .card{position:relative;border-radius:16px;padding:10px;border:1px solid #111827;background:linear-gradient(145deg,#0b1220,#0a0f1c);overflow:hidden;isolation:isolate}
-    .card .title{font-weight:800}
-    .card .subtitle{font-size:.86rem;color:#b6c2d1}
-    .chipwrap{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.45rem}
-    .chip{font-size:.73rem;border:1px solid #1f2937;border-radius:999px;padding:.2rem .45rem;background:#0a162c}
-    .card .pulse{position:absolute;inset:-20%;background:conic-gradient(from var(--d,0deg), var(--brand), var(--brand2), var(--brand3), var(--brand));filter:blur(32px);opacity:.18;z-index:-1;animation:spin 12s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
+    /* Auth box */
+    .auth{border:1px solid var(--brd);border-radius:16px;background:linear-gradient(180deg,#0c1426,#0b1220);padding:1rem}
+    /* centered modal state */
+    .auth.center{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,95vw);max-height:85vh;overflow:auto;z-index:1001;box-shadow:0 20px 80px #0008}
+    .backdrop{position:fixed;inset:0;background:#0009;backdrop-filter:saturate(0.8) blur(2px);z-index:1000}
+    .close{position:absolute;right:.6rem;top:.6rem;border:1px solid var(--brd);background:#0b1220;color:var(--ink);border-radius:10px;padding:.25rem .5rem;cursor:pointer;font-weight:800}
+    .tabs{display:flex;gap:.5rem;margin-bottom:.6rem}
+    .tab{flex:1;text-align:center;padding:.55rem;border:1px solid var(--brd);border-radius:999px;background:#0b1220;cursor:pointer;font-weight:700}
+    .tab[aria-selected="true"]{outline:2px solid var(--accent)}
+    .field{display:flex;flex-direction:column;gap:.35rem;margin:.5rem 0}
+    label{color:#cbd5e1;font-size:.92rem}
+    input{background:#0a0f1c;border:1px solid var(--brd);border-radius:10px;padding:.55rem .6rem;color:var(--ink)}
+    .row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+    .btn{padding:.55rem .9rem;border:1px solid var(--brd);border-radius:12px;background:#0b1220;color:var(--ink);font-weight:800;cursor:pointer}
+    .btn.primary{background:linear-gradient(180deg,var(--c1),#128473);border-color:#0e766e}
+    .btn.google{display:flex;align-items:center;gap:.5rem}
+    .btn.block{width:100%;justify-content:center}
+    .muted{color:var(--muted)}
+    .err{color:#fecaca}
+    .ok{color:#bbf7d0}
 
-    /* Listings */
-    .grid.listings{grid-template-columns:repeat(2,minmax(0,1fr))}
-    @media(min-width:768px){.grid.listings{grid-template-columns:repeat(3,1fr)}}
-    @media(min-width:1100px){.grid.listings{grid-template-columns:repeat(5,1fr)}}
-    .item{border:1px solid #111827;border-radius:14px;background:#0b1220;overflow:hidden;display:flex;flex-direction:column}
-    .item .thumb{aspect-ratio:1.1/1;background:#0f172a}
-    .item .meta{padding:.5rem .6rem}
-    .badge{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .5rem;border-radius:999px;font-size:.75rem;border:1px solid #1f2937;white-space:nowrap}
-    .badge.gold{background:linear-gradient(180deg,#facc15,#f59e0b);color:#111827;border-color:#a16207}
+    /* Bottom bar + legal */
+    footer{margin:1.25rem 0 0;background:#000}
+    .foot{max-width:1200px;margin:0 auto;padding:1rem}
+    .legal{display:grid;gap:.6rem;grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media(min-width:760px){.legal{grid-template-columns:repeat(5,1fr)}}
+    .legal a{display:block;color:#d1d5db}
+    .copyright{margin-top:.5rem;color:#94a3b8}
 
-    /* Live chat bubble + panel */
-    .chat-bubble{position:fixed;right:14px;bottom:74px;z-index:70;display:flex;align-items:center;gap:.5rem;padding:.6rem .8rem;border-radius:999px;background:linear-gradient(180deg,#111827,#0b1220);border:1px solid #1f2937;box-shadow:0 6px 20px #0008;cursor:pointer}
-    .chat-dot{width:10px;height:10px;border-radius:999px;background:#22c55e;box-shadow:0 0 0 6px #22c55e22}
-    .chat-panel{position:fixed;right:14px;bottom:140px;width:min(92vw,340px);background:#0b1220;border:1px solid #1f2937;border-radius:16px;box-shadow:0 10px 30px #000a;display:none;flex-direction:column;overflow:hidden;z-index:80}
-    .chat-head{display:flex;align-items:center;justify-content:space-between;padding:.6rem .8rem;border-bottom:1px solid #1f2937}
-    .chat-body{height:280px;overflow:auto;padding:.6rem .8rem}
-    .chat-input{display:flex;gap:.5rem;padding:.6rem .8rem;border-top:1px solid #1f2937}
-    .chat-input input{flex:1;background:#0a0f1c;border:1px solid #1f2937;border-radius:10px;padding:.5rem .6rem;color:#e5e7eb}
-
-    /* Bottom bar (fixed) */
-    .bbar{position:fixed;left:0;right:0;bottom:0;z-index:65;border-top:1px solid #111827;background:linear-gradient(180deg,#0b1220,#0a0f1c)}
-    .bwrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;padding:.5rem 1rem}
-    .pill{display:flex;align-items:center;gap:.5rem;border:1px solid #1f2937;border-radius:999px;padding:.55rem .8rem}
-    .pill b{font-size:.95rem}
-
-    body{padding-bottom:94px}
-
-    /* Footer (legal) */
-    footer{background:#000;color:#9ca3af}
-    .footwrap{max-width:1200px;margin:0 auto;padding:1rem}
-    .footgrid{display:grid;gap:.75rem;grid-template-columns:repeat(2,minmax(0,1fr))}
-    @media(min-width:800px){.footgrid{grid-template-columns:repeat(5,1fr)}}
-    .footgrid a{display:block;padding:.25rem 0;color:#d1d5db;word-break:break-word}
-    .copyright{margin-top:.75rem;font-size:.9rem;color:#94a3b8}
-
-    /* Modal */
-    .modal{position:fixed;inset:0;background:#0008;display:none;place-items:center;z-index:90}
-    .modal .box{width:min(92vw,560px);background:#0b1220;border:1px solid #1f2937;border-radius:16px;padding:1rem}
-    .modal h3{margin:.2rem 0 0}
-    .row{display:flex;gap:.5rem;flex-wrap:wrap;margin:.6rem 0;word-break:break-word}
-    .kbd{font-family:ui-monospace,monospace;border:1px dashed #334155;border-radius:10px;padding:.35rem .5rem;background:#0a162c}
-
-    /* Extra mobile safety */
-    @media(max-width:768px){
-      .section{padding:0 .75rem}
-      .hero{padding:1rem .75rem 0}
-      .bwrap{grid-template-columns:1fr}
-    }
-    @media(max-width:480px){
-      .grid.cards{grid-template-columns:repeat(2,1fr)}
-      .grid.listings{grid-template-columns:1fr}
-      .btn{padding:.5rem .7rem}
-      .topwrap{gap:.5rem}
-    }
-    @media(max-width:360px){
-      .grid.cards{grid-template-columns:1fr}
-    }
+    .badge{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .5rem;border-radius:999px;border:1px solid var(--brd)}
+  .lang select{background:#0a0f1c;border:1px solid var(--brd);color:var(--ink);border-radius:10px;padding:.45rem .6rem}
   </style>
 </head>
 <body>
-  <!-- TOPBAR -->
-  <div class="topbar">
-    <div class="topwrap">
-      <div class="logo" aria-label="Üreten Eller">
-        <img src="/assets/img/logo.png" alt="logo" class="logo-img" />
-        <span class="dot"></span>
-        <span id="brand">Üreten Eller</span>
-      </div>
+  <div class="wrap">
+    <div class="top">
+      <div class="logo"><img src="//assets/icons/logo.svg" alt="logo" /><span>Üreten Eller</span></div>
       <div class="spacer"></div>
-      <div class="lang">
-        <span>🌍</span>
-        <select id="langSel" aria-label="Dil seçimi">
-          <option value="tr">TR</option>
-          <option value="en">EN</option>
-          <option value="ar">AR</option>
-          <option value="de">DE</option>
-        </select>
+      <div class="badge">🎉 <b>1000+ mutlu kullanıcı</b></div>
+      <div class="lang" style="margin-left:.6rem"><select id="langSel" aria-label="Dil">
+        <option value="tr">Türkçe</option>
+        <option value="en">English</option>
+        <option value="de">Deutsch</option>
+        <option value="ar">العربية</option>
+      </select></div>
+    </div>
+
+    <div class="hero">
+      <div class="cta">
+        <button class="btn primary" id="openSignup">Ücretsiz Kaydol</button>
+        <button class="btn ghost" id="openLogin">Zaten Üyeyim (Giriş)</button>
       </div>
-      <button class="btn primary" id="postBtn">+ <span data-i18n="post">İlan Ver</span></button>
-      <button class="btn" id="profileBtn" data-i18n="profile">Profil</button>
-      <button class="btn" id="logoutBtn" data-i18n="logout">Çıkış</button>
-      <button class="btn gold" id="proBtn" data-i18n="premium">Premium Üyelik</button>
+      <h1 id="welcome">Üreten Ellere Hoş Geldiniz</h1>
+      <div class="tag" id="tagline">Aracısız alışveriş</div>
+        <div class="ticker" id="ticker">
+          <span class="tick">El emeğine değer!</span>
+          <span class="tick">Aracısız alışveriş</span>
+          <span class="tick">Yerel üreticiye destek</span>
+          <span class="tick">Ev yapımı lezzetler</span>
+          <span class="tick">Kişiye özel hediyeler</span>
+        </div>
+      
     </div>
-  </div>
 
-  <!-- HERO -->
-  <section class="hero">
-    <h1 id="welcome">Üreten Ellere Hoş Geldiniz</h1>
-    <p class="tag" id="tagLine" data-i18n="tag">Aracısız alışveriş</p>
-    <p class="slogan" id="slogan">Makrome ile şıklık</p>
-  </section>
-
-  <!-- LISTINGS CENTER -->
-  <section class="section" id="listingCenter" style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2rem;min-height:60vh;text-align:center">
-    <div class="listcol" style="width:min(100%,900px)">
-      <div class="sechead" style="justify-content:center">
-        <h2 data-i18n="stdTitle">Standart İlanlar</h2>
-        <span class="mini" id="stdCount">50</span>
+    <div class="grid" id="grid">
+      <!-- LEFT: categories -->
+      <div>
+        <div class="cards" id="catGrid">
+            <div class="card"><div class="title">🍲 Yemekler</div><div class="chips"><span class='chip'>Ev yemekleri</span><span class='chip'>Börek-çörek</span><span class='chip'>Çorba</span><span class='chip'>Zeytinyağlı</span><span class='chip'>Pilav-makarna</span><span class='chip'>Et-tavuk</span><span class='chip'>Kahvaltılık</span><span class='chip'>Meze</span><span class='chip'>Dondurulmuş</span><span class='chip'>Çocuk öğünleri</span><span class='chip'>Diyet/vegan/gf</span></div></div>
+            <div class="card"><div class="title">🎂 Pasta & Tatlı</div><div class="chips"><span class='chip'>Yaş pasta</span><span class='chip'>Kek-cupcake</span><span class='chip'>Kurabiye</span><span class='chip'>Şerbetli</span><span class='chip'>Sütlü</span><span class='chip'>Cheesecake</span><span class='chip'>Diyet tatlı</span><span class='chip'>Çikolata/şekerleme</span><span class='chip'>Doğum günü setleri</span></div></div>
+            <div class="card"><div class="title">🫙 Reçel • Turşu • Sos</div><div class="chips"><span class='chip'>Reçel-marmelat</span><span class='chip'>Pekmez</span><span class='chip'>Turşu</span><span class='chip'>Domates/biber sos</span><span class='chip'>Acı sos</span><span class='chip'>Salça</span><span class='chip'>Sirke</span><span class='chip'>Konserve</span></div></div>
+            <div class="card"><div class="title">🌾 Yöresel / Kışlık</div><div class="chips"><span class='chip'>Erişte</span><span class='chip'>Tarhana</span><span class='chip'>Yufka</span><span class='chip'>Mantı</span><span class='chip'>Kurutulmuş sebze-meyve</span><span class='chip'>Salça</span><span class='chip'>Sirke</span><span class='chip'>Konserve</span></div></div>
+            <div class="card"><div class="title">🥗 Diyet / Vegan / Glutensiz</div><div class="chips"><span class='chip'>Fit tabaklar</span><span class='chip'>Vegan yemekler</span><span class='chip'>GF unlu mamuller</span><span class='chip'>Şekersiz tatlı</span><span class='chip'>Keto ürün</span><span class='chip'>Protein atıştırmalık</span></div></div>
+            <div class="card"><div class="title">💍 Takı</div><div class="chips"><span class='chip'>Bileklik</span><span class='chip'>Kolye</span><span class='chip'>Küpe</span><span class='chip'>Yüzük</span><span class='chip'>Halhal</span><span class='chip'>Broş</span><span class='chip'>Setler</span><span class='chip'>İsimli/kişiye özel</span><span class='chip'>Makrome</span><span class='chip'>Doğal taş</span><span class='chip'>Reçine</span><span class='chip'>Tel sarma</span></div></div>
+            <div class="card"><div class="title">👶 Bebek & Çocuk</div><div class="chips"><span class='chip'>Hayvan/bebek figürleri</span><span class='chip'>Çıngırak</span><span class='chip'>Diş kaşıyıcı örgü</span><span class='chip'>Bez oyuncak/kitap</span><span class='chip'>Montessori oyuncak</span><span class='chip'>Setler</span><span class='chip'>Örgü patik-bere</span><span class='chip'>Bebek battaniyesi</span><span class='chip'>Önlük-ağız bezi</span><span class='chip'>Lohusa seti</span><span class='chip'>Saç aksesuarı</span><span class='chip'>El emeği kıyafet</span></div></div>
+            <div class="card"><div class="title">🧶 Örgü / Triko</div><div class="chips"><span class='chip'>Hırka</span><span class='chip'>Kazak</span><span class='chip'>Atkı-bere</span><span class='chip'>Panço</span><span class='chip'>Şal</span><span class='chip'>Çorap</span><span class='chip'>Lif takımı</span><span class='chip'>Bebek takımı</span><span class='chip'>Yelek</span><span class='chip'>Kırlent-örtü</span></div></div>
+            <div class="card"><div class="title">✂️ Dikiş / Terzilik</div><div class="chips"><span class='chip'>Paça/onarım</span><span class='chip'>Fermuar değişimi</span><span class='chip'>Perde dikişi</span><span class='chip'>Nevresim-yastık</span><span class='chip'>Masa örtüsü</span><span class='chip'>Özel dikim</span><span class='chip'>Kostüm</span></div></div>
+            <div class="card"><div class="title">🧵 Makrome & Dekor</div><div class="chips"><span class='chip'>Duvar süsü</span><span class='chip'>Saksı askısı</span><span class='chip'>Anahtarlık</span><span class='chip'>Avize</span><span class='chip'>Amerikan servis/runner</span><span class='chip'>Sepet</span><span class='chip'>Raf/duvar dekoru</span></div></div>
+            <div class="card"><div class="title">🏠 Ev Dekor & Aksesuar</div><div class="chips"><span class='chip'>Keçe işleri</span><span class='chip'>Kırlent</span><span class='chip'>Kapı süsü</span><span class='chip'>Tepsi süsleme</span><span class='chip'>Çerçeve</span><span class='chip'>Rüya kapanı</span><span class='chip'>Tablo</span></div></div>
+            <div class="card"><div class="title">🕯️ Mum & Kokulu Ürünler</div><div class="chips"><span class='chip'>Soya/balmumu mum</span><span class='chip'>Kokulu taş</span><span class='chip'>Oda spreyi</span><span class='chip'>Tütsü</span><span class='chip'>Jel mum</span><span class='chip'>Hediye seti</span></div></div>
+            <div class="card"><div class="title">🧼 Doğal Sabun & Kozmetik</div><div class="chips"><span class='chip'>Zeytinyağlı sabun</span><span class='chip'>Bitkisel sabunlar</span><span class='chip'>Katı şampuan</span><span class='chip'>Dudak balmı</span><span class='chip'>Krem/merhem</span><span class='chip'>Banyo tuzu</span><span class='chip'>Lavanta kesesi</span></div></div>
+            <div class="card"><div class="title">🧸 Amigurumi & Oyuncak (dekoratif)</div><div class="chips"><span class='chip'>Anahtarlık</span><span class='chip'>Magnet</span><span class='chip'>Koleksiyon figürü</span><span class='chip'>Dekor bebek/karakter</span></div></div>
+          </div>
       </div>
-      <div class="grid listings" id="stdGrid" style="justify-content:center;place-content:center"></div>
-    </div>
-    <div class="listcol" style="width:min(100%,900px)">
-      <div class="sechead" style="justify-content:center">
-        <h2 data-i18n="preTitle">Vitrin (Premium)</h2>
-        <span class="mini" id="preCount">50</span>
+
+      <!-- RIGHT: auth box -->
+      <div class="auth" id="authBox" aria-hidden="true" style="display:none"><button class="close" id="closeAuth" aria-label="Kapat">✕</button>
+        <div class="tabs" role="tablist">
+          <button class="tab" id="tabLogin" role="tab" aria-selected="true">Giriş Yap</button>
+          <button class="tab" id="tabSignup" role="tab" aria-selected="false">Kayıt Ol</button>
+        </div>
+
+        <!-- LOGIN -->
+        <form id="loginForm" novalidate>
+          <div class="field"><label for="lemail">E‑posta</label><input id="lemail" type="email" required /></div>
+          <div class="field"><label for="lpass">Şifre</label><div class="input"><input id="lpass" type="password" required /><button type="button" class="eye" data-toggle="lpass">Göster</button></div></div>
+          <div class="row" style="justify-content:space-between">
+            <button class="btn primary" id="loginSubmit" type="submit">Giriş Yap</button>
+            <button class="btn" type="button" id="forgotBtn">Şifremi Unuttum</button>
+          </div>
+          <div class="row" style="margin-top:.5rem">
+            <button class="btn google block" type="button" id="gLogin">🔐 Google ile Giriş</button>
+          </div>
+          <div id="lmsg" class="muted" style="margin-top:.4rem"></div>
+        </form>
+
+        <!-- SIGNUP -->
+        <form id="signupForm" style="display:none" novalidate>
+          <div class="field"><label for="semail">E‑posta</label><input id="semail" type="email" required /></div>
+          <div class="field"><label for="spass">Şifre</label><input id="spass" type="password" minlength="6" required /></div>
+          <div class="field"><label for="sname">Ad Soyad (opsiyonel)</label><input id="sname" type="text" /></div>
+          <div class="row">
+            <label class="row" style="gap:.35rem"><input type="checkbox" id="ckvkk" required /> KVKK Aydınlatma'yı kabul ediyorum</label>
+          </div>
+          <div class="row">
+            <label class="row" style="gap:.35rem"><input type="checkbox" id="ccerez" required /> Çerez Politikası'nı kabul ediyorum</label>
+          </div>
+          <div class="row" style="justify-content:space-between;margin-top:.4rem">
+            <button class="btn primary" id="signupSubmit" type="submit">Kayıt Ol</button>
+            <button class="btn google" type="button" id="gSignup">⚡ Google ile Devam</button>
+          </div>
+          <div id="smsg" class="muted" style="margin-top:.4rem"></div>
+        </form>
       </div>
-      <div class="grid listings" id="preGrid" style="justify-content:center;place-content:center"></div>
-    </div>
-  </section>
-
-  <!-- CATEGORIES -->
-  <section class="section" id="cats">
-    <div class="sechead"><h2 data-i18n="categories">Kategoriler</h2><span class="mini" id="catCount"></span></div>
-    <div class="grid cards" id="catGrid"></div>
-  </section>
-
-  <!-- LIVE CHAT BUBBLE + PANEL -->
-  <div class="chat-bubble" id="chatOpen">
-    <span class="chat-dot"></span>
-    <b data-i18n="liveSupport">Canlı Destek</b>
-  </div>
-  <div class="chat-panel" id="chatPanel" aria-hidden="true">
-    <div class="chat-head"><b data-i18n="liveSupport">Canlı Destek</b><button class="btn" id="chatClose" data-i18n="close">Kapat</button></div>
-    <div class="chat-body" id="chatBody">
-      <div class="mini" data-i18n="chatHello">Merhaba! Sorunuzu yazın, en kısa sürede dönüş yapalım.</div>
-    </div>
-    <div class="chat-input">
-      <input id="chatTxt" placeholder="Mesajınızı yazın..." data-i18n-ph="chatPlaceholder" />
-      <button class="btn primary" id="chatSend" data-i18n="send">Gönder</button>
-    </div>
-  </div>
-
-  <!-- BOTTOM BAR: messages + notifications -->
-  <div class="bbar">
-    <div class="bwrap">
-      <div class="pill" id="msgBtn">📨 <b data-i18n="messages">Mesajlar</b> <span id="msgN" class="badge" style="margin-left:auto">0</span></div>
-      <div class="pill" id="notiBtn">🔔 <b data-i18n="notifications">Bildirimler</b> <span id="notiN" class="badge" style="margin-left:auto">0</span></div>
     </div>
   </div>
 
   <!-- FOOTER / LEGAL -->
+  <div id="backdrop" class="backdrop" style="display:none"></div>
+
   <footer>
-    <div class="footwrap">
-      <div class="footgrid">
+    <div class="foot">
+      <div class="legal">
         <div>
-          <a href="/legal.html" data-i18n="f_contact">İletişim / Impressum</a>
-          <a href="/legal.html" data-i18n="f_privacy">Gizlilik Politikası</a>
-          <a href="/legal.html" data-i18n="f_kvkk">KVKK Aydınlatma</a>
-          <a href="/legal.html" data-i18n="f_cookies">Çerez Politikası</a>
+          <a href="/legal.html">İletişim / Impressum</a>
+          <a href="/legal.html">Gizlilik Politikası</a>
+          <a href="/legal.html">KVKK Aydınlatma</a>
+          <a href="/legal.html">Çerez Politikası</a>
         </div>
         <div>
-          <a href="/legal.html" data-i18n="f_terms">Kullanım Şartları</a>
-          <a href="/legal.html" data-i18n="f_distance">Mesafeli Satış Sözleşmesi</a>
-          <a href="/legal.html" data-i18n="f_preinfo">Ön Bilgilendirme Formu</a>
-          <a href="/legal.html" data-i18n="f_delivery">Teslimat &amp; İade</a>
+          <a href="/legal.html">Kullanım Şartları</a>
+          <a href="/legal.html">Mesafeli Satış Sözleşmesi</a>
+          <a href="/legal.html">Ön Bilgilendirme Formu</a>
+          <a href="/legal.html">Teslimat & İade</a>
         </div>
         <div>
-          <a href="/legal.html" data-i18n="f_rules">Topluluk Kuralları</a>
-          <a href="/legal.html" data-i18n="f_banned">Yasaklı Ürünler</a>
-          <a href="/legal.html" data-i18n="f_alllegal">Tüm Yasal Metinler</a>
-        </div>
-        <div>
-          <a href="/" target="_self" data-i18n="f_home">Anasayfa</a>
-          <a href="/" id="goPost" data-i18n="post">İlan Ver</a>
-          <a href="/" id="goPro" data-i18n="premiumShort">Premium</a>
+          <a href="/legal.html">Topluluk Kuralları</a>
+          <a href="/legal.html">Yasaklı Ürünler</a>
+          <a href="/legal.html">Tüm Yasal Metinler</a>
         </div>
         <div>
           <a href="https://www.xn--reteneller-8db.com/" target="_blank" rel="noopener">Punycode Alan Adı</a>
           <a href="https://ureteneller.com.tr" target="_blank" rel="noopener">.com.tr</a>
         </div>
+        <div>
+          <span class="muted">© <span id="yr"></span> Üreten Eller</span>
+        </div>
       </div>
-      <div class="copyright">© <span id="yr"></span> Üreten Eller</div>
     </div>
   </footer>
 
-  <!-- PREMIUM MODAL -->
-  <div class="modal" id="proModal" aria-hidden="true">
-    <div class="box">
-      <h3 data-i18n="proTitle">Premium Üyelik – 1.999 TL</h3>
-      <p class="mini" data-i18n="proInfo">Ödeme sonrası <b>kullanıcı adınız</b> ile dekontu iletmeniz gerekmektedir.</p>
-      <div class="row"><span class="kbd" data-i18n="paparaName">Papara Hesap Adı:</span> <b>Nejla Karataş</b></div>
-      <div class="row"><span class="kbd" data-i18n="iban">IBAN:</span> <span id="ibanTxt" class="kbd">TR59 0082 9000 0949 1868 4611 05</span> <button class="btn" id="copyIban" data-i18n="copy">Kopyala</button></div>
-      <div class="row mini" data-i18n="receiptHelp">Dekontu <a href="/legal.html" data-i18n="contact">iletişim</a> sayfasından veya canlı destekten gönderin.</div>
-      <div class="row" style="justify-content:flex-end"><button class="btn" id="proClose" data-i18n="close">Kapat</button></div>
-    </div>
-  </div>
+  <!-- Firebase + App (CDN, ES modules) -->
+  <script type="module">
+  const HOME = "/docs/index.html";
+// ===== Helpers =====
+const $=(s)=>document.querySelector(s);
+const $$=(s)=>Array.from(document.querySelectorAll(s));
+const COLORS=["#10b981","#f59e0b","#8b5cf6","#06b6d4","#ef4444"];
 
-  <script>
-  // ===== i18n (TR/EN/AR/DE) =====
-  const I18N={
-    tr:{brand:"Üreten Eller",welcome:"Üreten Ellere Hoş Geldiniz",tag:"Aracısız alışveriş",post:"İlan Ver",profile:"Profil",logout:"Çıkış",premium:"Premium Üyelik",premiumShort:"Premium",categories:"Kategoriler",stdTitle:"Standart İlanlar",preTitle:"Vitrin (Premium)",messages:"Mesajlar",notifications:"Bildirimler",liveSupport:"Canlı Destek",close:"Kapat",send:"Gönder",chatHello:"Merhaba! Sorunuzu yazın, en kısa sürede dönüş yapalım.",chatPlaceholder:"Mesajınızı yazın...",f_contact:"İletişim / Impressum",f_privacy:"Gizlilik Politikası",f_kvkk:"KVKK Aydınlatma",f_cookies:"Çerez Politikası",f_terms:"Kullanım Şartları",f_distance:"Mesafeli Satış Sözleşmesi",f_preinfo:"Ön Bilgilendirme Formu",f_delivery:"Teslimat & İade",f_rules:"Topluluk Kuralları",f_banned:"Yasaklı Ürünler",f_alllegal:"Tüm Yasal Metinler",f_home:"Anasayfa",proTitle:"Premium Üyelik – 1.999 TL",proInfo:"Ödeme sonrası <b>kullanıcı adınız</b> ile dekontu iletmeniz gerekmektedir.",paparaName:"Papara Hesap Adı:",iban:"IBAN:",copy:"Kopyala",copied:"Kopyalandı",
-      slogans:[
-        "El emeğine değer!","Ev yapımı lezzetler kapında","Doğal, taze, güvenli","Üreten kazanır, alan mutlu","Aracısız alışveriş","Komşundan sofrana","İsme özel hediyeler","Yerel üreticiye destek","Her ilmekte sevgi","Glutensiz & vegan seçenek","Kışlıklar hazır","Taze reçel, nefis kahvaltı","Evdeki ustaların buluşması","Özgün tasarım takılar","Sıcacık örgüler","Doğal sabun & kozmetik","Doğum günü setleri","El işi dekorla fark yarat","Bebekler için güvenli ürünler","Makrome ile şıklık","Kokularla huzur","Emeğin en güzel hali","Katkısız tatlar","Geleneksel tarifler","Lezzet ve tasarım bir arada"
-      ]},
-    en:{brand:"Creative Hands",welcome:"Welcome to Creative Hands",tag:"Direct shopping",post:"Post Listing",profile:"Profile",logout:"Logout",premium:"Premium Membership",premiumShort:"Premium",categories:"Categories",stdTitle:"Standard Listings",preTitle:"Showcase (Premium)",messages:"Messages",notifications:"Notifications",liveSupport:"Live Support",close:"Close",send:"Send",chatHello:"Hi! Type your question, we'll reply shortly.",chatPlaceholder:"Type your message...",f_contact:"Contact / Impressum",f_privacy:"Privacy Policy",f_kvkk:"KVKK Notice",f_cookies:"Cookie Policy",f_terms:"Terms of Use",f_distance:"Distance Sales Agreement",f_preinfo:"Pre-Information Form",f_delivery:"Delivery & Returns",f_rules:"Community Guidelines",f_banned:"Prohibited Items",f_alllegal:"All Legal Texts",f_home:"Home",proTitle:"Premium Membership – 1,999 TRY",proInfo:"After payment, please send the receipt with your <b>username</b>.",paparaName:"Papara Account Name:",iban:"IBAN:",copy:"Copy",copied:"Copied",
-      slogans:[
-        "Craft deserves value","Homemade tastes at your door","Natural, fresh, safe","Makers win, buyers smile","No middlemen","From neighbor to table","Personalized gifts","Support local makers","Love in every stitch","Gluten-free & vegan options","Winter pantry ready","Fresh jam, happy breakfast","Meeting of home masters","Unique jewelry designs","Cozy knitwear","Natural soap & cosmetics","Birthday bundles","Stand out with handmade décor","Safe for little ones","Chic with macramé","Peaceful scents","Beauty of craftsmanship","Additive-free flavors","Traditional recipes","Taste & design together"
-      ]},
-    ar:{brand:"أيادٍ مُنتجة",welcome:"مرحباً بكم في أيادٍ منتجة",tag:"تسوق مباشر",post:"أضف إعلاناً",profile:"الملف الشخصي",logout:"تسجيل الخروج",premium:"عضوية بريميوم",premiumShort:"بريميوم",categories:"التصنيفات",stdTitle:"إعلانات عادية",preTitle:"الواجهة (بريميوم)",messages:"الرسائل",notifications:"الإشعارات",liveSupport:"الدعم المباشر",close:"إغلاق",send:"إرسال",chatHello:"مرحباً! اكتب سؤالك وسنرد قريباً.",chatPlaceholder:"اكتب رسالتك...",f_contact:"اتصال / إمبريسوم",f_privacy:"سياسة الخصوصية",f_kvkk:"إشعار KVKK",f_cookies:"سياسة الكوكيز",f_terms:"شروط الاستخدام",f_distance:"اتفاقية البيع عن بُعد",f_preinfo:"نموذج المعلومات المسبقة",f_delivery:"التسليم والإرجاع",f_rules:"إرشادات المجتمع",f_banned:"السِلَع الممنوعة",f_alllegal:"جميع النصوص القانونية",f_home:"الرئيسية",proTitle:"عضوية بريميوم – 1.999 ليرة",proInfo:"بعد الدفع، أرسل الإيصال مع <b>اسم المستخدم</b>.",paparaName:"اسم حساب Papara:",iban:"IBAN:",copy:"نسخ",copied:"تم النسخ",
-      slogans:[
-        "قيمة للحِرَف","مأكولات منزلية إلى بابك","طبيعي وطازج وآمن","المُنتِج يربح والمشتري يفرح","بدون وسطاء","من الجار إلى المائدة","هدايا مخصصة","ادعم المنتجين المحليين","حب في كل غرزة","خيارات خالية من الغلوتين ونباتية","مونة الشتاء جاهزة","مربى طازج وفطور سعيد","لقاء خبراء البيت","مجوهرات فريدة","حياكة دافئة","صابون وتجميلي طبيعي","باقة عيد ميلاد","تميّز بديكور يدوي","آمن للصغار","أناقة بالمكرمية","روائح مريحة","جمال الحِرفة","نكهات بلا مُضافات","وصفات تقليدية","الطعم والتصميم معاً"
-      ]},
-    de:{brand:"Schaffende Hände",welcome:"Willkommen bei Schaffende Hände",tag:"Direkter Einkauf",post:"Anzeige aufgeben",profile:"Profil",logout:"Abmelden",premium:"Premium-Mitgliedschaft",premiumShort:"Premium",categories:"Kategorien",stdTitle:"Standardanzeigen",preTitle:"Schaufenster (Premium)",messages:"Nachrichten",notifications:"Benachrichtigungen",liveSupport:"Live-Support",close:"Schließen",send:"Senden",chatHello:"Hallo! Schreibe deine Frage, wir antworten bald.",chatPlaceholder:"Nachricht eingeben...",f_contact:"Kontakt / Impressum",f_privacy:"Datenschutz",f_kvkk:"KVKK-Hinweis",f_cookies:"Cookie-Richtlinie",f_terms:"Nutzungsbedingungen",f_distance:"Fernabsatzvertrag",f_preinfo:"Vorabinformationsformular",f_delivery:"Lieferung & Rückgabe",f_rules:"Community-Richtlinien",f_banned:"Verbotene Artikel",f_alllegal:"Alle Rechtstexte",f_home:"Startseite",proTitle:"Premium-Mitgliedschaft – 1.999 TRY",proInfo:"Nach der Zahlung sende bitte die Quittung mit <b>deinem Benutzernamen</b>.",paparaName:"Papara-Kontoname:",iban:"IBAN:",copy:"Kopieren",copied:"Kopiert",
-      slogans:[
-        "Wert für Handwerk","Hausgemachtes bis zur Tür","Natürlich, frisch, sicher","Hersteller gewinnt, Käufer lächelt","Ohne Zwischenhändler","Vom Nachbarn auf den Tisch","Personalisierte Geschenke","Unterstütze lokale Hersteller","Liebe in jeder Masche","Glutenfrei & vegan","Vorrat für den Winter","Frische Marmelade, gutes Frühstück","Treffpunkt der Hausmeister*innen","Einzigartige Schmuckdesigns","Kuschelige Strickwaren","Natürliche Seife & Kosmetik","Geburtstag-Sets","Mit Handdeko auffallen","Sicher für Kinder","Schick mit Makramee","Beruhigende Düfte","Schönheit des Handwerks","Ohne Zusatzstoffe","Traditionelle Rezepte","Geschmack & Design vereint"
-      ]}
-  };
+// ===== Language packs (UI + categories + slogans + legal) =====
+const BASE_CATS={
+  food:{t:"🍲 Yemekler",s:["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"]},
+  cake:{t:"🎂 Pasta & Tatlı",s:["Yaş pasta","Kek-cupcake","Kurabiye","Şerbetli","Sütlü","Cheesecake","Diyet tatlı","Çikolata/şekerleme","Doğum günü setleri"]},
+  jar:{t:"🫙 Reçel • Turşu • Sos",s:["Reçel-marmelat","Pekmez","Turşu","Domates/biber sos","Acı sos","Salça","Sirke","Konserve"]},
+  winter:{t:"🌾 Yöresel / Kışlık",s:["Erişte","Tarhana","Yufka","Mantı","Kurutulmuş sebze-meyve","Salça","Sirke","Konserve"]},
+  diet:{t:"🥗 Diyet / Vegan / Glutensiz",s:["Fit tabaklar","Vegan yemekler","GF unlu mamuller","Şekersiz tatlı","Keto ürün","Protein atıştırmalık"]},
+  jew:{t:"💍 Takı",s:["Bileklik","Kolye","Küpe","Yüzük","Halhal","Broş","Setler","İsimli/kişiye özel","Makrome","Doğal taş","Reçine","Tel sarma"]},
+  kid:{t:"👶 Bebek & Çocuk",s:["Hayvan/bebek figürleri","Çıngırak","Diş kaşıyıcı örgü","Bez oyuncak/kitap","Montessori oyuncak","Setler","Örgü patik-bere","Bebek battaniyesi","Önlük-ağız bezi","Lohusa seti","Saç aksesuarı","El emeği kıyafet"]},
+  knit:{t:"🧶 Örgü / Triko",s:["Hırka","Kazak","Lif-takımı","Atkı-bere","Panço","Şal","Çorap","Lif takımı","Bebek takımı","Yelek","Kırlent-örtü"]},
+  sew:{t:"✂️ Dikiş / Terzilik",s:["Paça/onarım","Fermuar değişimi","Perde dikişi","Nevresim-yastık","Masa örtüsü","Özel dikim","Kostüm"]},
+  mac:{t:"🧵 Makrome & Dekor",s:["Duvar süsü","Saksı askısı","Anahtarlık","Avize","Amerikan servis/runner","Sepet","Raf/duvar dekoru"]},
+  home:{t:"🏠 Ev Dekor & Aksesuar",s:["Keçe işleri","Kırlent","Kapı süsü","Tepsi süsleme","Çerçeve","Rüya kapanı","Tablo"]},
+  candle:{t:"🕯️ Mum & Kokulu Ürünler",s:["Soya/balmumu mum","Kokulu taş","Oda spreyi","Tütsü","Jel mum","Hediye seti"]},
+  soap:{t:"🧼 Doğal Sabun & Kozmetik",s:["Zeytinyağlı sabun","Bitkisel sabunlar","Katı şampuan","Dudak balmı","Krem/merhem","Banyo tuzu","Lavanta kesesi"]},
+  toys:{t:"🧸 Amigurumi & Oyuncak (dekoratif)",s:["Anahtarlık","Magnet","Koleksiyon figürü","Dekor bebek/karakter"]}
+};
 
-  // ===== Category data (icons + subcats) =====
-  const CATS=[
-    {k:"food",icon:"🍲"},
-    {k:"cake",icon:"🎂"},
-    {k:"jar",icon:"🫙"},
-    {k:"winter",icon:"🌾"},
-    {k:"diet",icon:"🥗"},
-    {k:"jew",icon:"💍"},
-    {k:"kid",icon:"👶"},
-    {k:"knit",icon:"🧶"},
-    {k:"sew",icon:"✂️"},
-    {k:"mac",icon:"🧵"},
-    {k:"home",icon:"🏠"},
-    {k:"candle",icon:"🕯️"},
-    {k:"soap",icon:"🧼"},
-    {k:"toys",icon:"🧸"}
-  ];
-  // Category translations
-  const CAT_I18N={
-    tr:{
-      food:{title:"Yemekler",subs:["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"]},
-      cake:{title:"Pasta & Tatlı",subs:["Yaş pasta","Kek-cupcake","Kurabiye","Şerbetli","Sütlü","Cheesecake","Diyet tatlı","Çikolata/şekerleme","Doğum günü setleri"]},
-      jar:{title:"Reçel • Turşu • Sos",subs:["Reçel-marmelat","Pekmez","Turşu","Domates/biber sos","Acı sos","Salça","Sirke","Konserve"]},
-      winter:{title:"Yöresel / Kışlık",subs:["Erişte","Tarhana","Yufka","Mantı","Kurutulmuş sebze-meyve","Salça","Sirke","Konserve"]},
-      diet:{title:"Diyet / Vegan / Glutensiz",subs:["Fit tabaklar","Vegan yemekler","GF unlu mamuller","Şekersiz tatlı","Keto ürün","Protein atıştırmalık"]},
-      jew:{title:"Takı",subs:["Bileklik","Kolye","Küpe","Yüzük","Halhal","Broş","Setler","İsimli/kişiye özel","Makrome","Doğal taş","Reçine","Tel sarma"]},
-      kid:{title:"Bebek & Çocuk",subs:["Hayvan/bebek figürleri","Çıngırak","Diş kaşıyıcı örgü","Bez oyuncak/kitap","Montessori oyuncak","Setler","Örgü patik-bere","Bebek battaniyesi","Önlük-ağız bezi","Lohusa seti","Saç aksesuarı","El emeği kıyafet"]},
-      knit:{title:"Örgü / Triko",subs:["Hırka","Kazak","Atkı-bere","Panço","Şal","Çorap","Lif takımı","Bebek takımı","Yelek","Kırlent-örtü"]},
-      sew:{title:"Dikiş / Terzilik",subs:["Paça/onarım","Fermuar değişimi","Perde dikişi","Nevresim-yastık","Masa örtüsü","Özel dikim","Kostüm"]},
-      mac:{title:"Makrome & Dekor",subs:["Duvar süsü","Saksı askısı","Anahtarlık","Avize","Amerikan servis/runner","Sepet","Raf/duvar dekoru"]},
-      home:{title:"Ev Dekor & Aksesuar",subs:["Keçe işleri","Kırlent","Kapı süsü","Tepsi süsleme","Çerçeve","Rüya kapanı","Tablo"]},
-      candle:{title:"Mum & Kokulu Ürünler",subs:["Soya/balmumu mum","Kokulu taş","Oda spreyi","Tütsü","Jel mum","Hediye seti"]},
-      soap:{title:"Doğal Sabun & Kozmetik",subs:["Zeytinyağlı sabun","Bitkisel sabunlar","Katı şampuan","Dudak balmı","Krem/merhem","Banyo tuzu","Lavanta kesesi"]},
-      toys:{title:"Amigurumi & Oyuncak (dekoratif)",subs:["Anahtarlık","Magnet","Koleksiyon figürü","Dekor bebek/karakter"]}
-    },
-    en:{
-      food:{title:"Meals",subs:["Home meals","Pastry","Soup","Olive oil dishes","Rice & pasta","Meat & chicken","Breakfast","Meze","Frozen","Kids meals","Diet/vegan/gf"]},
-      cake:{title:"Cakes & Desserts",subs:["Birthday cake","Cake & cupcake","Cookies","Syrupy","Milk desserts","Cheesecake","Diet dessert","Chocolate/candy","Birthday sets"]},
-      jar:{title:"Jams • Pickles • Sauces",subs:["Jam/marmalade","Molasses","Pickles","Tomato/pepper sauce","Hot sauce","Tomato paste","Vinegar","Canned"]},
-      winter:{title:"Local / Winter Pantry",subs:["Noodles","Tarhana","Yufka","Manti dumplings","Dried veg/fruit","Tomato paste","Vinegar","Canned"]},
-      diet:{title:"Diet / Vegan / Gluten-free",subs:["Fit plates","Vegan dishes","GF bakery","Sugar-free dessert","Keto product","Protein snacks"]},
-      jew:{title:"Jewelry",subs:["Bracelet","Necklace","Earrings","Ring","Anklet","Brooch","Sets","Personalized","Macrame","Gemstone","Resin","Wire wrap"]},
-      kid:{title:"Baby & Kids",subs:["Animal/baby figures","Rattle","Teether crochet","Cloth toy/book","Montessori toy","Sets","Knit booties/beanie","Baby blanket","Bib/burp cloth","Maternity set","Hair accessory","Handmade clothing"]},
-      knit:{title:"Knit / Crochet",subs:["Cardigan","Sweater","Scarf/Beanie","Poncho","Shawl","Socks","Bath set","Baby set","Vest","Cushion/Cover"]},
-      sew:{title:"Sewing / Tailoring",subs:["Hems/repair","Zipper change","Curtain sewing","Duvet/Pillow","Tablecloth","Custom tailoring","Costume"]},
-      mac:{title:"Macrame & Decor",subs:["Wall hanging","Plant hanger","Keychain","Chandelier","Placemat/Runner","Basket","Shelf/Wall decor"]},
-      home:{title:"Home Decor & Accessories",subs:["Felt crafts","Cushion","Door wreath","Tray decoration","Frame","Dream catcher","Painting"]},
-      candle:{title:"Candles & Fragrances",subs:["Soy/beeswax candle","Aroma stone","Room spray","Incense","Gel candle","Gift set"]},
-      soap:{title:"Natural Soap & Cosmetics",subs:["Olive oil soap","Herbal soaps","Solid shampoo","Lip balm","Cream/ointment","Bath salt","Lavender sachet"]},
-      toys:{title:"Amigurumi & Toys (decor)",subs:["Keychain","Magnet","Collector figure","Decor doll/character"]}
-    },
-    ar:{
-      food:{title:"وجبات",subs:["أكلات منزلية","معجنات","شوربة","أطباق بالزيت","رز ومعكرونة","لحوم ودجاج","فطور","مقبلات","مجمد","وجبات للأطفال","دايت/نباتي/خالٍ من الغلوتين"]},
-      cake:{title:"كعكات وحلويات",subs:["كيك عيد ميلاد","كيك وكب كيك","بسكويت","حلويات بالقطر","حلويات بالحليب","تشيزكيك","حلويات دايت","شوكولا/حلويات","باكجات عيد ميلاد"]},
-      jar:{title:"مربيات • مخللات • صلصات",subs:["مربى/مربى البرتقال","دبس","مخللات","صلصة طماطم/فلفل","صلصة حارة","معجون طماطم","خل","معلبات"]},
-      winter:{title:"منتجات محلية/مونة الشتاء",subs:["شعيرية","طرخونة","يوفكا","مانتي","خضار/فاكهة مجففة","معجون طماطم","خل","معلبات"]},
-      diet:{title:"دايت / نباتي / خالٍ من الغلوتين",subs:["أطباق صحية","أطباق نباتية","مخبوزات خالية من الغلوتين","حلويات بدون سكر","منتج كيتو","سناكات بروتين"]},
-      jew:{title:"إكسسوارات",subs:["سوار","قلادة","أقراط","خاتم","خلخال","بروش","طقم","أسماء/مخصص","مكرمية","أحجار طبيعية","ريزين","سلك لف"]},
-      kid:{title:"رضّع وأطفال",subs:["مجسمات حيوانات/أطفال","خشخيشة","عضاضة كروشيه","لعبة/كتاب قماشي","ألعاب مونتسوري","أطقم","حذاء/قبعة محاكة","بطانية طفل","مريلة/قفلة","طقم نفاس","اكسسوار شعر","ملابس يدوية"]},
-      knit:{title:"حياكة/تريكو",subs:["كارديغان","كنزة","وشاح/قبعة","بونشو","شال","جوارب","طقم حمّام","طقم أطفال","صديري","وسادة/غطاء"]},
-      sew:{title:"خياطة/تفصيل",subs:["ذيل/تصليح","تغيير سحاب","خياطة ستائر","أغطية/وسائد","مفرش طاولة","تفصيل خاص","زي تنكري"]},
-      mac:{title:"مكرمية وديكور",subs:["تعليقة حائط","حامل نبات","ميدالية","ثريا","مفرش/رانر","سلة","رف/ديكور حائط"]},
-      home:{title:"ديكور المنزل وإكسسوارات",subs:["أعمال لباد","وسادة","زينة باب","تزيين صينية","إطار","صائد الأحلام","لوحة"]},
-      candle:{title:"شموع وروائح",subs:["شموع صويا/شمع نحل","حجر عطري","معطر غرفة","بخور","شموع جل","طقم هدية"]},
-      soap:{title:"صابون طبيعي ومستحضرات",subs:["صابون زيت زيتون","صوابين عشبية","شامبو صلب","مرهم شفاه","كريم/مرهم","ملح حمام","أكياس خزامى"]},
-      toys:{title:"أميجورومي وألعاب (ديكور)",subs:["ميدالية","مغناطيس","مجسم تجميعي","دمية/شخصية ديكور"]}
-    },
-    de:{
-      food:{title:"Speisen",subs:["Hausmannskost","Gebäck","Suppe","Gerichte mit Olivenöl","Reis & Pasta","Fleisch & Huhn","Frühstück","Meze","Tiefkühl","Kindermahlzeiten","Diät/vegan/gf"]},
-      cake:{title:"Kuchen & Süßes",subs:["Torte","Kuchen & Cupcake","Kekse","Sirupgebäck","Milchdesserts","Käsekuchen","Diät-Dessert","Schokolade/Bonbon","Geburtstags-Sets"]},
-      jar:{title:"Marmelade • Pickles • Saucen",subs:["Marmelade","Traubensirup","Eingelegtes","Tomaten/Paprika-Sauce","Scharfe Sauce","Tomatenmark","Essig","Eingewecktes"]},
-      winter:{title:"Regional / Wintervorrat",subs:["Bandnudeln","Tarhana","Yufka","Manti","Getrocknetes Obst/Gemüse","Tomatenmark","Essig","Eingewecktes"]},
-      diet:{title:"Diät / Vegan / Glutenfrei",subs:["Fitness-Teller","Vegane Speisen","GF Backwaren","Zuckerfreie Desserts","Keto-Produkt","Protein-Snacks"]},
-      jew:{title:"Schmuck",subs:["Armband","Kette","Ohrringe","Ring","Fußkettchen","Brosche","Sets","Personalisiert","Makramee","Edelstein","Harz","Drahtwicklung"]},
-      kid:{title:"Baby & Kinder",subs:["Tier/Baby-Figuren","Rassel","Beißring häkeln","Stoffspielzeug/Buch","Montessori-Spielzeug","Sets","Gehäkelte Schühchen/Mütze","Babydecke","Lätzchen/Spucktuch","Wochenbett-Set","Haar-Accessoire","Handgemachte Kleidung"]},
-      knit:{title:"Strick / Häkeln",subs:["Cardigan","Pullover","Schal/Mütze","Poncho","Tuch","Socken","Badeset","Babyset","Weste","Kissen/Decke"]},
-      sew:{title:"Nähen / Schneiderei",subs:["Saum/Reparatur","Reißverschlusswechsel","Vorhangnähen","Bett-/Kissenbezug","Tischdecke","Maßanfertigung","Kostüm"]},
-      mac:{title:"Makramee & Deko",subs:["Wandbehang","Pflanzenhänger","Schlüsselanhänger","Lampe","Platzset/Runner","Korb","Regal/Wanddeko"]},
-      home:{title:"Wohndeko & Accessoires",subs:["Filzarbeiten","Kissen","Türkranz","Tablettdeko","Rahmen","Traumfänger","Bild"]},
-      candle:{title:"Kerzen & Düfte",subs:["Soja/Bienenwachs-Kerze","Duftstein","Raumspray","Weihrauch","Gelkerze","Geschenkset"]},
-      soap:{title:"Natürliche Seife & Kosmetik",subs:["Olivenölseife","Kräuterseifen","Festes Shampoo","Lippenbalsam","Creme/Salbe","Badesalz","Lavendelsäckchen"]},
-      toys:{title:"Amigurumi & Spielzeug (Deko)",subs:["Schlüsselanhänger","Magnet","Sammelfigur","Deko-Puppe/Charakter"]}
-    }
-  };
+const TEXT={
+  tr:{signup:"Ücretsiz Kaydol",loginBtn:"Zaten Üyeyim (Giriş)",welcome:"Üreten Ellere Hoş Geldiniz",tagline:"Aracısız alışveriş",tabLogin:"Giriş Yap",tabSignup:"Kayıt Ol",forgot:"Şifremi Unuttum",gLogin:"🔐 Google ile Giriş",gCont:"⚡ Google ile Devam",loginSubmit:"Giriş Yap",signupSubmit:"Kayıt Ol",
+      cats:BASE_CATS,
+      slogans:["El emeğine değer!","Aracısız alışveriş","Yerel üreticiye destek","Ev yapımı lezzetler","Kişiye özel hediyeler","Glutensiz & vegan var","Sıcacık örgüler","Doğal sabun & kozmetik","Yöresel kışlıklar","Taze reçeller","Özenle el işi","Emekle gelen kalite","Her ilmekte sevgi","Evden eve güven","Doğum günü setleri","Şık takılar","Makrome ile şıklık","Kokularla huzur","Bebekler için güvenli","Geleneksel tarifler","Katkısız tatlar","Sofraya komşudan","Ustaların buluşması","Lezzet ve tasarım","Sevgiyle üretildi"],
+      legal:["İletişim / Impressum","Gizlilik Politikası","KVKK Aydınlatma","Çerez Politikası","Kullanım Şartları","Mesafeli Satış Sözleşmesi","Ön Bilgilendirme Formu","Teslimat & İade","Topluluk Kuralları","Yasaklı Ürünler","Tüm Yasal Metinler","Punycode Alan Adı",".com.tr"]},
+  en:{signup:"Sign up free",loginBtn:"I already have an account",welcome:"Welcome to Üreten Eller",tagline:"Direct, no middleman",tabLogin:"Log In",tabSignup:"Sign Up",forgot:"Forgot password",gLogin:"🔐 Continue with Google",gCont:"⚡ Continue with Google",loginSubmit:"Log In",signupSubmit:"Sign Up",
+      cats:{
+        food:{t:"🍲 Meals",s:["Home-cooked","Börek & pastry","Soup","Olive-oil dishes","Rice & pasta","Meat & chicken","Breakfast","Meze","Frozen","Kids meals","Diet/vegan/gf"]},
+        cake:{t:"🎂 Cakes & Sweets",s:["Fresh cakes","Cake & cupcake","Cookies","Syrupy","Milk desserts","Cheesecake","Diet desserts","Chocolate & candy","Birthday sets"]},
+        jar:{t:"🫙 Jam • Pickle • Sauce",s:["Jam & marmalade","Molasses","Pickles","Tomato/pepper sauce","Hot sauce","Tomato paste","Vinegar","Canned"]},
+        winter:{t:"🌾 Local / Winter Prep",s:["Noodles (erişte)","Tarhana","Yufka","Manti","Dried veg/fruit","Tomato paste","Vinegar","Canned"]},
+        diet:{t:"🥗 Diet / Vegan / Gluten‑free",s:["Fit plates","Vegan meals","GF bakery","Sugar‑free desserts","Keto","Protein snacks"]},
+        jew:{t:"💍 Jewelry",s:["Bracelet","Necklace","Earrings","Ring","Anklet","Brooch","Sets","Personalized","Macramé","Gemstone","Resin","Wire wrap"]},
+        kid:{t:"👶 Baby & Kids",s:["Animal/baby figures","Rattle","Teether (knit)","Cloth toy/book","Montessori toy","Sets","Booties & beanies","Baby blanket","Bib/burp cloth","Maternity set","Hair accessory","Handmade outfit"]},
+        knit:{t:"🧶 Knitwear",s:["Cardigan","Sweater","Scarf & beanie","Poncho","Shawl","Socks","Bath set","Baby set","Vest","Cushion/throw"]},
+        sew:{t:"✂️ Tailoring",s:["Hem/repair","Kazak","Zipper change","Curtain stitch","Duvet/pillow","Table cloth","Custom sew","Costume"]},
+        mac:{t:"🧵 Macramé & Decor",s:["Wall hanging","Plant hanger","Keychain","Chandelier","Runner/placemat","Basket","Shelf/wall decor"]},
+        home:{t:"🏠 Home Decor & Accessories",s:["Felt crafts","Cushion","Door wreath","Tray decor","Frame","Dream catcher","Painting"]},
+        candle:{t:"🕯️ Candles & Scents",s:["Soy/beeswax candles","Aroma stone","Room spray","Incense","Gel candle","Gift set"]},
+        soap:{t:"🧼 Natural Soap & Cosmetics",s:["Olive‑oil soap","Herbal soaps","Solid shampoo","Lip balm","Cream/ointment","Bath salt","Lavender sachet"]},
+        toys:{t:"🧸 Amigurumi & Toys (decor)",s:["Keychain","Magnet","Collectible figure","Decor doll/character"]}
+      },
+      slogans:["Valuing handicraft","Direct trade","Support local makers","Homemade goodness","Personalized gifts","Gluten‑free & vegan","Cozy knits","Natural soap & cosmetics","Traditional pantry","Fresh jams","Carefully handmade","Quality with effort","Love in every stitch","Home‑to‑home trust","Birthday sets","Elegant jewelry","Style with macramé","Peaceful scents","Safe for babies","Traditional recipes","Additive‑free taste","From neighbor to table","Masters united","Taste & design","Made with love"],
+      legal:["Contact / Impressum","Privacy Policy","KVKK Notice","Cookie Policy","Terms of Use","Distance Sales Agreement","Pre‑Information Form","Delivery & Returns","Community Rules","Prohibited Products","All Legal Texts","Punycode Domain",".com.tr"]},
+  de:{signup:"Kostenlos registrieren",loginBtn:"Ich habe schon ein Konto",welcome:"Willkommen bei Üreten Eller",tagline:"Direkt & ohne Vermittler",tabLogin:"Anmelden",tabSignup:"Registrieren",forgot:"Passwort vergessen",gLogin:"🔐 Mit Google fortfahren",gCont:"⚡ Mit Google fortfahren",loginSubmit:"Anmelden",signupSubmit:"Registrieren",
+      cats:{
+        food:{t:"🍲 Gerichte",s:["Hausmannskost","Börek & Gebäck","Suppe","Olivenölgerichte","Reis & Pasta","Fleisch & Hähnchen","Frühstück","Meze","Tiefgekühlt","Kindermahlzeiten","Diät/vegan/gf"]},
+        cake:{t:"🎂 Kuchen & Süßes",s:["Torten","Kuchen & Cupcake","Kekse","Sirupgebäck","Milchdesserts","Käsekuchen","Diät-Desserts","Schokolade & Süßigkeiten","Geburtstagssets"]},
+        jar:{t:"🫙 Marmelade • Gurken • Saucen",s:["Marmelade","Traubensirup","Eingelegtes","Tomaten-/Pfeffersauce","Scharfe Sauce","Tomatenmark","Essig","Eingemachtes"]},
+        winter:{t:"🌾 Regional / Vorrat",s:["Erişte-Nudeln","Tarhana","Yufka","Manti","Getrocknetes Obst/Gemüse","Tomatenmark","Essig","Konserve"]},
+        diet:{t:"🥗 Diät / Vegan / Glutenfrei",s:["Fit-Teller","Vegane Gerichte","GF Backwaren","Zuckerfreie Desserts","Keto","Proteinsnacks"]},
+        jew:{t:"💍 Schmuck",s:["Armband","Kette","Ohrringe","Ring","Fußkettchen","Brosche","Sets","Personalisiert","Makramee","Edelstein","Harz","Drahtwicklung"]},
+        kid:{t:"👶 Baby & Kinder",s:["Tier/Baby-Figuren","Rassel","Beißring (Häkel)","Stoffspielzeug/Buch","Montessori-Spielzeug","Sets","Schühchen & Mützen","Babydecke","Lätzchen/Spucktuch","Wochenbett-Set","Haaraccessoire","Handgemachte Kleidung"]},
+        knit:{t:"🧶 Strick",s:["Cardigan","Pullover","lif-Team","Schal & Mütze","Poncho","Tuch","Socken","Badeset","Babyset","Weste","Kissen/Decke"]},
+        sew:{t:"✂️ Schneiderei",s:["Saum/Reparatur","Reißverschlusswechsel","Vorhangnaht","Bettwäsche/Kissen","Tischdecke","Maßanfertigung","Kostüm"]},
+        mac:{t:"🧵 Makramee & Deko",s:["Wandbehang","Pflanzenhänger","Schlüsselanhänger","Leuchte","Läufer/Set","Korb","Regal/Wanddekor"]},
+        home:{t:"🏠 Wohndeko & Zubehör",s:["Filzarbeiten","Kissen","Türkranz","Tablettdeko","Rahmen","Traumfänger","Bild"]},
+        candle:{t:"🕯️ Kerzen & Düfte",s:["Soja/Bienenwachs","Aromastein","Raumspray","Weihrauch","Gelierte Kerze","Geschenkset"]},
+        soap:{t:"🧼 Naturseife & Kosmetik",s:["Olivenölseife","Kräuterseifen","Festes Shampoo","Lippenbalsam","Creme/Salbe","Badesalz","Lavendelsäckchen"]},
+        toys:{t:"🧸 Amigurumi & Figuren",s:["Schlüsselanhänger","Magnet","Sammelfigur","Deko-Puppe/Charakter"]}
+      },
+      slogans:["Wert fürs Handwerk","Direkter Handel","Lokale Macher unterstützen","Hausgemacht","Personalisierte Geschenke","Glutenfrei & vegan","Kuschelige Stricksachen","Naturseife & Kosmetik","Traditioneller Vorrat","Frische Marmeladen","Sorgfältig handgemacht","Qualität durch Mühe","Liebe in jeder Masche","Vertrauen von Haus zu Haus","Geburtstagssets","Eleganter Schmuck","Stil mit Makramee","Beruhigende Düfte","Sicher für Babys","Traditionelle Rezepte","Ohne Zusatzstoffe","Vom Nachbarn auf den Tisch","Meister vereint","Geschmack & Design","Mit Liebe gemacht"],
+      legal:["Kontakt / Impressum","Datenschutz","KVKK-Hinweis","Cookie-Richtlinie","Nutzungsbedingungen","Fernabsatzvertrag","Vorabinformation","Lieferung & Rückgabe","Community-Regeln","Verbotene Produkte","Alle Rechtstexte","Punycode-Domain",".com.tr"]},
+  ar:{signup:"سجّل مجانًا",loginBtn:"لدي حساب",welcome:"مرحبًا بكم في أُنتِجت الأيادي (Üreten Eller)",tagline:"بيع وشراء مباشر",tabLogin:"تسجيل الدخول",tabSignup:"إنشاء حساب",forgot:"نسيت كلمة المرور",gLogin:"🔐 المتابعة مع Google",gCont:"⚡ المتابعة مع Google",loginSubmit:"دخول",signupSubmit:"تسجيل",
+      cats:{
+        food:{t:"🍲 أطعمة",s:["أكلات منزلية","فطائر وبوريك","شوربة","أطباق بزيت الزيتون","أرز ومعكرونة","لحم ودجاج","فطور","مقبلات","مجمدات","وجبات للأطفال","حِمية/نباتي/خالٍ من الغلوتين"]},
+        cake:{t:"🎂 كيك وحلويات",s:["كيك طازج","كيك وكب كيك","بسكويت","حلويات شرقية","حلويات بالحليب","تشيزكيك","حلويات للحمية","شوكولاتة/حلويات","مجموعات عيد الميلاد"]},
+        jar:{t:"🫙 مربى • مخللات • صلصات",s:["مربى","دبس","مخللات","صلصة طماطم/فلفل","صلصة حارة","معجون طماطم","خل","معلبات"]},
+        winter:{t:"🌾 مؤن منزلية/شتوية",s:["نودلز (إريشته)","طرخانة","يوفكا","مانتي","خضار/فاكهة مجففة","معجون طماطم","خل","معلبات"]},
+        diet:{t:"🥗 حمية/نباتي/خالٍ من الغلوتين",s:["أطباق صحية","أطعمة نباتية","مخبوزات GF","حلويات بدون سكر","كيتو","وجبات بروتين"]},
+        jew:{t:"💍 مجوهرات",s:["أساور","قلادات","أقراط","خواتم","خلخال","بروش","مجموعات","مخصص بالاسم","مكرمية","أحجار طبيعية","ريزين","سلك لف"]},
+        kid:{t:"👶 أطفال",s:["مجسمات حيوانات/رضّع","خشخيشة","عضّاضة تريكو","دمى/كتب قماش","منتسوري","مجموعات","حذاء وقبعة تريكو","بطانية أطفال","مريلة/فوطة","طقم نفاس","إكسسوارات شعر","ملابس يدوية"]},
+        knit:{t:"🧶 حياكة",s:["كارديجان","كنزة","وشاح/قبعة","بونشو","شال","جوارب","طقم حمّام","طقم أطفال","صديري""الألياف كيت","وسادة/غطاء"]},
+        sew:{t:"✂️ خياطة",s:["ثَني/تصليح","تبديل سحّاب","تفصيل ستائر","أغطية/وسائد","مفرش طاولة","تفصيل خاص","زيّ"]},
+        mac:{t:"🧵 مكرمية وديكور",s:["زينة حائط","حامل أصيص","ميدالية","ثريا","رانر/طقم سفرة","سلّة","رف/زينة حائط"]},
+        home:{t:"🏠 ديكور منزلي",s:["أعمال لباد","وسادة","زينة الباب","تزيين صينية","إطار","صائد أحلام","لوحة"]},
+        candle:{t:"🕯️ شمع وروائح",s:["شمع صويا/عسل","حجر عطري","معطر جو","بخور","شمع جل","طقم هدايا"]},
+        soap:{t:"🧼 صابون طبيعي وتجميل",s:["صابون زيت الزيتون","صوابين عشبية","شامبو صلب","مرطّب شفاه","كريم/مرهم","ملح استحمام","أكياس لافندر"]},
+        toys:{t:"🧸 أميغورومي ولُعب (ديكور)",s:["ميدالية","مغناطيس","مجسّمات","دمية/شخصية ديكور"]}
+      },
+      slogans:["قيمة لعمل اليد","تجارة مباشرة","ندعم المنتجين المحليين","نكهة منزلية","هدايا مخصّصة","خالي من الغلوتين ونباتي","دفء الحياكة","صابون طبيعي وتجميل","مؤن تقليدية","مربّى طازج","مصنوع بعناية","جودة مع جهد","حب في كل غرزة","ثقة من منزل لمنزل","أطقم عيد الميلاد","مجوهرات أنيقة","أناقة بالمكرمية","روائح مريحة","آمن للأطفال","وصفات تقليدية","طعم بلا إضافات","من الجار إلى المائدة","اجتماع الحرفيين","طعم وتصميم","صنع بالمحبة"],
+      legal:["اتصال / إمبريسوم","سياسة الخصوصية","إشعار KVKK","سياسة ملفات تعريف الارتباط","شروط الاستخدام","عقد البيع عن بُعد","نموذج المعلومات المسبقة","التسليم والإرجاع","قواعد المجتمع","منتجات محظورة","جميع النصوص القانونية","نطاق Punycode",".com.tr"]}
+};
 
-  // ===== Render categories (with sub categories visible) =====
-  const catGrid=document.getElementById('catGrid');
-  const catCount=document.getElementById('catCount');
-  function renderCats(){
-    catGrid.innerHTML='';
-    const dict = CAT_I18N[L]||CAT_I18N.tr;
-    CATS.forEach((c,i)=>{
-      const tr = dict[c.k];
-      const title = tr?.title || '';
-      const subs = tr?.subs || [];
-      const el=document.createElement('a');
-      el.href=`/kategori/${encodeURIComponent(c.k)}`;
-      el.className='card';
-      const chips = subs.map(s=>`<span class="chip">${s}</span>`).join('');
-      el.innerHTML=`<div class="pulse" style="--d:${i*24}deg"></div>
-        <div class="title">${c.icon} ${title}</div>
-        <div class="subtitle">${subs.length} ${L==='en'?'subcategories':(L==='de'?'Unterkategorien':(L==='ar'?'فئات فرعية':'alt kategori'))}</div>
-        <div class="chipwrap">${chips}</div>`;
-      el.addEventListener('mouseenter',()=>el.querySelector('.pulse').style.opacity=.28);
-      el.addEventListener('mouseleave',()=>el.querySelector('.pulse').style.opacity=.18);
-      catGrid.appendChild(el);
-    });
-    catCount.textContent = `${CATS.length} ${I18N[L]?.categories||I18N.tr.categories}`;
-  }
+let LANG=localStorage.getItem('ue_lang')||'tr';
 
-  // ===== Listings (real data will be loaded from Firebase) =====
-  const pre = [];
-  const std = [];
-  function renderList(grid,arr,prem){
-    grid.innerHTML='';
-    const max = 50;
-    (arr||[]).slice(0,max).forEach((x,idx)=>{
-      const el=document.createElement('a');
-      el.href=`/ilan/${x.id||''}`;
-      el.className='item';
-      el.style.order = String(9999-idx);
-      el.innerHTML=`<div class="thumb"></div>
-        <div class="meta">
-          ${prem?'<span class="badge gold">⭐ Vitrin</span>':''}
-          <div style="margin-top:.35rem;font-weight:700">${x.t||''}</div>
-          <div style="display:flex;gap:.5rem;align-items:center;color:#9ca3af;margin-top:.25rem">
-            <span>${x.price||''}</span> • <span>${x.ago||''}</span>
-          </div>
-        </div>`;
-      grid.appendChild(el);
-    });
-  }
+function setDir(){
+  const html=document.documentElement; html.lang=LANG; html.dir = (LANG==='ar')?'rtl':'ltr';
+}
 
-  // Premium rotasyon: 5 dakikada bir sırayı değiştir
-  setInterval(()=>{
-    if(pre && pre.length){ pre.push(pre.shift()); renderList(document.getElementById('preGrid'),pre,true); }
-  }, 300000);
+function applyLang(){
+  const t=TEXT[LANG]||TEXT.tr;
+  $('#openSignup').textContent=t.signup;
+  $('#openLogin').textContent=t.loginBtn;
+  $('#welcome').textContent=t.welcome;
+  $('#tagline').textContent=t.tagline;
+  $('#tabLogin').textContent=t.tabLogin;
+  $('#tabSignup').textContent=t.tabSignup;
+  $('#forgotBtn').textContent=t.forgot;
+  $('#gLogin').textContent=t.gLogin;
+  $('#gSignup').textContent=t.gCont;
+  $('#loginSubmit').textContent=t.loginSubmit;
+  $('#signupSubmit').textContent=t.signupSubmit;
+}
 
-  // ===== Slogan + Dil =====
-  const langSel=document.getElementById('langSel');
-  const sloganEl=document.getElementById('slogan');
-  const brandEl=document.getElementById('brand');
-  const welcomeEl=document.getElementById('welcome');
-  const TKEYS=['post','profile','logout','premium','premiumShort','categories','stdTitle','preTitle','messages','notifications','liveSupport','close','send','f_contact','f_privacy','f_kvkk','f_cookies','f_terms','f_distance','f_preinfo','f_delivery','f_rules','f_banned','f_alllegal','f_home','proTitle','paparaName','iban','copy'];
-  let L='tr', idx=0, timer=null;
-  function applyLang(){
-    const t=I18N[L];
-    brandEl.textContent=t.brand;
-    welcomeEl.textContent=t.welcome;
-    document.getElementById('tagLine').textContent=t.tag;
-    TKEYS.forEach(k=>{ document.querySelectorAll(`[data-i18n="${k}"]`).forEach(n=>{ if(k==='proTitle'||k==='proInfo'){ n.innerHTML=t[k]; } else { n.textContent=t[k]; } }) });
-    // placeholders
-    const phMap={ chatPlaceholder:t.chatPlaceholder };
-    document.querySelectorAll('[data-i18n-ph]').forEach(n=>{ const key=n.getAttribute('data-i18n-ph'); if(phMap[key]) n.setAttribute('placeholder', phMap[key]); });
-    // slogan
-    const start = t.slogans.indexOf('Makrome ile şıklık');
-    idx = start>=0 ? start : 0;
-    sloganEl.textContent=t.slogans[idx];
-    clearInterval(timer);
-    timer=setInterval(()=>{ idx=(idx+1)%t.slogans.length; sloganEl.textContent=t.slogans[idx]; },5000);
-    // kategoriler
-    renderCats();
-  }
-  langSel.addEventListener('change',e=>{L=e.target.value; applyLang(); document.documentElement.lang=L; document.documentElement.dir = (L==='ar')?'rtl':'ltr';});
+function renderCats(){
+  const t=TEXT[LANG]||TEXT.tr; const C=t.cats||TEXT.tr.cats; const grid=$('#catGrid'); if(!grid) return; grid.innerHTML='';
+  const order=["food","cake","jar","winter","diet","jew","kid","knit","sew","mac","home","candle","soap","toys"];
+  order.forEach((key,i)=>{ const c=C[key]; if(!c) return; const col=COLORS[i%COLORS.length]; const el=document.createElement('div'); el.className='card'; el.innerHTML=`<div class="halo" style="background:radial-gradient(400px 200px at 20% 0%,${col},transparent)"></div><div class="title">${c.t}</div><div class="chips">${c.s.map(s=>`<span class='chip'>${s}</span>`).join('')}</div>`; grid.appendChild(el); });
+}
 
-  // ===== Buttons =====
-  function go(u){ location.href=u }
-  document.getElementById('postBtn').onclick=()=>go('/docs/ilan.html');
-  document.getElementById('profileBtn').onclick=()=>go('/docs/ilan.html');
-  document.getElementById('logoutBtn').onclick=()=>go('/docs/auth.html');
-  document.getElementById('goPost').onclick=(e)=>{e.__noPreventDefault__();go('/ilan-ver.html')};
-  document.getElementById('goPro').onclick=(e)=>{e.__noPreventDefault__();openPro()};
+function renderSlogans(){
+  const t=TEXT[LANG]||TEXT.tr; const ticker=$('#ticker'); ticker.innerHTML='';
+  const arr=t.slogans || TEXT.tr.slogans; arr.forEach(()=>{ const s=document.createElement('span'); s.className='tick'; ticker.appendChild(s); });
+  let idx=0,color=0; function cycle(){ const nodes=[...ticker.children]; nodes.forEach((n,i)=>{ n.style.display=(i>=idx && i<idx+5)?'inline-flex':'none'; n.textContent=arr[(idx+i)%arr.length]; n.style.background=`linear-gradient(180deg,${COLORS[(color+i)%COLORS.length]},#0b1220)`; n.style.borderColor='transparent'; }); idx=(idx+5)%arr.length; color=(color+1)%COLORS.length; }
+  cycle(); clearInterval(window.__slogInt); window.__slogInt=setInterval(cycle,5000);
+}
 
-  // ===== Chat open/close =====
-  const chatOpen=document.getElementById('chatOpen');
-  const chatPanel=document.getElementById('chatPanel');
-  const chatClose=document.getElementById('chatClose');
-  const chatSend=document.getElementById('chatSend');
-  const chatTxt=document.getElementById('chatTxt');
-  const chatBody=document.getElementById('chatBody');
-  function showChat(v){ chatPanel.style.display=v?'flex':'none'; chatPanel.setAttribute('aria-hidden', v? 'false':'true'); }
-  chatOpen.onclick=()=>showChat(true);
-  chatClose.onclick=()=>showChat(false);
-  chatSend.onclick=()=>{ const t=chatTxt.value.trim(); if(!t) return; const p=document.createElement('div'); p.textContent='Siz: '+t; chatBody.appendChild(p); chatTxt.value=''; chatBody.scrollTop=chatBody.scrollHeight; };
+function renderLegal(){
+  const t=TEXT[LANG]||TEXT.tr; const names=t.legal||TEXT.tr.legal; const links=$$('.legal a'); links.forEach((a,i)=>{ if(names[i]) a.textContent=names[i]; });
+}
 
-  // ===== Premium modal open/close =====
-  const proModal=document.getElementById('proModal');
-  const copyIban=document.getElementById('copyIban');
-  document.getElementById('proBtn').onclick=()=>openPro();
-  document.getElementById('proClose').onclick=()=>proModal.style.display='none';
-  function openPro(){ proModal.style.display='grid'; proModal.setAttribute('aria-hidden','false'); }
-  copyIban.onclick=()=>{ const s=document.getElementById('ibanTxt').innerText; navigator.clipboard.writeText(s); copyIban.textContent=I18N[L].copied; setTimeout(()=>copyIban.textContent=I18N[L].copy,1500); };
+function initLangSelect(){
+  const sel=$('#langSel'); if(!sel) return; sel.value=LANG; sel.onchange=()=>{ LANG=sel.value; localStorage.setItem('ue_lang',LANG); setDir(); applyLang(); renderCats(); renderSlogans(); renderLegal(); };
+}
 
-  // ===== Counters & year =====
-  document.getElementById('preCount').textContent='50';
-  document.getElementById('stdCount').textContent='50';
-  document.getElementById('yr').textContent=new Date().getFullYear();
+// ===== Auth panel: open on same page (NOT new page) =====
+function bindAuthPanel(){
+  const grid=$('#grid'); const box=$('#authBox'); const bd=$('#backdrop');
+  const tabLogin=$('#tabLogin'); const tabSignup=$('#tabSignup');
+  const loginForm=$('#loginForm'); const signupForm=$('#signupForm');
+  function sel(tab){ const login=tab==='login'; tabLogin.setAttribute('aria-selected',login); tabSignup.setAttribute('aria-selected',!login); loginForm.style.display=login?'block':'none'; signupForm.style.display=login?'none':'block'; }
+  function open(which){ if(bd) bd.style.display='block'; box.style.display='block'; box.setAttribute('aria-hidden','false'); box.classList.add('center'); grid.classList.remove('two'); sel(which); }
+  function close(){ box.style.display='none'; box.classList.remove('center'); box.setAttribute('aria-hidden','true'); if(bd) bd.style.display='none'; }
+  $('#openSignup').onclick=()=>open('signup');
+  $('#openLogin').onclick=()=>open('login');
+  tabLogin.onclick=()=>sel('login');
+  tabSignup.onclick=()=>sel('signup');
+  $('#closeAuth').onclick=close; if(bd){ bd.onclick=close; }
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && box.classList.contains('center')) close(); });
+  // password eyes
+  document.addEventListener('click',(e)=>{ const b=e.target.closest('.eye'); if(!b) return; const id=b.getAttribute('data-toggle'); const el=document.getElementById(id); if(!el) return; const isPwd=el.type==='password'; el.type=isPwd?'text':'password'; b.textContent=isPwd?'Gizle':'Göster'; });
+}
 
-  // ===== Initial render =====
-  renderList(document.getElementById('preGrid'),pre,true);
-  renderList(document.getElementById('stdGrid'),std,false);
-  applyLang();
-  </script>
+function boot(){ setDir(); initLangSelect(); applyLang(); renderCats(); renderSlogans(); renderLegal(); bindAuthPanel(); $('#yr').textContent=new Date().getFullYear(); }
+if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot); } else { boot(); }
+</script>
+
 </body>
 </html>
