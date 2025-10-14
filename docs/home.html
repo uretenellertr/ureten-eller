@@ -160,7 +160,7 @@
       <div class="spacer"></div>
       <div class="actions">
         <a class="btn small premium" href="#" id="btnPremium">Premium</a>
-        <a class="btn small profile" href="/home.html#profile" id="btnProfile">👤 Profil</a>
+        <a class="btn small profile" href="/docs/home.html#profile" id="btnProfile">👤 Profil</a>
         <a class="btn small primary" href="/ilanver.html" id="btnPost">İlan Ver</a>
         <button class="btn small logout" id="btnLogout">Çıkış</button>
       </div>
@@ -312,7 +312,9 @@
   </div>
   <div id="toast" class="toast" hidden>Kopyalandı</div>
   <script>
-  const HOME = '/home.html';
+  // === YOL TUTARLILIĞI ===
+  const HOME = '/docs/home.html'; // NEDEN: Her yerde aynı yolu kullanmak için tek sabit
+
   const $=(s)=>document.querySelector(s);
   const $$=(s)=>Array.from(document.querySelectorAll(s));
   const COLORS=["#10b981","#f59e0b","#8b5cf6","#06b6d4","#ef4444","#eab308","#14b8a6","#f97316","#a855f7","#3b82f6"];
@@ -556,7 +558,7 @@
     // password eye toggle
     document.addEventListener('click',(e)=>{ const b=e.target.closest('[data-toggle]'); if(!b) return; const id=b.getAttribute('data-toggle'); const el=document.getElementById(id); if(!el) return; const isPwd=el.type==='password'; el.type=isPwd?'text':'password'; b.textContent=isPwd?'Gizle':'Göster'; });
     // Giriş formu: sayfayı yenileme, girişli işaretle ve profile git
-  // prevent submit (demo)
+    // prevent submit (demo)
     $('#loginForm').addEventListener('submit',e=>{ e.preventDefault(); $('#lmsg').textContent='(Demo) Giriş tetiklendi'; });
     $('#signupForm').addEventListener('submit',e=>{ e.preventDefault();
       const pass=$('#spass')?$('#spass').value.trim():''; const pass2=$('#spass2')?$('#spass2').value.trim():'';
@@ -617,48 +619,49 @@
   const btnLogout = document.getElementById('btnLogout');
   if(btnLogout){ btnLogout.addEventListener('click', ()=>{ try{ /* Firebase mevcutsa signOut burada olabilir */ }catch(_){} location.href='/docs/auth.html'; }); }
   
-  <!-- Profil butonu: girişliysen sadece URL'i #profile yap; girişsizsen paneli aç -->
->
-// --- PROFIL AKIŞI ---
-
-function __openProfile(){
-  const bd  = document.getElementById('backdrop');
-  const box = document.getElementById('authBox');
-  if (bd)  bd.style.display = 'block';
-  if (box){
-    box.style.display = 'block';
-    box.classList.add('center');
-    box.setAttribute('aria-hidden','false');
+  // Profil akışı
+  function __openProfile(){
+    const bd  = document.getElementById('backdrop');
+    const box = document.getElementById('authBox');
+    if (bd)  bd.style.display = 'block';
+    if (box){
+      box.style.display = 'block';
+      box.classList.add('center');
+      box.setAttribute('aria-hidden','false');
+    }
   }
-}
 
-// Sayfa #profile ile gelmiş VE girişsizsen panel otomatik açılsın
-window.addEventListener('load', function(){
-  if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
-    __openProfile();
-  }
-});
-
-// Profil butonu: girişliysen panel açma; girişsizsen panel aç
-const __btnProf = document.getElementById('btnProfile');
-if (__btnProf){
-  __btnProf.addEventListener('click', function(e){
-    e.preventDefault();
-    if (localStorage.getItem('ue_uid')) {
-      // Girişli: yalnızca URL #profile; panel kapalı kalsın
-      location.href = '/home.html#profile';
-      const box = document.getElementById('authBox');
-      const bd  = document.getElementById('backdrop');
-      if (box){ box.style.display='none'; box.setAttribute('aria-hidden','true'); box.classList.remove('center'); }
-      if (bd){ bd.style.display='none'; }
-    } else {
-      // Girişsiz: URL + panel aç
-      location.hash = '#profile';
+  function __maybeOpenProfileFromHash(){
+    if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
       __openProfile();
     }
-  });
-}
-</script>
-  
+  }
+
+  // Sayfa yüklenince #profile ile gelindiyse ve girişli değilsen aç
+  window.addEventListener('load', __maybeOpenProfileFromHash);
+  // Her hash değişiminde de kontrol et (garanti)
+  window.addEventListener('hashchange', __maybeOpenProfileFromHash);
+
+  // Profil butonu: girişliysen sadece URL, girişsizsen panel
+  const __btnProf = document.getElementById('btnProfile');
+  if (__btnProf){
+    __btnProf.addEventListener('click', function(e){
+      e.preventDefault();
+      if (localStorage.getItem('ue_uid')) {
+        // Girişli: profiline git
+        location.href = HOME + '#profile';
+      } else {
+        // Girişsiz: URL + panel
+        if (location.pathname + location.hash !== HOME + '#profile') {
+          location.href = HOME + '#profile'; // Yönlendirme sonrası load/hashchange paneli açar
+        } else {
+          location.hash = '#profile';
+          __openProfile();
+        }
+      }
+    });
+  }
+  </script>
+
   </body>
 </html>
