@@ -1,0 +1,548 @@
+import React, { useState, useRef, useEffect } from "react";
+
+export default function SellerProfile() {
+  // ===== State =====
+  const [search, setSearch] = useState("");
+  const [follow, setFollow] = useState(false);
+  const [activeTab, setActiveTab] = useState("urunler");
+  const [settingsTab, setSettingsTab] = useState("profil");
+  const [openPanel, setOpenPanel] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [city, setCity] = useState("");
+  const [district, setDistrict] = useState("");
+  const [pass0, setPass0] = useState("");
+  const [pass1, setPass1] = useState("");
+  const [pass2, setPass2] = useState("");
+  const [toast, setToast] = useState("");
+  const [lang, setLang] = useState("tr");
+  const fileRef = useRef(null);
+
+  // ===== User profile (Firebase-backed) =====
+  const [uid, setUid] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
+  const [profileCategory, setProfileCategory] = useState("");
+  const [joinedAt, setJoinedAt] = useState("");
+  const [responseTime, setResponseTime] = useState("");
+  const [bio, setBio] = useState("");
+  const [editingBio, setEditingBio] = useState(false);
+  // Store info (editable)
+  const [storeWeekdayHours, setStoreWeekdayHours] = useState("");
+  const [storeWeekendHours, setStoreWeekendHours] = useState("");
+  const [storeShipTime, setStoreShipTime] = useState("");
+  const [storePolicy, setStorePolicy] = useState("");
+  const [editingStore, setEditingStore] = useState(false);
+
+  // Try to hydrate from Firebase if available
+  useEffect(() => {
+    const fb = (typeof window !== 'undefined') ? window.firebase : null;
+    if (!fb || !fb.auth || !fb.firestore) return; // no backend wired
+    const auth = fb.auth();
+    const db = fb.firestore();
+    const unsub = auth.onAuthStateChanged(async (u) => {
+      if (!u) return;
+      setUid(u.uid || "");
+      setDisplayName(u.displayName || "");
+      setUsername((u.email && u.email.split('@')[0]) || "");
+      try {
+        const doc = await db.collection('users').doc(u.uid).get();
+        if (doc.exists) {
+          const d = doc.data() || {};
+          setAvatarUrl(d.avatarUrl || "");
+          setCity(d.city || "");
+          setDistrict(d.district || "");
+          setProfileCategory(d.category || "");
+          setJoinedAt(d.joinedAt || "");
+          setResponseTime(d.responseTime || "");
+          setBio(d.bio || "");
+          setStoreWeekdayHours((d.storeWeekdayHours) || (d.store && d.store.weekdayHours) || "");
+          setStoreWeekendHours((d.storeWeekendHours) || (d.store && d.store.weekendHours) || "");
+          setStoreShipTime((d.storeShipTime) || (d.store && d.store.shipTime) || "");
+          setStorePolicy((d.storePolicy) || (d.store && d.store.policy) || "");
+        }
+      } catch(e) { /* ignore */ }
+    });
+    return () => unsub && unsub();
+  }, []);
+
+  // Save helpers
+  const saveToFirestore = async (payload, toastMsg) => {
+    const fb = (typeof window !== 'undefined') ? window.firebase : null;
+    if (!fb || !fb.auth || !fb.firestore || !uid) { showToast('Backend bağlantısı yok'); return; }
+    try {
+      await fb.firestore().collection('users').doc(uid).set(payload, { merge: true });
+      showToast(toastMsg);
+    } catch (e) { showToast('Kaydetme hatası'); }
+  };
+
+  // ===== i18n =====
+  const T = {
+    tr: {
+      home: "Ana Sayfa",
+      search: "Ara…",
+      login: "Giriş",
+      message: "Mesaj Gönder",
+      follow: "Takip Et",
+      following: "Takipte",
+      share: "Paylaş",
+      report: "Şikayet Et",
+      addListing: "İlan Ekle",
+      tabs: ["Ürünler", "Değerlendirmeler", "Hakkında", "Kargo & İade", "$$$"],
+      sellerSettings: "Satıcı Ayarları",
+      settingsTabs: ["Profil", "İletişim", "Güvenlik", "Ödemeler"],
+      premiumTitle: "Premium",
+      gotoPremium: "Premium’a Geç",
+      premiumHint: "Premium admin tarafından verilir.",
+      storeInfo: "Mağaza Bilgileri",
+      weekday: "Hafta içi",
+      weekend: "Hafta sonu",
+      shipTime: "Kargo süresi",
+      policy: "İade politikası",
+      legalLinks: [
+        "Kurumsal","Hakkımızda","İletişim","Gizlilik","KVKK Aydınlatma","Kullanım Şartları","Mesafeli Satış Sözleşmesi","Teslimat & İade","Çerez","Topluluk Kuralları"
+      ],
+      mobileTabs: ["Ürünler","Öne Çıkan","Sepet","Profil"],
+      city: "İstanbul",
+      category: "Giyim",
+      joined: "Ağustos 2023",
+      response: "Yanıt süresi ~ 1 saat",
+      listings: { live: "Yayında", days: (d)=>`Süresi ${d} gün`, badges: { new: "Yıvma", featured: "Vitrin" } },
+      settingsTitle: "Ayarlar",
+      avatarChange: "Avatar Değiştir",
+      imageUrl: "Görsel URL",
+      save: "Kaydet",
+      pickFromFile: "Dosyadan Seç",
+      cityLabel: "İl",
+      districtLabel: "İlçe",
+      passwordChange: "Şifre Değiştir",
+      current: "Mevcut",
+      new: "Yeni",
+      newAgain: "Yeni (tekrar)",
+      shareSuccess: "Bağlantı paylaşıldı",
+      shareCopied: "Bağlantı kopyalandı",
+      reportToast: "Şikayet formu açıldı",
+      addedListing: "İlan ekleme akışı açıldı"
+    },
+    en: {
+      home: "Home",
+      search: "Search…",
+      login: "Log In",
+      message: "Message",
+      follow: "Follow",
+      following: "Following",
+      share: "Share",
+      report: "Report",
+      addListing: "Add Listing",
+      tabs: ["Products", "Reviews", "About", "Shipping & Returns", "$$$"],
+      sellerSettings: "Seller Settings",
+      settingsTabs: ["Profile", "Contact", "Security", "Payments"],
+      premiumTitle: "Premium",
+      gotoPremium: "Go Premium",
+      premiumHint: "Premium is granted by admin.",
+      storeInfo: "Store Info",
+      weekday: "Weekdays",
+      weekend: "Weekend",
+      shipTime: "Shipping time",
+      policy: "Return policy",
+      legalLinks: ["Corporate","About","Contact","Privacy","KVKK","Terms","Distance Sales","Delivery & Returns","Cookies","Community"],
+      mobileTabs: ["Products","Featured","Cart","Profile"],
+      city: "Istanbul",
+      category: "Clothing",
+      joined: "Aug 2023",
+      response: "Response ~ 1h",
+      listings: { live: "Live", days: (d)=>`Expires in ${d} days`, badges: { new: "New", featured: "Featured" } },
+      settingsTitle: "Settings",
+      avatarChange: "Change Avatar",
+      imageUrl: "Image URL",
+      save: "Save",
+      pickFromFile: "Pick from file",
+      cityLabel: "City",
+      districtLabel: "District",
+      passwordChange: "Change Password",
+      current: "Current",
+      new: "New",
+      newAgain: "New (again)",
+      shareSuccess: "Shared",
+      shareCopied: "Link copied",
+      reportToast: "Report form opened",
+      addedListing: "Listing flow opened"
+    },
+    de: {
+      home: "Startseite",
+      search: "Suchen…",
+      login: "Anmelden",
+      message: "Nachricht",
+      follow: "Folgen",
+      following: "Folgt",
+      share: "Teilen",
+      report: "Melden",
+      addListing: "Anzeige hinzufügen",
+      tabs: ["Produkte","Bewertungen","Über","Versand & Rückgabe","$$$"],
+      sellerSettings: "Verkäufer-Einstellungen",
+      settingsTabs: ["Profil","Kontakt","Sicherheit","Zahlungen"],
+      premiumTitle: "Premium",
+      gotoPremium: "Premium holen",
+      premiumHint: "Premium wird vom Admin vergeben.",
+      storeInfo: "Shop-Infos",
+      weekday: "Werktage",
+      weekend: "Wochenende",
+      shipTime: "Versandzeit",
+      policy: "Rückgabe",
+      legalLinks: ["Unternehmen","Über uns","Kontakt","Datenschutz","KVKK","AGB","Fernabsatz","Lieferung & Rückgabe","Cookies","Community"],
+      mobileTabs: ["Produkte","Highlights","Warenkorb","Profil"],
+      city: "Istanbul",
+      category: "Bekleidung",
+      joined: "Aug 2023",
+      response: "Antwort ~ 1h",
+      listings: { live: "Aktiv", days: (d)=>`Läuft in ${d} Tagen ab`, badges: { new: "Neu", featured: "Vitrine" } },
+      settingsTitle: "Einstellungen",
+      avatarChange: "Avatar ändern",
+      imageUrl: "Bild-URL",
+      save: "Speichern",
+      pickFromFile: "Datei wählen",
+      cityLabel: "Stadt",
+      districtLabel: "Bezirk",
+      passwordChange: "Passwort ändern",
+      current: "Aktuell",
+      new: "Neu",
+      newAgain: "Neu (wieder)",
+      shareSuccess: "Geteilt",
+      shareCopied: "Link kopiert",
+      reportToast: "Formular geöffnet",
+      addedListing: "Anzeige-Flow geöffnet"
+    },
+    ar: {
+      home: "الصفحة الرئيسية",
+      search: "ابحث…",
+      login: "تسجيل الدخول",
+      message: "رسالة",
+      follow: "متابعة",
+      following: "متابَع",
+      share: "مشاركة",
+      report: "إبلاغ",
+      addListing: "إضافة إعلان",
+      tabs: ["المنتجات","التقييمات","نبذة","الشحن والإرجاع","$$$"],
+      sellerSettings: "إعدادات البائع",
+      settingsTabs: ["الملف","التواصل","الأمان","المدفوعات"],
+      premiumTitle: "بريميوم",
+      gotoPremium: "الترقية لبريميوم",
+      premiumHint: "البريميوم يمنحه المشرف.",
+      storeInfo: "معلومات المتجر",
+      weekday: "أيام الأسبوع",
+      weekend: "عطلة الأسبوع",
+      shipTime: "زمن الشحن",
+      policy: "سياسة الإرجاع",
+      legalLinks: ["الشركة","من نحن","اتصال","الخصوصية","KVKK","الشروط","البيع عن بُعد","التسليم والإرجاع","الكوكيز","المجتمع"],
+      mobileTabs: ["المنتجات","مميز","السلة","الملف"],
+      city: "إسطنبول",
+      category: "ملابس",
+      joined: "أغسطس 2023",
+      response: "الاستجابة ~ 1 س",
+      listings: { live: "نشط", days: (d)=>`ينتهي خلال ${d} يومًا`, badges: { new: "جديد", featured: "واجهة" } },
+      settingsTitle: "الإعدادات",
+      avatarChange: "تغيير الصورة",
+      imageUrl: "رابط الصورة",
+      save: "حفظ",
+      pickFromFile: "اختر من ملف",
+      cityLabel: "المدينة",
+      districtLabel: "المنطقة",
+      passwordChange: "تغيير كلمة المرور",
+      current: "الحالية",
+      new: "الجديدة",
+      newAgain: "الجديدة (مرة أخرى)",
+      shareSuccess: "تمت المشاركة",
+      shareCopied: "تم نسخ الرابط",
+      reportToast: "تم فتح نموذج البلاغ",
+      addedListing: "تم فتح تدفّق الإعلان"
+    }
+  };
+  const L = T[lang] || T.tr;
+
+  // Update dir for Arabic
+  useEffect(()=>{ document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr'; }, [lang]);
+
+  // ===== Helpers =====
+  const showToast = (m)=>{ setToast(m); setTimeout(()=>setToast(""), 2000); };
+
+  async function handleShare(){
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    try{
+      if (navigator.share){ await navigator.share({ title: 'Üreten Eller', url }); showToast(L.shareSuccess); }
+      else { await navigator.clipboard.writeText(url); showToast(L.shareCopied); }
+    }catch{ /* user cancelled */ }
+  }
+  function handleReport(){ showToast(L.reportToast); }
+  function handleAddListing(){ if (typeof window !== 'undefined') { window.location.href = '/docs/ilan.html'; } }
+  async function saveBio(){ await saveToFirestore({ bio }, 'Biyografi kaydedildi'); setEditingBio(false); }
+
+  const products = []; // sahte ilanlar kaldırıldı
+
+  return (
+    <div className="min-h-screen text-white" style={{background:'linear-gradient(180deg,#0b1220,#0a0f1c)'}}>
+      {/* ÜST BAR */}
+      <header className="sticky top-0 z-40 bg-transparent backdrop-blur border-b border-[#1f2937]">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-4 py-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="h-6 w-6 bg-cyan-400 rounded-sm" />
+            <span className="text-lg font-bold tracking-tight text-white hidden sm:block">ÜRETEN ELLER</span>
+          </div>
+          <div className="flex-1 max-w-xl hidden md:flex items-center">
+            <input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder={L.search} className="w-full border border-[#1f2937] rounded-md px-3 py-2 text-sm bg-[#0a0f1c] text-white placeholder-white/60" />
+          </div>
+          <div className="flex items-center gap-3">
+            <a href="/docs/index.html" className="px-3 py-1.5 rounded border border-[#1f2937] hover:bg-white/10 text-sm">{L.home}</a>
+            <select value={lang} onChange={(e)=>setLang(e.target.value)} className="text-sm border border-[#1f2937] bg-[#0a0f1c] rounded-md px-2 py-1">
+              <option value="tr">TR</option><option value="en">EN</option><option value="de">DE</option><option value="ar">AR</option>
+            </select>
+            <button className="text-sm">{L.login}</button>
+            <button className="p-2 rounded hover:bg-white/10">🛒</button>
+            <button className="p-2 rounded hover:bg-white/10">🔔</button>
+            <button onClick={()=>setOpenPanel(true)} className="p-2 rounded hover:bg-white/10 md:hidden" aria-label="Ayarlar">☰</button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 mt-6 grid lg:grid-cols-12 gap-6">
+        {/* SOL PROFİL KARTI */}
+        <section className="lg:col-span-8">
+          <div className="flex items-start gap-4">
+            <div className="w-28 h-28 rounded-full border-4 border-cyan-400 bg-gray-200 overflow-hidden">
+              <img src={avatarUrl || "/assets/img/default-avatar.png"} alt="avatar" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex-1 min-w-0">
+              {(displayName || username) && (
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  {displayName && <h1 className="text-xl font-semibold truncate">{displayName}</h1>}
+                  {username && <span className="text-sm text-white">@{username}</span>}
+                </div>
+              )}
+              {(city || profileCategory || joinedAt || responseTime) && (
+                <div className="mt-1 text-sm text-white flex flex-wrap gap-x-3 gap-y-1">
+                  {city && <span>{city}{district?`, ${district}`:''}</span>}
+                  {profileCategory && <span>• {profileCategory}</span>}
+                  {joinedAt && <span>• {joinedAt}</span>}
+                  {responseTime && <span>• {responseTime}</span>}
+                </div>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button onClick={()=>{ if (typeof window!== 'undefined'){ window.location.href = '/docs/mesajlar.html?to=' + encodeURIComponent(uid); } }} className="bg-emerald-500 hover:bg-emerald-400 text-white text-sm px-3 py-1.5 rounded">{L.message}</button>
+                <button onClick={()=>setFollow(v=>!v)} className={`border border-[#1f2937] text-sm px-3 py-1.5 rounded ${follow?"bg-white/10":""}`}>{follow?L.following:L.follow}</button>
+                <button onClick={handleShare} className="border border-[#1f2937] text-sm px-3 py-1.5 rounded">{L.share}</button>
+                <button onClick={handleReport} className="border border-[#1f2937] text-sm px-3 py-1.5 rounded">{L.report}</button>
+                <button onClick={handleAddListing} className="border border-[#1f2937] text-sm px-3 py-1.5 rounded">{L.addListing}</button>
+                <button onClick={()=>setOpenPanel(true)} className="border border-[#1f2937] text-sm px-3 py-1.5 rounded">{L.settingsTitle}</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Sekmeler */}
+          <div className="mt-6 border-b border-[#1f2937] flex gap-6 text-sm font-medium">
+            {L.tabs.map((name, i)=>{
+              const keys=["urunler","deger","hakkinda","kargo","sss"]; const key=keys[i];
+              const active=activeTab===key;
+              return (
+                <button key={name} onClick={()=>setActiveTab(key)} className={`pb-3 -mb-px ${active?"border-b-2 border-cyan-400 text-white":"text-white"}`}>{name}</button>
+              );
+            })}
+          </div>
+
+          {/* Sekme İçerikleri */}
+          {activeTab==="urunler" && (
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+              {products.map(p=> (
+                <article key={p.id} className="border border-[#1f2937] rounded-xl overflow-hidden" style={{background:'linear-gradient(145deg,#0e172a,#0b1326)'}}>
+                  <div className="relative">
+                    <img src={p.img} alt="Ürün" className="w-full h-36 object-cover" />
+                    {p.badge && (
+                      <span className={`absolute left-2 top-2 text-[11px] px-2 py-0.5 rounded-full ${p.badge==="featured"?"bg-cyan-500/90 text-white":"bg-emerald-500 text-white"}`}>
+                        {p.badge==="featured"?L.listings.badges.featured:L.listings.badges.new}
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-2">
+                    <p className="text-[13px] font-semibold">{L.listings.live}</p>
+                    <p className="text-[12px] text-white">{L.listings.days(p.days)}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+
+          {activeTab==="deger" && (
+            <div className="mt-6 text-sm text-white">Henüz değerlendirme yok.</div>
+          )}
+          {activeTab==="hakkinda" && (
+            <div className="mt-6 text-sm text-white leading-6">
+              {!editingBio ? (
+                <div className="cursor-text border border-[#1f2937] rounded-lg p-3 bg-[#0a0f1c]" onClick={()=>setEditingBio(true)}>
+                  {bio && bio.length ? bio : 'Biyografinizi buraya yazın… (130 karakter)'}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    maxLength={130}
+                    value={bio}
+                    onChange={(e)=> setBio(e.target.value.slice(0,130))}
+                    placeholder={'Biyografinizi buraya yazın… (130 karakter)'}
+                    className="w-full bg-[#0a0f1c] border border-[#1f2937] rounded-lg px-3 py-2 text-sm"
+                  />
+                  <div className="flex items-center justify-between text-xs">
+                    <span>{bio.length}/130</span>
+                    <div className="space-x-2">
+                      <button onClick={()=> setEditingBio(false)} className="px-3 py-1.5 border border-[#1f2937] rounded-lg">İptal</button>
+                      <button onClick={saveBio} className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 rounded-lg">{L.save}</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab==="kargo" && (
+            <div className="mt-6 text-sm text-white leading-6">Kargo: 1-5 iş günü içinde. İade: 14 gün koşullu.</div>
+          )}
+          {activeTab==="sss" && (
+            <div className="mt-6 text-sm text-white leading-6">Ücretlendirme ve komisyon bilgileri burada yer alacak.</div>
+          )}
+        </section>
+
+        {/* SAĞ AYARLAR KARTI */}
+        <aside className="lg:col-span-4 space-y-6">
+          <div className="border border-[#1f2937] rounded-xl p-5 text-white" style={{background:'linear-gradient(180deg,#0c1426,#0b1220)'}}>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold">{L.storeInfo}</h4>
+              {!editingStore ? (
+                <button onClick={()=>setEditingStore(true)} className="text-xs px-2 py-1 border border-[#1f2937] rounded">Düzenle</button>
+              ) : null}
+            </div>
+
+            {!editingStore ? (
+              <dl className="text-sm grid grid-cols-2 gap-y-2">
+                <dt className="text-white">{L.weekday}</dt><dd className="text-right">{storeWeekdayHours || '—'}</dd>
+                <dt className="text-white">{L.weekend}</dt><dd className="text-right">{storeWeekendHours || '—'}</dd>
+                <dt className="text-white">{L.shipTime}</dt><dd className="text-right">{storeShipTime || '—'}</dd>
+                <dt className="text-white">{L.policy}</dt><dd className="text-right">{storePolicy || '—'}</dd>
+              </dl>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <div className="text-sm mb-1">{L.weekday}</div>
+                  <input type="text" value={storeWeekdayHours} onChange={(e)=>setStoreWeekdayHours(e.target.value)} className="w-full bg-[#0a0f1c] border border-[#1f2937] rounded px-3 py-2 text-sm" placeholder="09.00 - 16.00" />
+                </div>
+                <div>
+                  <div className="text-sm mb-1">{L.weekend}</div>
+                  <input type="text" value={storeWeekendHours} onChange={(e)=>setStoreWeekendHours(e.target.value)} className="w-full bg-[#0a0f1c] border border-[#1f2937] rounded px-3 py-2 text-sm" placeholder="10.00 - 16.00" />
+                </div>
+                <div>
+                  <div className="text-sm mb-1">{L.shipTime}</div>
+                  <input type="text" value={storeShipTime} onChange={(e)=>setStoreShipTime(e.target.value)} className="w-full bg-[#0a0f1c] border border-[#1f2937] rounded px-3 py-2 text-sm" placeholder="1-5 iş günü" />
+                </div>
+                <div>
+                  <div className="text-sm mb-1">{L.policy}</div>
+                  <input type="text" value={storePolicy} onChange={(e)=>setStorePolicy(e.target.value)} className="w-full bg-[#0a0f1c] border border-[#1f2937] rounded px-3 py-2 text-sm" placeholder="Geçerlidir" />
+                </div>
+                <div className="flex items-center justify-end gap-2">
+                  <button onClick={()=>setEditingStore(false)} className="px-3 py-1.5 border border-[#1f2937] rounded">İptal</button>
+                  <button onClick={async ()=>{ await saveToFirestore({ storeWeekdayHours, storeWeekendHours, storeShipTime, storePolicy, store: { weekdayHours: storeWeekdayHours, weekendHours: storeWeekendHours, shipTime: storeShipTime, policy: storePolicy } }, 'Mağaza bilgileri kaydedildi'); setEditingStore(false); }} className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 rounded">Kaydet</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
+
+      {/* ALT LEGAL BAR */}
+      <footer className="mt-8 bg-black/80 text-white text-[12px]">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex flex-wrap gap-x-4 gap-y-2">
+          {L.legalLinks.map((x)=> <a key={x} href="#" className="hover:text-white">{x}</a>)}
+          <span className="ml-auto">© 2025 Üreten Eller</span>
+        </div>
+      </footer>
+
+      {/* MOBİL ALT NAV */}
+      <nav className="fixed md:hidden bottom-0 inset-x-0 bg-[#0a0f1c] border-t border-[#1f2937] grid grid-cols-4 text-xs text-white">
+        {L.mobileTabs.map((x,i)=> (
+          <button key={x} onClick={()=> setActiveTab(["urunler","deger","sss","hakkinda"][i])} className="py-2 flex flex-col items-center gap-1">
+            <span className="w-5 h-5 rounded-full border" />
+            {x}
+          </button>
+        ))}
+      </nav>
+
+      {/* AYARLAR PANELİ — küçük, responsive */}
+      {openPanel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-black/60" onClick={()=>setOpenPanel(false)} />
+          <div className="relative w-full max-w-md sm:max-w-md md:max-w-lg text-white rounded-2xl border border-[#1f2937] shadow-2xl p-4 sm:p-5" style={{background:'#0b1220'}}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base sm:text-lg font-semibold">{L.settingsTitle}</h3>
+              <button onClick={()=>setOpenPanel(false)} className="text-white hover:text-cyan-100">✕</button>
+            </div>
+
+            {/* Avatar Değiştir */}
+            <div className="mt-4">
+              <div className="text-sm font-semibold mb-2">{L.avatarChange}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
+                <div className="sm:col-span-2 flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={L.imageUrl}
+                    value={avatarUrl}
+                    onChange={(e)=>setAvatarUrl(e.target.value)}
+                    className="flex-1 bg-[#0a0f1c] border border-[#1f2937] rounded-lg px-3 py-2 text-sm"
+                  />
+                  <button onClick={()=>{ setOpenPanel(false); saveToFirestore({ avatarUrl }, 'Avatar güncellendi'); }} className="px-3 sm:px-4 py-2 bg-emerald-500 hover:bg-emerald-400 rounded-lg text-sm">{L.save}</button>
+                </div>
+                <div className="sm:col-span-1">
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e)=>{ const f=e.target.files && e.target.files[0]; if(!f) return; const reader=new FileReader(); reader.onload=(ev)=>{ const v=ev.target && ev.target.result; if(typeof v==='string'){ setAvatarUrl(v); } }; reader.readAsDataURL(f); }} />
+                  <button onClick={()=> fileRef.current && fileRef.current.click()} className="w-full px-3 py-2 bg-[#0a0f1c] border border-[#1f2937] rounded-lg text-sm">{L.pickFromFile}</button>
+                </div>
+              </div>
+              {avatarUrl && (
+                <div className="mt-3 text-xs">
+                  Önizleme:
+                  <div className="mt-2 w-16 h-16 rounded-full overflow-hidden border border-[#1f2937]">
+                    <img src={avatarUrl} alt="preview" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Şehir / İlçe */}
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <div className="text-sm font-semibold mb-2">{L.cityLabel}</div>
+                <input type="text" value={city} onChange={(e)=>setCity(e.target.value)} className="w-full bg-[#0a0f1c] border border-[#1f2937] rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold mb-2">{L.districtLabel}</div>
+                <input type="text" value={district} onChange={(e)=>setDistrict(e.target.value)} className="w-full bg-[#0a0f1c] border border-[#1f2937] rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div className="sm:col-span-2 text-right">
+                <button onClick={()=>{ setOpenPanel(false); saveToFirestore({ city, district }, 'Konum güncellendi'); }} className="mt-2 px-3 sm:px-4 py-2 bg-emerald-500 hover:bg-emerald-400 rounded-lg text-sm">{L.save}</button>
+              </div>
+            </div>
+
+            {/* Şifre Değiştir */}
+            <div className="mt-6">
+              <div className="text-sm font-semibold mb-2">{L.passwordChange}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <input type="password" placeholder={L.current} value={pass0} onChange={(e)=>setPass0(e.target.value)} className="bg-[#0a0f1c] border border-[#1f2937] rounded-lg px-3 py-2 text-sm" />
+                <input type="password" placeholder={L.new} value={pass1} onChange={(e)=>setPass1(e.target.value)} className="bg-[#0a0f1c] border border-[#1f2937] rounded-lg px-3 py-2 text-sm" />
+                <input type="password" placeholder={L.newAgain} value={pass2} onChange={(e)=>setPass2(e.target.value)} className="bg-[#0a0f1c] border border-[#1f2937] rounded-lg px-3 py-2 text-sm" />
+              </div>
+              <div className="text-right mt-2">
+                <button onClick={async ()=>{ if(pass1!==pass2){ alert('Şifreler eşleşmiyor'); return;} const fb = (typeof window !== 'undefined') ? window.firebase : null; if (fb?.auth && fb.auth().currentUser) { try { await fb.auth().currentUser.updatePassword(pass1); showToast('Şifre güncellendi'); } catch(e){ showToast('Şifre güncellenemedi'); } } else { showToast('Backend bağlantısı yok'); } setOpenPanel(false); }} className="px-3 sm:px-4 py-2 bg-emerald-500 hover:bg-emerald-400 rounded-lg text-sm">{L.save}</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white border border-gray-700 px-4 py-2 rounded-lg shadow">{toast}</div>
+      )}
+    </div>
+  );
+}
