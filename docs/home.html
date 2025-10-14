@@ -556,25 +556,14 @@
     // password eye toggle
     document.addEventListener('click',(e)=>{ const b=e.target.closest('[data-toggle]'); if(!b) return; const id=b.getAttribute('data-toggle'); const el=document.getElementById(id); if(!el) return; const isPwd=el.type==='password'; el.type=isPwd?'text':'password'; b.textContent=isPwd?'Gizle':'Göster'; });
     // Giriş formu: sayfayı yenileme, girişli işaretle ve profile git
-$('#loginForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-  localStorage.setItem('ue_uid', '1');
-  $('#lmsg').textContent = 'Giriş başarılı';
-  location.href = '/profile.html';
-});
-
-// Kayıt formu: basit kontrol
-$('#signupForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const pass = $('#spass')?.value.trim() || '';
-  const pass2 = $('#spass2')?.value.trim() || '';
-  if (pass !== pass2) {
-    $('#smsg').innerHTML = '<span class="err">Şifreler eşleşmiyor.</span>';
-    return;
+  // prevent submit (demo)
+    $('#loginForm').addEventListener('submit',e=>{ e.preventDefault(); $('#lmsg').textContent='(Demo) Giriş tetiklendi'; });
+    $('#signupForm').addEventListener('submit',e=>{ e.preventDefault();
+      const pass=$('#spass')?$('#spass').value.trim():''; const pass2=$('#spass2')?$('#spass2').value.trim():'';
+      if(pass!==pass2){ $('#smsg').innerHTML='<span class="err">Şifreler eşleşmiyor.</span>'; return; }
+      $('#smsg').innerHTML='<span class="ok">Kayıt alındı! Lütfen <b>e‑posta</b> kutunu kontrol et. Gelen kutusunda yoksa <b>spam/önemsiz</b> klasörünü de kontrol et. Hesabını aktifleştirmek için e‑postadaki <b>doğrulama</b> bağlantısına tıkla.</span>';
+    });
   }
-  $('#smsg').innerHTML = '<span class="ok">Kayıt alındı! Lütfen e-posta kutunu kontrol et.</span>';
-});
-}
     
   function boot(){
     try{
