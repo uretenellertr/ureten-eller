@@ -613,55 +613,65 @@
   function copyText(txt){ if(!txt) return; if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(()=>showToast('Kopyalandı')).catch(()=>showToast('Kopyalanamadı')); } else { const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); showToast('Kopyalandı'); }catch(_){ showToast('Kopyalanamadı'); } finally{ document.body.removeChild(ta); } } }
   $$('.btn.copy').forEach(b=> b.addEventListener('click', ()=> copyText(b.getAttribute('data-copy')) ));
 
-    // Logout: auth ekranına yönlendir
+      // Logout: auth ekranına yönlendir
   const btnLogout = document.getElementById('btnLogout');
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
       try { /* Firebase signOut burada olabilir */ } catch (_) {}
-      location.href = '/docs/auth.html';
+      location.href = '/auth.html';
     });
   }
 
-// --- PROFIL AKIŞI ---
+  // --- PROFİL AKIŞI ---
 
-function __openProfile(){
-  const bd  = document.getElementById('backdrop');
-  const box = document.getElementById('authBox');
-  if (bd)  bd.style.display = 'block';
-  if (box){
-    box.style.display = 'block';
-    box.classList.add('center');
-    box.setAttribute('aria-hidden','false');
+  function __openProfile(){
+    const bd  = document.getElementById('backdrop');
+    const box = document.getElementById('authBox');
+    if (bd)  bd.style.display = 'block';
+    if (box){
+      box.style.display = 'block';
+      box.classList.add('center');
+      box.setAttribute('aria-hidden','false');
+    }
   }
-}
 
-// Sayfa #profile ile gelmiş VE girişsizsen panel otomatik açılsın
-window.addEventListener('load', function(){
-  if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
-    __openProfile();
-  }
-});
-
-// Profil butonu: girişliysen panel açma; girişsizsen panel aç
-const __btnProf = document.getElementById('btnProfile');
-if (__btnProf){
-  __btnProf.addEventListener('click', function(e){
-    e.preventDefault();
-    if (localStorage.getItem('ue_uid')) {
-      // Girişli: yalnızca URL #profile; panel kapalı kalsın
-      location.href = '#profile';
-      const box = document.getElementById('authBox');
-      const bd  = document.getElementById('backdrop');
-      if (box){ box.style.display='none'; box.setAttribute('aria-hidden','true'); box.classList.remove('center'); }
-      if (bd){ bd.style.display='none'; }
-    } else {
-      // Girişsiz: URL + panel aç
-      location.hash = '#profile';
+  // Sayfa #profile ile gelmiş VE girişsizsen panel otomatik açılsın
+  window.addEventListener('load', function(){
+    if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
       __openProfile();
     }
   });
-}
+
+  // Profil butonu
+  const __btnProf = document.getElementById('btnProfile');
+  if (__btnProf){
+    __btnProf.addEventListener('click', function(e){
+      e.preventDefault();
+
+      const loggedIn = !!localStorage.getItem('ue_uid');
+
+      // Home'da değilsek: doğrudan /home.html#profile'a git
+      if (location.pathname !== '/home.html') {
+        location.href = '/home.html#profile';
+        return;
+      }
+
+      // Zaten home'da isek: sayfayı yenilemeden hash ayarla
+      location.hash = '#profile';
+
+      if (!loggedIn) {
+        // Girişsiz: modal aç
+        __openProfile();
+      } else {
+        // Girişli: modal kapalı kalsın
+        const box = document.getElementById('authBox');
+        const bd  = document.getElementById('backdrop');
+        if (box){ box.style.display='none'; box.setAttribute('aria-hidden','true'); box.classList.remove('center'); }
+        if (bd){ bd.style.display='none'; }
+      }
+    });
+  }
+
 </script>
-  
-  </body>
+    </body>
 </html>
