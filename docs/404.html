@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="tr" dir="ltr">
+<head>
+  <style>body.hidden{opacity:0;visibility:hidden}</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Üreten Eller – El emeği pazar yeri</title>
+  <meta name="description" content="El emeği ürünler ve ev yapımı lezzetler için güvenli pazar yeri." />
+  <link rel="icon" href="/assets/icons/favicon-32x32.png" />
+  <style>
+    :root{ --brand:#25a18e; --brand2:#f59e0b; --brand3:#8b5cf6; --dark:#0b0b0b; --ink:#e5e7eb; --accent:#22d3ee; }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:#0a0f1c;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,'Noto Sans',sans-serif}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+
+    /* Topbar */
+    .topbar{position:sticky;top:0;z-index:60;backdrop-filter:saturate(160%) blur(8px);background:linear-gradient(90deg,#0b1220ee,#0b1220cc 60%,#0b122000);border-bottom:1px solid #111827}
+    .topwrap{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;max-width:1200px;margin:0 auto}
+    .logo{display:flex;gap:.5rem;align-items:center;font-weight:800;letter-spacing:.2px}
+    .logo .dot{width:10px;height:10px;border-radius:999px;background:conic-gradient(from 0deg,var(--brand),var(--brand2),var(--brand3),var(--brand));}
+    .logo-img{width:28px;height:28px;object-fit:contain}
+    .spacer{flex:1}
+    .btn{padding:.55rem .9rem;border:1px solid #1f2937;border-radius:999px;background:linear-gradient(180deg,#111827,#0b1220);color:#e5e7eb;font-weight:600;cursor:pointer}
+    .btn:hover{border-color:#334155;transform:translateY(-1px)}
+    .btn.primary{background:linear-gradient(180deg,var(--brand),#128473);border-color:#0e766e}
+    .btn.gold{background:linear-gradient(180deg,#facc15,#f59e0b);color:#111827;border-color:#a16207}
+
+    /* Language */
+    .lang{display:flex;align-items:center;gap:.5rem;border:1px solid #1f2937;border-radius:999px;padding:.35rem .6rem}
+    .lang select{background:transparent;border:none;color:var(--ink);font-weight:600;outline:none}
+
+    /* Hero */
+    .hero{max-width:900px;margin:0 auto;padding:1.25rem 1rem 0;text-align:center}
+    .hero h1{margin:.25rem 0 0;font-size:clamp(30px,5.2vw,56px);line-height:1.15}
+    .hero .tag{margin:.35rem 0 0;color:#cbd5e1;font-size:clamp(16px,2.4vw,22px)}
+    .slogan{margin:.35rem 0 0;height:1.9em;color:var(--accent);font-weight:800;font-size:clamp(16px,2.6vw,24px)}
+
+    /* Sections */
+    .section{max-width:1200px;margin:1rem auto;padding:0 1rem}
+    .sechead{display:flex;align-items:center;justify-content:space-between;margin:.75rem 0 .5rem}
+    .sechead h2{margin:0;font-size:clamp(18px,2.2vw,26px)}
+    .sechead .mini{color:#9ca3af;font-size:.9rem}
+
+    /* Grids */
+    .grid{display:grid;gap:.85rem}
+    .grid.cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media(min-width:640px){.grid.cards{grid-template-columns:repeat(3,1fr)}}
+    @media(min-width:900px){.grid.cards{grid-template-columns:repeat(6,1fr)}}
+
+    .card{position:relative;border-radius:16px;padding:10px;border:1px solid #111827;background:linear-gradient(145deg,#0b1220,#0a0f1c);overflow:hidden;isolation:isolate}
+    .card .title{font-weight:800}
+    .card .subtitle{font-size:.86rem;color:#b6c2d1}
+    .chipwrap{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.45rem}
+    .chip{font-size:.73rem;border:1px solid #1f2937;border-radius:999px;padding:.2rem .45rem;background:#0a162c}
+    .card .pulse{position:absolute;inset:-20%;background:conic-gradient(from var(--d,0deg), var(--brand), var(--brand2), var(--brand3), var(--brand));filter:blur(32px);opacity:.18;z-index:-1;animation:spin 12s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Listings */
+    .grid.listings{grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media(min-width:768px){.grid.listings{grid-template-columns:repeat(3,1fr)}}
+    @media(min-width:1100px){.grid.listings{grid-template-columns:repeat(5,1fr)}}
+    .item{border:1px solid #111827;border-radius:14px;background:#0b1220;overflow:hidden;display:flex;flex-direction:column}
+    .item .thumb{aspect-ratio:1.1/1;background:#0f172a}
+    .item .meta{padding:.5rem .6rem}
+    .badge{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .5rem;border-radius:999px;font-size:.75rem;border:1px solid #1f2937}
+    .badge.gold{background:linear-gradient(180deg,#facc15,#f59e0b);color:#111827;border-color:#a16207}
+
+    /* Live chat bubble + panel */
+    .chat-bubble{position:fixed;right:14px;bottom:74px;z-index:70;display:flex;align-items:center;gap:.5rem;padding:.6rem .8rem;border-radius:999px;background:linear-gradient(180deg,#111827,#0b1220);border:1px solid #1f2937;box-shadow:0 6px 20px #0008;cursor:pointer}
+    .chat-dot{width:10px;height:10px;border-radius:999px;background:#22c55e;box-shadow:0 0 0 6px #22c55e22}
+    .chat-panel{position:fixed;right:14px;bottom:140px;width:min(92vw,340px);background:#0b1220;border:1px solid #1f2937;border-radius:16px;box-shadow:0 10px 30px #000a;display:none;flex-direction:column;overflow:hidden;z-index:80}
+    .chat-head{display:flex;align-items:center;justify-content:space-between;padding:.6rem .8rem;border-bottom:1px solid #1f2937}
+    .chat-body{height:280px;overflow:auto;padding:.6rem .8rem}
+    .chat-input{display:flex;gap:.5rem;padding:.6rem .8rem;border-top:1px solid #1f2937}
+    .chat-input input{flex:1;background:#0a0f1c;border:1px solid #1f2937;border-radius:10px;padding:.5rem .6rem;color:#e5e7eb}
+
+    /* Bottom bar (fixed) */
+    .bbar{position:fixed;left:0;right:0;bottom:0;z-index:65;border-top:1px solid #111827;background:linear-gradient(180deg,#0b1220,#0a0f1c)}
+    .bwrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;padding:.5rem 1rem}
+    .pill{display:flex;align-items:center;gap:.5rem;border:1px solid #1f2937;border-radius:999px;padding:.55rem .8rem}
+    .pill b{font-size:.95rem}
+
+    body{padding-bottom:94px}
+
+    /* Footer (legal) */
+    footer{background:#000;color:#9ca3af}
+    .footwrap{max-width:1200px;margin:0 auto;padding:1rem}
+    .footgrid{display:grid;gap:.75rem;grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media(min-width:800px){.footgrid{grid-template-columns:repeat(5,1fr)}}
+    .footgrid a{display:block;padding:.25rem 0;color:#d1d5db}
+    .copyright{margin-top:.75rem;font-size:.9rem;color:#94a3b8}
+
+    /* Modal */
+    .modal{position:fixed;inset:0;background:#0008;display:none;place-items:center;z-index:90}
+    .modal .box{width:min(92vw,560px);background:#0b1220;border:1px solid #1f2937;border-radius:16px;padding:1rem}
+    .modal h3{margin:.2rem 0 0}
+    .row{display:flex;gap:.5rem;flex-wrap:wrap;margin:.6rem 0}
+    .kbd{font-family:ui-monospace,monospace;border:1px dashed #334155;border-radius:10px;padding:.35rem .5rem;background:#0a162c}
+  </style>
+</head>
+<body>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topwrap">
+      <div class="logo" aria-label="Üreten Eller">
+        <img src="//assets/icons/logo.svg" alt="logo" class="logo-img" />
+        <span class="dot"></span>
+        <span id="brand">Üreten Eller</span>
+      </div>
+      <div class="spacer"></div>
+      <div class="lang">
+        <span>🌍</span>
+        <select id="langSel" aria-label="Dil seçimi">
+          <option value="tr">TR</option>
+          <option value="en">EN</option>
+          <option value="ar">AR</option>
+          <option value="de">DE</option>
+        </select>
+      </div>
+      <button class="btn primary" id="postBtn">+ <span data-i18n="post">İlan Ver</span></button>
+      <button class="btn" id="profileBtn" data-i18n="profile">Profil</button>
+      <button class="btn" id="logoutBtn" data-i18n="logout">Çıkış</button>
+      <button class="btn gold" id="proBtn" data-i18n="premium">Premium Üyelik</button>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1 id="welcome">Üreten Ellere Hoş Geldiniz</h1>
+    <p class="tag">Aracısız alışveriş</p>
+    <p class="slogan" id="slogan">Makrome ile şıklık</p>
+  </section>
+
+  <!-- PREMIUM SHOWCASE (moved above categories) -->
+  <section class="section">
+    <div class="sechead">
+      <h2>Vitrin (Premium)</h2>
+      <span class="mini" id="preCount">30</span>
+    </div>
+    <div class="grid listings" id="preGrid"></div>
+  </section>
+
+  <!-- STANDARD LISTINGS (moved above categories) -->
+  <section class="section">
+    <div class="sechead">
+      <h2>Standart İlanlar</h2>
+      <span class="mini" id="stdCount">50</span>
+    </div>
+    <div class="grid listings" id="stdGrid"></div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section class="section" id="cats">
+    <div class="sechead"><h2 data-i18n="categories">Kategoriler</h2><span class="mini" id="catCount"></span></div>
+    <div class="grid cards" id="catGrid"></div>
+  </section>
+
+  <!-- LIVE CHAT BUBBLE + PANEL -->
+  <div class="chat-bubble" id="chatOpen">
+    <span class="chat-dot"></span>
+    <b data-i18n="liveSupport">Canlı Destek</b>
+  </div>
+  <div class="chat-panel" id="chatPanel" aria-hidden="true">
+    <div class="chat-head"><b>Canlı Destek</b><button class="btn" id="chatClose">Kapat</button></div>
+    <div class="chat-body" id="chatBody">
+      <div class="mini">Merhaba! Sorunuzu yazın, en kısa sürede dönüş yapalım.</div>
+    </div>
+    <div class="chat-input">
+      <input id="chatTxt" placeholder="Mesajınızı yazın..." />
+      <button class="btn primary" id="chatSend">Gönder</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR: messages + notifications -->
+  <div class="bbar">
+    <div class="bwrap">
+      <div class="pill" id="msgBtn">📨 <b data-i18n="messages">Mesajlar</b> <span id="msgN" class="badge" style="margin-left:auto">0</span></div>
+      <div class="pill" id="notiBtn">🔔 <b data-i18n="notifications">Bildirimler</b> <span id="notiN" class="badge" style="margin-left:auto">0</span></div>
+    </div>
+  </div>
+
+  <!-- FOOTER / LEGAL -->
+  <footer>
+    <div class="footwrap">
+      <div class="footgrid">
+        <div>
+          <a href="/legal/iletisim-impressum.html">İletişim / Impressum</a>
+          <a href="/legal/gizlilik-politikasi.html">Gizlilik Politikası</a>
+          <a href="/legal/kvkk-aydinlatma.html">KVKK Aydınlatma</a>
+          <a href="/legal/cerez-politikasi.html">Çerez Politikası</a>
+        </div>
+        <div>
+          <a href="/legal/kullanim-sartlari.html">Kullanım Şartları</a>
+          <a href="/legal/mesafeli-satis-sozlesmesi.html">Mesafeli Satış Sözleşmesi</a>
+          <a href="/legal/on-bilgilendirme-formu.html">Ön Bilgilendirme Formu</a>
+          <a href="/legal/teslimat-iade-iptal.html">Teslimat &amp; İade</a>
+        </div>
+        <div>
+          <a href="/legal/topluluk-kurallari.html">Topluluk Kuralları</a>
+          <a href="/legal/yasakli-urunler.html">Yasaklı Ürünler</a>
+          <a href="/legal.html">Tüm Yasal Metinler</a>
+        </div>
+        <div>
+          <a href="/" target="_self">Anasayfa</a>
+          <a href="/" id="goPost">İlan Ver</a>
+          <a href="/" id="goPro">Premium</a>
+        </div>
+        <div>
+          <a href="https://www.xn--reteneller-8db.com/" target="_blank" rel="noopener">Punycode Alan Adı</a>
+          <a href="https://ureteneller.com.tr" target="_blank" rel="noopener">.com.tr</a>
+        </div>
+      </div>
+      <div class="copyright">© <span id="yr"></span> Üreten Eller</div>
+    </div>
+  </footer>
+
+  <!-- PREMIUM MODAL -->
+  <div class="modal" id="proModal" aria-hidden="true">
+    <div class="box">
+      <h3>Premium Üyelik – 1.999 TL</h3>
+      <p class="mini">Ödeme sonrası <b>kullanıcı adınız</b> ile dekontu iletmeniz gerekmektedir.</p>
+      <div class="row"><span class="kbd">Papara Hesap Adı:</span> <b>Nejla Karataş</b></div>
+      <div class="row"><span class="kbd">IBAN:</span> <span id="ibanTxt" class="kbd">TR59 0082 9000 0949 1868 4611 05</span> <button class="btn" id="copyIban">Kopyala</button></div>
+      <div class="row mini">Dekontu <a href="/legal/iletisim-impressum.html">iletişim</a> sayfasından veya canlı destekten gönderin.</div>
+      <div class="row" style="justify-content:flex-end"><button class="btn" id="proClose">Kapat</button></div>
+    </div>
+  </div>
+
+  <script>
+  // ===== i18n (TR/EN/AR/DE) =====
+  const I18N={
+    tr:{brand:"Üreten Eller",welcome:"Üreten Ellere Hoş Geldiniz",post:"İlan Ver",profile:"Profil",logout:"Çıkış",premium:"Premium Üyelik",categories:"Kategoriler",messages:"Mesajlar",notifications:"Bildirimler",liveSupport:"Canlı Destek",
+      slogans:[
+        "El emeğine değer!","Ev yapımı lezzetler kapında","Doğal, taze, güvenli","Üreten kazanır, alan mutlu","Aracısız alışveriş","Komşundan sofrana","İsme özel hediyeler","Yerel üreticiye destek","Her ilmekte sevgi","Glutensiz & vegan seçenek","Kışlıklar hazır","Taze reçel, nefis kahvaltı","Evdeki ustaların buluşması","Özgün tasarım takılar","Sıcacık örgüler","Doğal sabun & kozmetik","Doğum günü setleri","El işi dekorla fark yarat","Bebekler için güvenli ürünler","Makrome ile şıklık","Kokularla huzur","Emeğin en güzel hali","Katkısız tatlar","Geleneksel tarifler","Lezzet ve tasarım bir arada"
+      ]},
+    en:{brand:"Creative Hands",welcome:"Welcome to Creative Hands",post:"Post Listing",profile:"Profile",logout:"Logout",premium:"Premium Membership",categories:"Categories",messages:"Messages",notifications:"Notifications",liveSupport:"Live Support",
+      slogans:[
+        "Craft deserves value","Homemade tastes at your door","Natural, fresh, safe","Makers win, buyers smile","No middlemen","From neighbor to table","Personalized gifts","Support local makers","Love in every stitch","Gluten‑free & vegan options","Winter pantry ready","Fresh jam, happy breakfast","Meeting of home masters","Unique jewelry designs","Cozy knitwear","Natural soap & cosmetics","Birthday bundles","Stand out with handmade décor","Safe for little ones","Chic with macramé","Peaceful scents","Beauty of craftsmanship","Additive‑free flavors","Traditional recipes","Taste & design together"
+      ]},
+    ar:{brand:"أيادٍ مُنتجة",welcome:"مرحباً بكم في أيادٍ منتجة",post:"أضف إعلاناً",profile:"الملف الشخصي",logout:"تسجيل الخروج",premium:"عضوية بريميوم",categories:"التصنيفات",messages:"الرسائل",notifications:"الإشعارات",liveSupport:"الدعم المباشر",
+      slogans:[
+        "قيمة للحِرَف","مأكولات منزلية إلى بابك","طبيعي وطازج وآمن","المُنتِج يربح والمشتري يفرح","بدون وسطاء","من الجار إلى المائدة","هدايا مخصصة","ادعم المنتجين المحليين","حب في كل غرزة","خيارات خالية من الغلوتين ونباتية","مونة الشتاء جاهزة","مربى طازج وفطور سعيد","لقاء خبراء البيت","مجوهرات فريدة","حياكة دافئة","صابون وتجميلي طبيعي","باقة عيد ميلاد","تميّز بديكور يدوي","آمن للصغار","أناقة بالمكرمية","روائح مريحة","جمال الحِرفة","نكهات بلا مُضافات","وصفات تقليدية","الطعم والتصميم معاً"
+      ]},
+    de:{brand:"Schaffende Hände",welcome:"Willkommen bei Schaffende Hände",post:"Anzeige aufgeben",profile:"Profil",logout:"Abmelden",premium:"Premium-Mitgliedschaft",categories:"Kategorien",messages:"Nachrichten",notifications:"Benachrichtigungen",liveSupport:"Live-Support",
+      slogans:[
+        "Wert für Handwerk","Hausgemachtes bis zur Tür","Natürlich, frisch, sicher","Hersteller gewinnt, Käufer lächelt","Ohne Zwischenhändler","Vom Nachbarn auf den Tisch","Personalisierte Geschenke","Unterstütze lokale Hersteller","Liebe in jeder Masche","Glutenfrei & vegan","Vorrat für den Winter","Frische Marmelade, gutes Frühstück","Treffpunkt der Hausmeister*innen","Einzigartige Schmuckdesigns","Kuschelige Strickwaren","Natürliche Seife & Kosmetik","Geburtstag-Sets","Mit Handdeko auffallen","Sicher für Kinder","Schick mit Makramee","Beruhigende Düfte","Schönheit des Handwerks","Ohne Zusatzstoffe","Traditionelle Rezepte","Geschmack & Design vereint"
+      ]}
+  };
+
+  // ===== Category data (icons + subcats) =====
+  const CATS=[
+    {k:"food",title:"Yemekler",icon:"🍲",subs:["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"]},
+    {k:"cake",title:"Pasta & Tatlı",icon:"🎂",subs:["Yaş pasta","Kek-cupcake","Kurabiye","Şerbetli","Sütlü","Cheesecake","Diyet tatlı","Çikolata/şekerleme","Doğum günü setleri"]},
+    {k:"jar",title:"Reçel • Turşu • Sos",icon:"🫙",subs:["Reçel-marmelat","Pekmez","Turşu","Domates/biber sos","Acı sos","Salça","Sirke","Konserve"]},
+    {k:"winter",title:"Yöresel / Kışlık",icon:"🌾",subs:["Erişte","Tarhana","Yufka","Mantı","Kurutulmuş sebze-meyve","Salça","Sirke","Konserve"]},
+    {k:"diet",title:"Diyet / Vegan / Glutensiz",icon:"🥗",subs:["Fit tabaklar","Vegan yemekler","GF unlu mamuller","Şekersiz tatlı","Keto ürün","Protein atıştırmalık"]},
+    {k:"jew",title:"Takı",icon:"💍",subs:["Bileklik","Kolye","Küpe","Yüzük","Halhal","Broş","Setler","İsimli/kişiye özel","Makrome","Doğal taş","Reçine","Tel sarma"]},
+    {k:"kid",title:"Bebek & Çocuk",icon:"👶",subs:["Hayvan/bebek figürleri","Çıngırak","Diş kaşıyıcı örgü","Bez oyuncak/kitap","Montessori oyuncak","Setler","Örgü patik-bere","Bebek battaniyesi","Önlük-ağız bezi","Lohusa seti","Saç aksesuarı","El emeği kıyafet"]},
+    {k:"knit",title:"Örgü / Triko",icon:"🧶",subs:["Hırka","Kazak","Atkı-bere","Panço","Şal","Çorap","Lif takımı","Bebek takımı","Yelek","Kırlent-örtü"]},
+    {k:"sew",title:"Dikiş / Terzilik",icon:"✂️",subs:["Paça/onarım","Fermuar değişimi","Perde dikişi","Nevresim-yastık","Masa örtüsü","Özel dikim","Kostüm"]},
+    {k:"mac",title:"Makrome & Dekor",icon:"🧵",subs:["Duvar süsü","Saksı askısı","Anahtarlık","Avize","Amerikan servis/runner","Sepet","Raf/duvar dekoru"]},
+    {k:"home",title:"Ev Dekor & Aksesuar",icon:"🏠",subs:["Keçe işleri","Kırlent","Kapı süsü","Tepsi süsleme","Çerçeve","Rüya kapanı","Tablo"]},
+    {k:"candle",title:"Mum & Kokulu Ürünler",icon:"🕯️",subs:["Soya/balmumu mum","Kokulu taş","Oda spreyi","Tütsü","Jel mum","Hediye seti"]},
+    {k:"soap",title:"Doğal Sabun & Kozmetik",icon:"🧼",subs:["Zeytinyağlı sabun","Bitkisel sabunlar","Katı şampuan","Dudak balmı","Krem/merhem","Banyo tuzu","Lavanta kesesi"]},
+    {k:"toys",title:"Amigurumi & Oyuncak (dekoratif)",icon:"🧸",subs:["Anahtarlık","Magnet","Koleksiyon figürü","Dekor bebek/karakter"]}
+  ];
+
+  // ===== Render categories (with sub categories visible) =====
+  const catGrid=document.getElementById('catGrid');
+  const catCount=document.getElementById('catCount');
+  CATS.forEach((c,i)=>{
+    const el=document.createElement('a');
+    el.href=`/kategori/${encodeURIComponent(c.k)}`;
+    el.className='card';
+    const chips = c.subs.map(s=>`<span class="chip">${s}</span>`).join('');
+    el.innerHTML=`<div class="pulse" style="--d:${i*24}deg"></div>
+      <div class="title">${c.icon} ${c.title}</div>
+      <div class="subtitle">${c.subs.length} alt kategori</div>
+      <div class="chipwrap">${chips}</div>`;
+    el.addEventListener('mouseenter',()=>el.querySelector('.pulse').style.opacity=.28);
+    el.addEventListener('mouseleave',()=>el.querySelector('.pulse').style.opacity=.18);
+    catGrid.appendChild(el);
+  });
+  document.getElementById('catCount').textContent = CATS.length+" kategori";
+
+  // ===== Listings (real data will be loaded from Firebase) =====
+  // For now: start with empty arrays so no fake/sahte ilan gösterilmiyor
+  const pre = [];
+  const std = [];
+  function renderList(grid,arr,prem){
+    grid.innerHTML='';
+    if(!arr || arr.length===0){
+      const empty = document.createElement('div');
+      empty.className='card';
+      empty.style.textAlign='center';
+      empty.style.padding='1.25rem';
+      empty.innerHTML = '<div class="title">Henüz ilan yok</div><div class="subtitle">Yeni ilanlar eklendiğinde burada görünecek.</div>';
+      grid.appendChild(empty);
+      return;
+    }
+    arr.forEach((x,idx)=>{
+      const el=document.createElement('a');
+      el.href=`/ilan/${x.id}`;
+      el.className='item';
+      el.style.order = String(9999-idx); // yeni en önde
+      el.innerHTML=`<div class="thumb"></div>
+        <div class="meta">
+          ${prem?'<span class="badge gold">⭐ Vitrin</span>':''}
+          <div style="margin-top:.35rem;font-weight:700">${x.t}</div>
+          <div style="display:flex;gap:.5rem;align-items:center;color:#9ca3af;margin-top:.25rem">
+            <span>${x.price}</span> • <span>${x.ago}</span>
+          </div>
+        </div>`;
+      grid.appendChild(el);
+    })
+  }
+  renderList(document.getElementById('preGrid'),pre,true);
+  renderList(document.getElementById('stdGrid'),std,false);
+
+  // ===== Slogan rotator (start with 'Makrome ile şıklık') =====
+  const langSel=document.getElementById('langSel');
+  const sloganEl=document.getElementById('slogan');
+  const brandEl=document.getElementById('brand');
+  const welcomeEl=document.getElementById('welcome');
+  const TKEYS=['post','profile','logout','premium','categories','messages','notifications','liveSupport'];
+  let L='tr', idx=0, timer=null;
+  function applyLang(){
+    const t=I18N[L];
+    brandEl.textContent=t.brand;
+    welcomeEl.textContent=t.welcome;
+    TKEYS.forEach(k=>{ document.querySelectorAll(`[data-i18n="${k}"]`).forEach(n=>n.textContent=t[k]) });
+    // Start from 'Makrome ile şıklık' if exists
+    const start = t.slogans.indexOf('Makrome ile şıklık');
+    idx = start>=0 ? start : 0;
+    sloganEl.textContent=t.slogans[idx];
+    clearInterval(timer);
+    timer=setInterval(()=>{ idx=(idx+1)%t.slogans.length; sloganEl.textContent=t.slogans[idx]; },5000);
+  }
+  langSel.addEventListener('change',e=>{L=e.target.value; applyLang(); document.documentElement.lang=L; document.documentElement.dir = (L==='ar')?'rtl':'ltr';});
+  applyLang();
+
+  // ===== Buttons (placeholder routes) =====
+  function go(u){ location.href=u }
+  document.getElementById('postBtn').onclick=()=>go('/ilan-ver.html');
+  document.getElementById('profileBtn').onclick=()=>go('/profil.html');
+  document.getElementById('logoutBtn').onclick=()=>alert('Çıkış: henüz entegre edilmedi');
+  document.getElementById('goPost').onclick=(e)=>{e.preventDefault();go('/ilan-ver.html')};
+  document.getElementById('goPro').onclick=(e)=>{e.preventDefault();openPro()};
+
+  // ===== Chat open/close =====
+  const chatOpen=document.getElementById('chatOpen');
+  const chatPanel=document.getElementById('chatPanel');
+  const chatClose=document.getElementById('chatClose');
+  const chatSend=document.getElementById('chatSend');
+  const chatTxt=document.getElementById('chatTxt');
+  const chatBody=document.getElementById('chatBody');
+  function showChat(v){ chatPanel.style.display=v?'flex':'none'; chatPanel.setAttribute('aria-hidden', v? 'false':'true'); }
+  chatOpen.onclick=()=>showChat(true);
+  chatClose.onclick=()=>showChat(false);
+  chatSend.onclick=()=>{ const t=chatTxt.value.trim(); if(!t) return; const p=document.createElement('div'); p.textContent='Siz: '+t; chatBody.appendChild(p); chatTxt.value=''; chatBody.scrollTop=chatBody.scrollHeight; };
+
+  // ===== Premium modal open/close =====
+  const proModal=document.getElementById('proModal');
+  const copyIban=document.getElementById('copyIban');
+  document.getElementById('proBtn').onclick=()=>openPro();
+  document.getElementById('proClose').onclick=()=>proModal.style.display='none';
+  function openPro(){ proModal.style.display='grid'; proModal.setAttribute('aria-hidden','false'); }
+  copyIban.onclick=()=>{ const s=document.getElementById('ibanTxt').innerText; navigator.clipboard.writeText(s); copyIban.textContent='Kopyalandı'; setTimeout(()=>copyIban.textContent='Kopyala',1500); };
+
+  // ===== Counters & year =====
+  document.getElementById('preCount').textContent=pre.length;
+  document.getElementById('stdCount').textContent=std.length;
+  document.getElementById('yr').textContent=new Date().getFullYear();
+
+  // ===== Mock notifications/messages increasing (demo) =====
+  let m=0,n=0; setInterval(()=>{document.getElementById('msgN').textContent=++m},9000);
+  setInterval(()=>{document.getElementById('notiN').textContent=++n},12000);
+  </script>
+  <script type="module" src="/docs/assets/js/auth-guard.js"></script>
+</body>
+</html>
