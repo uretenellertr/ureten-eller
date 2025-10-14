@@ -622,7 +622,7 @@
     });
   }
 
-<!-- --- PROFIL AKIŞI --- -->
+// --- PROFIL AKIŞI ---
 function __openProfile(){
   const bd  = document.getElementById('backdrop');
   const box = document.getElementById('authBox');
@@ -655,20 +655,20 @@ if (__btnProf){
       return;
     }
 
-    // Girişli: normal link davranışı kalsın (preventDefault YAPMA)
-    // Ama hash zaten #profile ise, kaydırmayı biz tetikleyelim
-    if (location.pathname === '/home.html' && location.hash === '#profile'){
+    // Girişli: aynı sayfadaysak hash scroll'u biz tetikleyelim
+    const samePage = (location.pathname === '/home.html' || location.pathname === '/docs/home.html');
+    if (samePage && location.hash === '#profile'){
       e.preventDefault();
       const target = document.getElementById('profile');
       if (target){ target.scrollIntoView({ behavior:'smooth', block:'start' }); }
-      // İstersen hashchange tetiklemek için şu iki satırı da kullanabilirsin:
-      // history.replaceState(null, '', '/home.html');
-      // location.hash = '#profile';
     }
+    // Değilse tarayıcının normal davranmasına izin ver (preventDefault yok)
   });
 }
 </script>
- <script src="/script.js"></script>
-  
+
+<!-- Anchor davranışını iyileştiren genel yardımcı -->
+<script src="/script.js"></script>
+
   </body>
 </html> 
