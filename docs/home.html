@@ -43,8 +43,7 @@
     .btn{padding:.6rem .9rem;border:1px solid var(--brd);border-radius:12px;background:#0b1220;color:var(--ink);font-weight:800;cursor:pointer;white-space:nowrap}
     .btn.primary{background:linear-gradient(180deg,var(--c1),#128473);border-color:#0e766e}
     .btn.ghost{background:transparent}
-    $1
-    .btn.premium{background:linear-gradient(180deg,var(--c6),#a16207);border-color:#a16207}
+        .btn.premium{background:linear-gradient(180deg,var(--c6),#a16207);border-color:#a16207}
     .btn.profile{background:linear-gradient(180deg,#16a34a,#065f46);border-color:#0e5135}
     .btn.logout{background:linear-gradient(180deg,#ef4444,#7f1d1d);border-color:#7f1d1d}
     .btn.premium{background:linear-gradient(180deg,var(--c6),#a16207);border-color:#a16207}
@@ -146,7 +145,7 @@
       <div class="spacer"></div>
       <div class="actions">
   <a class="btn small premium" href="#" id="btnPremium">Premium</a>
-  <a class="btn small profile" href="/docs/index.html#profile" id="btnProfile">👤 Profil</a>
+  <a class="btn small profile" href="/docs/home.html#profile" id="btnProfile">👤 Profil</a>
   <a class="btn small primary" href="/docs/ilanver.html" id="btnPost">İlan Ver</a>
   <button class="btn small logout" id="btnLogout">Çıkış</button>
 </div>
@@ -272,9 +271,9 @@
 
   <!-- Bottom fixed bar -->
   <nav class="bottomBar" role="navigation" aria-label="Alt menü">
-    <a class="bItem" href="/docs/index.html" aria-current="page"><span class="ico">🏠</span><span class="txt" id="navHomeTxt">Ana Sayfa</span></a>
-    <a class="bItem" href="/docs/index.html#messages"><span class="ico">💬</span><span class="txt" id="navMsgTxt">Mesajlar</span></a>
-    <a class="bItem" href="/docs/index.html#notifications"><span class="ico">🔔</span><span class="txt" id="navNotifTxt">Bildirimler</span></a>
+    <a class="bItem" href="/docs/home.html" aria-current="page"><span class="ico">🏠</span><span class="txt" id="navHomeTxt">Ana Sayfa</span></a>
+    <a class="bItem" href="/docs/home.html#messages"><span class="ico">💬</span><span class="txt" id="navMsgTxt">Mesajlar</span></a>
+    <a class="bItem" href="/docs/home.html#notifications"><span class="ico">🔔</span><span class="txt" id="navNotifTxt">Bildirimler</span></a>
   </nav>
 
   <!-- Live chat bubble + panel -->
@@ -286,14 +285,14 @@
   </div>
   <div id="toast" class="toast" hidden>Kopyalandı</div>
   <script>
-  const HOME = "/docs/home.html";
+  const HOME = '/docs/home.html';
   const $=(s)=>document.querySelector(s);
   const $$=(s)=>Array.from(document.querySelectorAll(s));
   const COLORS=["#10b981","#f59e0b","#8b5cf6","#06b6d4","#ef4444","#eab308","#14b8a6","#f97316","#a855f7","#3b82f6"];
 
   // === Language packs (UI + categories + slogans + legal) ===
   const TEXT={
-    tr:{signup:"Ücretsiz Kaydol",loginBtn:"Zaten Üyeyim (Giriş)",welcome:"Üreten Ellere Hoş Geldiniz",tagline:"Aracısız alışveriş",tabLogin:"Giriş Yap",tabSignup:"Kayıt Ol",forgot:"Şifremi Unuttum",gLogin:"🔐 Google ile Giriş",gCont:"⚡ Google ile Devam",loginSubmit:"Giriş Yap",signupSubmit:"Kayıt Ol",navHome:"Ana Sayfa",navMessages:"Mesajlar",navNotifs:"Bildirimler",
+    tr:{signup:"Ücretsiz Kaydol",loginBtn:"Zaten Üyeyim (Giriş)",welcome:"Üreten Ellere Hoş Geldiniz",tagline:"Aracısız alışveriş",tabLogin:"Giriş Yap",tabSignup:"Kayıt Ol",forgot:"Şifremi Unuttum",gLogin:"🔐 Google ile Giriş",gCont:"⚡ Google ile Devam",loginSubmit:"Giriş Yap",signupSubmit:"Kayıt Ol",topPremium:"Premium",topProfile:"Profil",topPost:"İlan Ver",topLogout:"Çıkış",navHome:"Ana Sayfa",navMessages:"Mesajlar",navNotifs:"Bildirimler",
       cats:{
         food:{t:"🍲 Yemekler",s:["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"]},
         cake:{t:"🎂 Pasta & Tatlı",s:["Yaş pasta","Kek-cupcake","Kurabiye","Şerbetli","Sütlü","Cheesecake","Diyet tatlı","Çikolata/şekerleme","Doğum günü setleri"]},
@@ -314,7 +313,7 @@
         "El emeğine değer!","Aracısız alışveriş","Yerel üreticiye destek","Ev yapımı lezzetler","Kişiye özel hediyeler","Glutensiz & vegan var","Sıcacık örgüler","Doğal sabun & kozmetik","Yöresel kışlıklar","Taze reçeller","Özenle el işi","Emekle gelen kalite","Her ilmekte sevgi","Evden eve güven","Doğum günü setleri","Şık takılar","Makrome ile şıklık","Kokularla huzur","Bebekler için güvenli","Geleneksel tarifler","Katkısız tatlar","Komşundan sofrana","Ustaların buluşması","Lezzet ve tasarım","Sevgiyle üretildi"
       ],
       legal:["İletişim / Impressum","Gizlilik Politikası","KVKK Aydınlatma","Çerez Politikası","Kullanım Şartları","Mesafeli Satış Sözleşmesi","Ön Bilgilendirme Formu","Teslimat & İade","Topluluk Kuralları","Yasaklı Ürünler","Tüm Yasal Metinler","Punycode Alan Adı",".com.tr"]},
-    en:{signup:"Sign up free",loginBtn:"I already have an account",welcome:"Welcome to Üreten Eller",tagline:"Direct, no middleman",tabLogin:"Log In",tabSignup:"Sign Up",forgot:"Forgot password",gLogin:"🔐 Continue with Google",gCont:"⚡ Continue with Google",loginSubmit:"Log In",signupSubmit:"Sign Up",navHome:"Home",navMessages:"Messages",navNotifs:"Notifications",
+    en:{signup:"Sign up free",loginBtn:"I already have an account",welcome:"Welcome to Üreten Eller",tagline:"Direct, no middleman",tabLogin:"Log In",tabSignup:"Sign Up",forgot:"Forgot password",gLogin:"🔐 Continue with Google",gCont:"⚡ Continue with Google",loginSubmit:"Log In",signupSubmit:"Sign Up",topPremium:"Premium",topProfile:"Profile",topPost:"Post Ad",topLogout:"Logout",navHome:"Home",navMessages:"Messages",navNotifs:"Notifications",
       cats:{
         food:{t:"🍲 Meals",s:["Home meals","Börek & pastry","Soup","Olive oil dishes","Rice & pasta","Meat & chicken","Breakfast","Meze","Frozen","Kids meals","Diet/vegan/gf"]},
         cake:{t:"🎂 Cakes & Desserts",s:["Birthday cake","Cake & cupcake","Cookies","Syrupy","Milk desserts","Cheesecake","Diet dessert","Chocolate/candy","Birthday sets"]},
@@ -335,7 +334,7 @@
         "Valuing handicraft","Direct trade","Support local makers","Homemade goodness","Personalized gifts","Gluten‑free & vegan","Cozy knits","Natural soap & cosmetics","Traditional pantry","Fresh jams","Carefully handmade","Quality with effort","Love in every stitch","Home‑to‑home trust","Birthday sets","Elegant jewelry","Style with macramé","Peaceful scents","Safe for babies","Traditional recipes","Additive‑free taste","From neighbor to table","Masters united","Taste & design","Made with love"
       ],
       legal:["Contact / Impressum","Privacy Policy","KVKK Notice","Cookie Policy","Terms of Use","Distance Sales Agreement","Pre‑Information Form","Delivery & Returns","Community Rules","Prohibited Products","All Legal Texts","Punycode Domain",".com.tr"]},
-    de:{signup:"Kostenlos registrieren",loginBtn:"Ich habe schon ein Konto",welcome:"Willkommen bei Üreten Eller",tagline:"Direkt & ohne Vermittler",tabLogin:"Anmelden",tabSignup:"Registrieren",forgot:"Passwort vergessen",gLogin:"🔐 Mit Google fortfahren",gCont:"⚡ Mit Google fortfahren",loginSubmit:"Anmelden",signupSubmit:"Registrieren",navHome:"Startseite",navMessages:"Nachrichten",navNotifs:"Benachrichtigungen",
+    de:{signup:"Kostenlos registrieren",loginBtn:"Ich habe schon ein Konto",welcome:"Willkommen bei Üreten Eller",tagline:"Direkt & ohne Vermittler",tabLogin:"Anmelden",tabSignup:"Registrieren",forgot:"Passwort vergessen",gLogin:"🔐 Mit Google fortfahren",gCont:"⚡ Mit Google fortfahren",loginSubmit:"Anmelden",signupSubmit:"Registrieren",topPremium:"Premium",topProfile:"Profil",topPost:"Anzeige aufgeben",topLogout:"Abmelden",navHome:"Startseite",navMessages:"Nachrichten",navNotifs:"Benachrichtigungen",
       cats:{
         food:{t:"🍲 Gerichte",s:["Hausmannskost","Börek & Gebäck","Suppe","Olivenölgerichte","Reis & Pasta","Fleisch & Hähnchen","Frühstück","Meze","Tiefkühl","Kindermahlzeiten","Diät/vegan/gf"]},
         cake:{t:"🎂 Kuchen & Süßes",s:["Torten","Kuchen & Cupcake","Kekse","Sirupgebäck","Milchdesserts","Käsekuchen","Diät-Dessert","Schokolade/Bonbon","Geburtstags-Sets"]},
@@ -356,7 +355,7 @@
         "Wert fürs Handwerk","Direkter Handel","Lokale Macher unterstützen","Hausgemacht","Personalisierte Geschenke","Glutenfrei & vegan","Kuschelige Stricksachen","Naturseife & Kosmetik","Traditioneller Vorrat","Frische Marmeladen","Sorgfältig handgemacht","Qualität durch Mühe","Liebe in jeder Masche","Vertrauen von Haus zu Haus","Geburtstagssets","Eleganter Schmuck","Stil mit Makramee","Beruhigende Düfte","Sicher für Babys","Traditionelle Rezepte","Ohne Zusatzstoffe","Vom Nachbarn auf den Tisch","Meister vereint","Geschmack & Design","Mit Liebe gemacht"
       ],
       legal:["Kontakt / Impressum","Datenschutz","KVKK-Hinweis","Cookie-Richtlinie","Nutzungsbedingungen","Fernabsatzvertrag","Vorabinformation","Lieferung & Rückgabe","Community-Regeln","Verbotene Produkte","Alle Rechtstexte","Punycode-Domain",".com.tr"]},
-    ar:{signup:"سجّل مجانًا",loginBtn:"لدي حساب",welcome:"مرحبًا بكم في Üreten Eller",tagline:"بيع وشراء مباشر",tabLogin:"تسجيل الدخول",tabSignup:"إنشاء حساب",forgot:"نسيت كلمة المرور",gLogin:"🔐 المتابعة مع Google",gCont:"⚡ المتابعة مع Google",loginSubmit:"دخول",signupSubmit:"تسجيل",navHome:"الرئيسية",navMessages:"الرسائل",navNotifs:"الإشعارات",
+    ar:{signup:"سجّل مجانًا",loginBtn:"لدي حساب",welcome:"مرحبًا بكم في Üreten Eller",tagline:"بيع وشراء مباشر",tabLogin:"تسجيل الدخول",tabSignup:"إنشاء حساب",forgot:"نسيت كلمة المرور",gLogin:"🔐 المتابعة مع Google",gCont:"⚡ المتابعة مع Google",loginSubmit:"دخول",signupSubmit:"تسجيل",topPremium:"بريميوم",topProfile:"الملف",topPost:"أنشئ إعلانًا",topLogout:"تسجيل الخروج",navHome:"الرئيسية",navMessages:"الرسائل",navNotifs:"الإشعارات",
       cats:{
         food:{t:"🍲 أطعمة",s:["أكلات منزلية","فطائر وبوريك","شوربة","أطباق بزيت الزيتون","أرز ومعكرونة","لحم ودجاج","فطور","مقبلات","مجمدات","وجبات للأطفال","حمية/نباتي/خالٍ من الغلوتين"]},
         cake:{t:"🎂 كيك وحلويات",s:["كيك طازج","كيك وكب كيك","بسكويت","حلويات شرقية","حلويات بالحليب","تشيزكيك","حلويات للحمية","شوكولاتة/حلويات","مجموعات عيد الميلاد"]},
@@ -399,6 +398,10 @@
     const nh=$('#navHomeTxt'); if(nh) nh.textContent=t.navHome;
     const nm=$('#navMsgTxt'); if(nm) nm.textContent=t.navMessages;
     const nn=$('#navNotifTxt'); if(nn) nn.textContent=t.navNotifs;
+    const bp=$('#btnPremium'); if(bp) bp.textContent=t.topPremium;
+    const bpr=$('#btnProfile'); if(bpr) bpr.innerHTML='👤 '+t.topProfile;
+    const bpo=$('#btnPost'); if(bpo) bpo.textContent=t.topPost;
+    const blo=$('#btnLogout'); if(blo) blo.textContent=t.topLogout;
   }
 
   function renderCats(){
@@ -519,161 +522,54 @@ const LISTINGS=[];
 
   function boot(){
     try{
-      setDir(); initLangSelect(); applyLang(); renderCats(); startCardGlow(); renderSlogans(); renderListings(); startListingRotation(); renderLegal(); bindAuthPanel(); $('#yr').textContent=new Date().getFullYear();
+      setDir();
+      initLangSelect();
+      applyLang();
+      renderCats();
+      startCardGlow();
+      renderSlogans();
+      renderListings();
+      startListingRotation();
+      renderLegal();
+      bindAuthPanel();
+      const y=$('#yr'); if(y) y.textContent=new Date().getFullYear();
     }catch(err){ console.error('Init error', err); }
   }
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot);
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', boot);
     // Ekran boyutu değişince mobil renk davranışını yeniden uygula
     window.addEventListener('resize', ()=>{ clearTimeout(window.__catGlowRT); window.__catGlowRT=setTimeout(()=>{ startCardGlow(); },200); });
   } else { boot(); }
+
+  // === Bottom bar & chat & premium helpers (frameworksız) ===
+  const fab = document.getElementById('fabChat');
+  const panel = document.getElementById('chatPanel');
+  const chatClose = document.getElementById('chatClose');
+  function toggleChat(show){ if(!panel) return; panel.hidden = (show===undefined) ? !panel.hidden : !show ? true : false; }
+  if(fab) fab.addEventListener('click', ()=> toggleChat(true));
+  if(chatClose) chatClose.addEventListener('click', ()=> toggleChat(false));
+
+  // Premium modal aç/kapat
+  const premiumBtn = document.getElementById('btnPremium');
+  const premiumModal = document.getElementById('premiumModal');
+  const closePremium = document.getElementById('closePremium');
+  const backdrop = document.getElementById('backdrop');
+  function openPremium(){ if(backdrop) backdrop.style.display='block'; if(premiumModal){ premiumModal.style.display='block'; premiumModal.setAttribute('aria-hidden','false'); premiumModal.classList.add('center'); } }
+  function closePremiumFn(){ if(premiumModal){ premiumModal.style.display='none'; premiumModal.classList.remove('center'); premiumModal.setAttribute('aria-hidden','true'); } if(backdrop) backdrop.style.display='none'; }
+  if(premiumBtn) premiumBtn.addEventListener('click', (e)=>{ e.preventDefault(); openPremium(); });
+  if(closePremium) closePremium.addEventListener('click', closePremiumFn);
+  if(backdrop) backdrop.addEventListener('click', ()=>{ if(premiumModal && premiumModal.style.display==='block') closePremiumFn(); });
+  const openChatFromPremium = document.getElementById('openChatFromPremium');
+  if(openChatFromPremium){ openChatFromPremium.addEventListener('click', ()=>{ closePremiumFn(); toggleChat(true); }); }
+
+  // Copy helpers + toast
+  function showToast(msg='Kopyalandı'){ const t=document.getElementById('toast'); if(!t) return; t.textContent=msg; t.hidden=false; clearTimeout(window.__toastT); window.__toastT=setTimeout(()=>{ t.hidden=true; }, 1600); }
+  function copyText(txt){ if(!txt) return; if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(()=>showToast('Kopyalandı')).catch(()=>showToast('Kopyalanamadı')); } else { const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); showToast('Kopyalandı'); }catch(_){ showToast('Kopyalanamadı'); } finally{ document.body.removeChild(ta); } } }
+  $$('.btn.copy').forEach(b=> b.addEventListener('click', ()=> copyText(b.getAttribute('data-copy')) ));
+
+  // Logout (fallback: sadece yönlendir)
+  const btnLogout = document.getElementById('btnLogout');
+  if(btnLogout){ btnLogout.addEventListener('click', ()=>{ try{ /* Firebase mevcutsa signOut burada olabilir */ }catch(_){} location.href='/docs/index.html'; }); }
   </script>
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
-import { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, updateProfile, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
-
-const firebaseConfig = {
-  apiKey: 'AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ',
-  authDomain: 'ureteneller-ecaac.firebaseapp.com',
-  projectId: 'ureteneller-ecaac',
-  storageBucket: 'ureteneller-ecaac.firebasestorage.app',
-  messagingSenderId: '368042877151',
-  appId: '1:368042877151:web:ee0879fc4717928079c96a',
-  measurementId: 'G-BJHKN8V4RQ'
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-setPersistence(auth, browserLocalPersistence).catch(()=>{});
-
-function $(s){ return document.querySelector(s); }
-function rmListeners(el){ if(!el) return null; const n=el.cloneNode(true); el.replaceWith(n); return n; }
-
-let loginForm=rmListeners(document.getElementById('loginForm'));
-let signupForm=rmListeners(document.getElementById('signupForm'));
-let gLoginBtn=rmListeners(document.getElementById('gLogin'));
-let gSignupBtn=rmListeners(document.getElementById('gSignup'));
-let forgotBtn=rmListeners(document.getElementById('forgotBtn'));
-
-const HOME = '/docs/home.html';
-
-function uiBusy(form, busy){ const btns = form ? form.querySelectorAll('button, input, select') : []; btns.forEach(b=> b.disabled=busy); }
-
-const provider = new GoogleAuthProvider();
-
-if(gLoginBtn) gLoginBtn.addEventListener('click', async ()=>{
-  const out = $('#lmsg');
-  try{ await signInWithPopup(auth, provider); location.href = HOME; }
-  catch(err){ if(out) out.textContent = trAuthErr(err); }
-});
-
-if(gSignupBtn) gSignupBtn.addEventListener('click', async ()=>{
-  const out = $('#smsg');
-  try{ await signInWithPopup(auth, provider); location.href = HOME; }
-  catch(err){ if(out) out.textContent = trAuthErr(err); }
-});
-
-if(loginForm) loginForm.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const email = $('#lemail')?.value?.trim();
-  const pass = $('#lpass')?.value;
-  const out = $('#lmsg');
-  uiBusy(loginForm,true);
-  try{
-    const res = await signInWithEmailAndPassword(auth, email, pass);
-    const user = res.user;
-    if(!user.emailVerified){
-      await sendEmailVerification(user);
-      if(out) out.innerHTML = 'E‑posta doğrulaması gönderildi. Lütfen e‑postayı onaylayın ve tekrar giriş yapın.';
-      await signOut(auth);
-      return;
-    }
-    location.href = HOME;
-  }catch(err){ if(out) out.textContent = trAuthErr(err); }
-  finally{ uiBusy(loginForm,false); }
-});
-
-if(signupForm) signupForm.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const email = $('#semail')?.value?.trim();
-  const pass = $('#spass')?.value;
-  const pass2= $('#spass2')?.value;
-  const name = $('#sname')?.value?.trim();
-  const surname = $('#ssurname')?.value?.trim();
-  const username = $('#suser')?.value?.trim();
-  const out = $('#smsg');
-  if(pass!==pass2){ if(out) out.textContent='Şifreler eşleşmiyor.'; return; }
-  uiBusy(signupForm,true);
-  try{
-    const { user } = await createUserWithEmailAndPassword(auth, email, pass);
-    const displayName = (name && surname) ? (name+' '+surname) : (username || '');
-    if(displayName){ try{ await updateProfile(user, { displayName }); }catch(_){} }
-    await sendEmailVerification(user);
-    if(out) out.innerHTML = 'Kayıt oluşturuldu. Lütfen e‑postadaki doğrulama bağlantısını tıklayın, sonra giriş yapın.';
-  }catch(err){ if(out) out.textContent = trAuthErr(err); }
-  finally{ uiBusy(signupForm,false); }
-});
-
-if(forgotBtn) forgotBtn.addEventListener('click', async ()=>{
-  const email = $('#lemail')?.value?.trim() || $('#semail')?.value?.trim();
-  const out = $('#lmsg');
-  if(!email){ if(out) out.textContent='Lütfen e‑posta adresini yaz.'; return; }
-  try{ await sendPasswordResetEmail(auth, email); if(out) out.textContent='Şifre sıfırlama e‑postası gönderildi.'; }
-  catch(err){ if(out) out.textContent = trAuthErr(err); }
-});
-
-function trAuthErr(err){
-  const c = err?.code || '';
-  switch(c){
-    case 'auth/invalid-email': return 'Geçersiz e‑posta.';
-    case 'auth/missing-password': return 'Şifre eksik.';
-    case 'auth/weak-password': return 'Şifre zayıf (en az 6 karakter).';
-    case 'auth/email-already-in-use': return 'Bu e‑posta zaten kayıtlı.';
-    case 'auth/user-not-found':
-    case 'auth/wrong-password': return 'E‑posta veya şifre hatalı.';
-    case 'auth/popup-blocked': return 'Tarayıcı açılır pencereyi engelledi.';
-    case 'auth/popup-closed-by-user': return 'Google penceresi kapatıldı.';
-    default: return 'İşlem başarısız: '+c;
-  }
-}
-
-onAuthStateChanged(auth, (user)=>{ /* oturum değişimi */ });
-
-// Çıkış butonu
-const btnLogout = document.getElementById('btnLogout');
-if(btnLogout){
-  btnLogout.addEventListener('click', async ()=>{
-    try{ await signOut(auth); }catch(_){ }
-    location.href = '/docs/index.html';
-  });
-}
-
-// Canlı destek aç/kapat
-const fab = document.getElementById('fabChat');
-const panel = document.getElementById('chatPanel');
-const chatClose = document.getElementById('chatClose');
-function toggleChat(show){ if(!panel) return; panel.hidden = (show===undefined) ? !panel.hidden : !show ? true : false; }
-if(fab) fab.addEventListener('click', ()=> toggleChat(true));
-if(chatClose) chatClose.addEventListener('click', ()=> toggleChat(false));
-
-// Premium modal aç/kapat
-const premiumBtn = document.getElementById('btnPremium');
-const premiumModal = document.getElementById('premiumModal');
-const closePremium = document.getElementById('closePremium');
-const backdrop = document.getElementById('backdrop');
-function openPremium(){ if(backdrop) backdrop.style.display='block'; if(premiumModal){ premiumModal.style.display='block'; premiumModal.setAttribute('aria-hidden','false'); premiumModal.classList.add('center'); } }
-function closePremiumFn(){ if(premiumModal){ premiumModal.style.display='none'; premiumModal.classList.remove('center'); premiumModal.setAttribute('aria-hidden','true'); } if(backdrop) backdrop.style.display='none'; }
-if(premiumBtn) premiumBtn.addEventListener('click', (e)=>{ e.preventDefault(); openPremium(); });
-if(closePremium) closePremium.addEventListener('click', closePremiumFn);
-if(backdrop) backdrop.addEventListener('click', ()=>{ if(premiumModal && premiumModal.style.display==='block') closePremiumFn(); });
-
-// Copy helpers + toast
-function showToast(msg='Kopyalandı'){ const t=document.getElementById('toast'); if(!t) return; t.textContent=msg; t.hidden=false; clearTimeout(window.__toastT); window.__toastT=setTimeout(()=>{ t.hidden=true; }, 1600); }
-function copyText(txt){ if(!txt) return; if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(()=>showToast('Kopyalandı')).catch(()=>showToast('Kopyalanamadı')); } else { const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); showToast('Kopyalandı'); }catch(_){ showToast('Kopyalanamadı'); } finally{ document.body.removeChild(ta); } } }
-$$('.btn.copy').forEach(b=> b.addEventListener('click', ()=> copyText(b.getAttribute('data-copy')) ));
-
-// Premiumdan canlı desteği aç
-const openChatFromPremium = document.getElementById('openChatFromPremium');
-if(openChatFromPremium){ openChatFromPremium.addEventListener('click', ()=>{ closePremiumFn(); toggleChat(true); }); }
-</script>
 </body>
 </html>
