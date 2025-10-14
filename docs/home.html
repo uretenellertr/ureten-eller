@@ -618,8 +618,9 @@
   if(btnLogout){ btnLogout.addEventListener('click', ()=>{ try{ /* Firebase mevcutsa signOut burada olabilir */ }catch(_){} location.href='/docs/auth.html'; }); }
   
   <!-- Profil butonu: girişliysen sadece URL'i #profile yap; girişsizsen paneli aç -->
+>
+// --- PROFIL AKIŞI ---
 
-// Giriş panelini aç
 function __openProfile(){
   const bd  = document.getElementById('backdrop');
   const box = document.getElementById('authBox');
@@ -631,21 +632,25 @@ function __openProfile(){
   }
 }
 
-// Sayfa yüklenince #profile ile gelindiyse ve girişli değilsen aç
+// Sayfa #profile ile gelmiş VE girişsizsen panel otomatik açılsın
 window.addEventListener('load', function(){
   if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
     __openProfile();
   }
 });
 
-// Profil butonu: girişliysen sadece URL, girişsizsen panel
+// Profil butonu: girişliysen panel açma; girişsizsen panel aç
 const __btnProf = document.getElementById('btnProfile');
 if (__btnProf){
   __btnProf.addEventListener('click', function(e){
     e.preventDefault();
     if (localStorage.getItem('ue_uid')) {
-      // Girişli: panel açma, sadece profil bölümüne git
+      // Girişli: yalnızca URL #profile; panel kapalı kalsın
       location.href = '/home.html#profile';
+      const box = document.getElementById('authBox');
+      const bd  = document.getElementById('backdrop');
+      if (box){ box.style.display='none'; box.setAttribute('aria-hidden','true'); box.classList.remove('center'); }
+      if (bd){ bd.style.display='none'; }
     } else {
       // Girişsiz: URL + panel aç
       location.hash = '#profile';
@@ -654,6 +659,6 @@ if (__btnProf){
   });
 }
 </script>
-
+  
   </body>
 </html>
