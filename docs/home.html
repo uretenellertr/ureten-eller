@@ -613,7 +613,7 @@
   function copyText(txt){ if(!txt) return; if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(()=>showToast('Kopyalandı')).catch(()=>showToast('Kopyalanamadı')); } else { const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); showToast('Kopyalandı'); }catch(_){ showToast('Kopyalanamadı'); } finally{ document.body.removeChild(ta); } } }
   $$('.btn.copy').forEach(b=> b.addEventListener('click', ()=> copyText(b.getAttribute('data-copy')) ));
 
-  /  // Logout: auth ekranına yönlendir
+    // Logout: auth ekranına yönlendir
   const btnLogout = document.getElementById('btnLogout');
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
