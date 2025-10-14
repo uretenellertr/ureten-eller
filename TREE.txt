@@ -1,11 +1,24 @@
 .
 ├── TREE.txt
 ├── docs
+│   ├── 404.html
+│   ├── CNAME
 │   ├── assets
 │   │   ├── audio
+│   │   │   └── intro.ogg
 │   │   ├── icons
-│   │   └── img
+│   │   │   ├──   favicon-32.png
+│   │   │   └── logo.svg
+│   │   ├── img
+│   │   │   └── logo.png
+│   │   └── js
+│   │       ├── auth-guard.js
+│   │       └── i18n.js
+│   ├── auth.html
+│   ├── ilan.html
 │   ├── index.html
+│   ├── index.html.bak.1760400455
+│   ├── index.html.bak.1760401580
 │   ├── legal
 │   │   ├── cerez-politikasi.html
 │   │   ├── gizlilik-politikasi.html
@@ -14,13 +27,18 @@
 │   │   ├── kvkk-aydinlatma.html
 │   │   ├── mesafeli-satis-sozlesmesi.html
 │   │   ├── on-bilgilendirme-formu.html
+│   │   ├── style.css
 │   │   ├── teslimat-iade-iptal.html
 │   │   ├── topluluk-kurallari.html
 │   │   └── yasakli-urunler.html
-│   └── legal.html
+│   ├── legal.html
+│   ├── script.js
+│   └── style.css
+├── package-lock.json
 ├── public
 │   └── assets
 │       └── js
+│           └── i18n.js
 └── ureten-eller
 
-11 directories, 13 files
+12 directories, 30 files
