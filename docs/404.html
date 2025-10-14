@@ -436,8 +436,8 @@
   document.getElementById('postBtn').onclick=()=>go('/docs/ilan.html');
   document.getElementById('profileBtn').onclick=()=>go('/docs/ilan.html');
   document.getElementById('logoutBtn').onclick=()=>go('/docs/auth.html');
-  document.getElementById('goPost').onclick=(e)=>{e.preventDefault();go('/ilan-ver.html')};
-  document.getElementById('goPro').onclick=(e)=>{e.preventDefault();openPro()};
+  document.getElementById('goPost').onclick=(e)=>{e.__noPreventDefault__();go('/ilan-ver.html')};
+  document.getElementById('goPro').onclick=(e)=>{e.__noPreventDefault__();openPro()};
 
   // ===== Chat open/close =====
   const chatOpen=document.getElementById('chatOpen');
