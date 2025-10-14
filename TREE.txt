@@ -1,0 +1,26 @@
+.
+├── TREE.txt
+├── docs
+│   ├── assets
+│   │   ├── audio
+│   │   ├── icons
+│   │   └── img
+│   ├── index.html
+│   ├── legal
+│   │   ├── cerez-politikasi.html
+│   │   ├── gizlilik-politikasi.html
+│   │   ├── iletisim-impressum.html
+│   │   ├── kullanim-sartlari.html
+│   │   ├── kvkk-aydinlatma.html
+│   │   ├── mesafeli-satis-sozlesmesi.html
+│   │   ├── on-bilgilendirme-formu.html
+│   │   ├── teslimat-iade-iptal.html
+│   │   ├── topluluk-kurallari.html
+│   │   └── yasakli-urunler.html
+│   └── legal.html
+├── public
+│   └── assets
+│       └── js
+└── ureten-eller
+
+11 directories, 13 files
