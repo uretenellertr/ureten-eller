@@ -61,5 +61,3 @@
   // Kısayol: veriyi-önden yüklemeye çalışan başka script yoksa sorun etmez
 })();
 
-
-
