@@ -631,7 +631,7 @@
 
   // #profile ile gelinirse otomatik aç
   window.addEventListener('load', function(){
-    if (location.hash === '#profile') __openProfile();
+    if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) __openProfile();
   });
 
   // Profil butonu: direkt profil bölümüne git
