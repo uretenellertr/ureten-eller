@@ -649,7 +649,7 @@ if (__btnProf){
     e.preventDefault();
     if (localStorage.getItem('ue_uid')) {
       // Girişli: yalnızca URL #profile; panel kapalı kalsın
-      location.href = '/home.html#profile';
+      location.href = '#profile';
       const box = document.getElementById('authBox');
       const bd  = document.getElementById('backdrop');
       if (box){ box.style.display='none'; box.setAttribute('aria-hidden','true'); box.classList.remove('center'); }
