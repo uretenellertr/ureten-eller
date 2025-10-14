@@ -643,6 +643,10 @@ if (__btnProf){
   });
 }
 
+// #profile görünür olunca profili aç
+window.addEventListener('hashchange', function(){
+  if (location.hash === '#profile') __openProfile();
+});
 </script>
-</body>
+</body> 
 </html>
