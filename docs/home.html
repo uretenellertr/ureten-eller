@@ -43,10 +43,9 @@
     .btn{padding:.6rem .9rem;border:1px solid var(--brd);border-radius:12px;background:#0b1220;color:var(--ink);font-weight:800;cursor:pointer;white-space:nowrap}
     .btn.primary{background:linear-gradient(180deg,var(--c1),#128473);border-color:#0e766e}
     .btn.ghost{background:transparent}
-        .btn.premium{background:linear-gradient(180deg,var(--c6),#a16207);border-color:#a16207}
+    .btn.premium{background:linear-gradient(180deg,var(--c6),#a16207);border-color:#a16207}
     .btn.profile{background:linear-gradient(180deg,#16a34a,#065f46);border-color:#0e5135}
     .btn.logout{background:linear-gradient(180deg,#ef4444,#7f1d1d);border-color:#7f1d1d}
-    .btn.premium{background:linear-gradient(180deg,var(--c6),#a16207);border-color:#a16207}
     .pmField{display:flex;align-items:center;gap:.5rem;margin:.4rem 0}
     .pmField code{background:#0a0f1c;border:1px solid var(--brd);padding:.35rem .5rem;border-radius:8px}
     .btn.copy{padding:.35rem .55rem;border-radius:8px}
@@ -79,7 +78,7 @@
     /* Category cards */
     .cards{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));align-items:stretch}
     .card{position:relative;border:1px solid var(--brd);border-radius:16px;padding:.9rem;background:linear-gradient(145deg,var(--card),var(--card2));overflow:hidden;transition:box-shadow .25s,transform .15s}
-.card:hover{transform:translateY(-2px);box-shadow:0 0 0 1px var(--glow, #22d3ee),0 0 26px var(--glow, #22d3ee)}
+    .card:hover{transform:translateY(-2px);box-shadow:0 0 0 1px var(--glow, #22d3ee),0 0 26px var(--glow, #22d3ee)}
     .card .title{font-weight:900}
     .chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.5rem}
     .chip{font-size:.75rem;border:1px solid var(--brd);border-radius:999px;padding:.18rem .5rem;background:#0a162c}
@@ -95,6 +94,18 @@
     .thumb{aspect-ratio:1.1/1;background:#0f172a;background-size:cover;background-position:center}
     .meta{padding:.5rem .6rem}
     .mini{color:#9ca3af}
+
+    /* Showcase (Vitrin) */
+    .showcaseWrap{max-width:1200px;margin:1rem auto 0;padding:0 1rem}
+    .showcaseHead{display:flex;align-items:center;justify-content:center;margin:.25rem 0 .6rem;gap:.5rem}
+    .showcaseHead h2{margin:0;font-size:1.05rem;letter-spacing:.2px}
+    .showcaseGrid{display:grid;gap:.85rem;grid-template-columns:repeat(3,minmax(0,1fr))}
+    @media(min-width:1100px){.showcaseGrid{grid-template-columns:repeat(5,1fr)}}
+    .scItem{border:1px solid var(--brd);border-radius:14px;background:#0b1220;overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 0 0 1px #a16207aa,0 0 18px #a16207aa}
+    .scItem .thumb{aspect-ratio:1/1;background:#0f172a;background-size:cover;background-position:center}
+    .scItem .meta{padding:.5rem .6rem}
+    .scItem .badgePrem{position:absolute;left:8px;top:8px;border:1px solid #a16207;background:linear-gradient(180deg,var(--c6),#a16207);color:#000;font-weight:900;border-radius:999px;padding:.15rem .45rem;font-size:.72rem}
+
 
     /* Auth box */
     .auth{border:1px solid var(--brd);border-radius:16px;background:linear-gradient(180deg,#0c1426,#0b1220);padding:1rem;position:relative}
@@ -131,24 +142,28 @@
       .card:hover{transform:none}
       .card:active{transform:scale(.98)}
     }
-      .listGrid{grid-template-columns:1fr}
-      /* Mobile: renk vurgusu hover'a bağlı olmasın, sürekli görünsün */
-      .card{box-shadow:0 0 0 1px var(--glow, #22d3ee),0 0 18px var(--glow, #22d3ee)}
-      .card:hover{transform:none}
-      .card:active{transform:scale(.98)}
+    /* Güvence için tekrar (bazı eski tarayıcılar media query dışını override edebiliyor) */
+    .listGrid{grid-template-columns:1fr}
+    .card{box-shadow:0 0 0 1px var(--glow, #22d3ee),0 0 18px var(--glow, #22d3ee)}
+    .card:hover{transform:none}
+    .card:active{transform:scale(.98)}
+
+    /* Görsel olarak görünmeyen ama anchor hedefi olan bölümler */
+    .anchor-target{position:relative;display:block;height:1px;overflow:hidden}
   </style>
-<link rel="preload" as="image" href="/assets/img/logo.png" />
+  <link rel="preload" as="image" href="/assets/img/logo.png" />
 </head>
 <body>
   <div class="wrap">
-    <div class="top"><div class="logo"><img src="/assets/icons/logo.svg" alt="logo" /><span>Üreten Eller</span></div>
+    <div class="top">
+      <div class="logo"><img src="/assets/icons/logo.svg" alt="logo" /><span>Üreten Eller</span></div>
       <div class="spacer"></div>
       <div class="actions">
-  <a class="btn small premium" href="#" id="btnPremium">Premium</a>
-  <a class="btn small profile" href="/docs/home.html#profile" id="btnProfile">👤 Profil</a>
-  <a class="btn small primary" href="/docs/ilanver.html" id="btnPost">İlan Ver</a>
-  <button class="btn small logout" id="btnLogout">Çıkış</button>
-</div>
+        <a class="btn small premium" href="#" id="btnPremium">Premium</a>
+        <a class="btn small profile" href="/docs/home.html#profile" id="btnProfile">👤 Profil</a>
+        <a class="btn small primary" href="/docs/ilanver.html" id="btnPost">İlan Ver</a>
+        <button class="btn small logout" id="btnLogout">Çıkış</button>
+      </div>
       <div class="lang" style="margin-left:.6rem"><select id="langSel" aria-label="Dil">
         <option value="tr">Türkçe</option>
         <option value="en">English</option>
@@ -160,25 +175,32 @@
     <div class="hero">
       <div class="heroLogo"><img src="/assets/img/logo.png" alt="Üreten Eller" /></div>
 
-    <!-- Premium Modal -->
-    <div class="auth" id="premiumModal" aria-hidden="true" style="display:none">
-      <button class="close" id="closePremium" aria-label="Kapat">✕</button>
-      <div class="tabs" style="margin-bottom:.2rem"><div class="tab" aria-selected="true" style="pointer-events:none">⭐ Premium Üyelik</div></div>
-      <div class="pmField"><b>Tutar:</b> <code>1999 TL</code> <button class="btn copy" data-copy="1999 TL">Kopyala</button></div>
-      <div class="pmField"><b>Alıcı:</b> <code>Nejla Karatal</code> <button class="btn copy" data-copy="Nejla Karatal">Kopyala</button></div>
-      <div class="pmField"><b>Papara / IBAN:</b> <code id="ibanCode">TR590082900009491868461105</code> <button class="btn copy" data-copy="TR590082900009491868461105">Kopyala</button></div>
-      <p class="note" style="margin-top:.6rem">Ödeme sonrası lütfen <b>dekontla birlikte</b> sağ alttaki <b>Canlı Destek</b> üzerinden bizimle iletişime geçiniz.</p>
-      <div class="row" style="margin-top:.6rem">
-        <button class="btn primary" id="openChatFromPremium">Canlı Desteği Aç</button>
+      <!-- Premium Modal -->
+      <div class="auth" id="premiumModal" aria-hidden="true" style="display:none">
+        <button class="close" id="closePremium" aria-label="Kapat">✕</button>
+        <div class="tabs" style="margin-bottom:.2rem"><div class="tab" aria-selected="true" style="pointer-events:none">⭐ Premium Üyelik</div></div>
+        <div class="pmField"><b>Tutar:</b> <code>1999 TL</code> <button class="btn copy" data-copy="1999 TL">Kopyala</button></div>
+        <div class="pmField"><b>Alıcı:</b> <code>Nejla Karatal</code> <button class="btn copy" data-copy="Nejla Karatal">Kopyala</button></div>
+        <div class="pmField"><b>Papara / IBAN:</b> <code id="ibanCode">TR590082900009491868461105</code> <button class="btn copy" data-copy="TR590082900009491868461105">Kopyala</button></div>
+        <p class="note" style="margin-top:.6rem">Ödeme sonrası lütfen <b>dekontla birlikte</b> sağ alttaki <b>Canlı Destek</b> üzerinden bizimle iletişime geçiniz.</p>
+        <div class="row" style="margin-top:.6rem">
+          <button class="btn primary" id="openChatFromPremium">Canlı Desteği Aç</button>
+        </div>
       </div>
-    </div>
       <h1 id="welcome">Üreten Ellere Hoş Geldiniz</h1>
       <div class="tag" id="tagline">Aracısız alışveriş</div>
       <div class="ticker" id="ticker"></div>
+
+      <!-- VİTRİN (PREMIUM) ALTINA EKLENDİ -->
+      <section class="showcaseWrap" aria-labelledby="scTitle">
+        <div class="showcaseHead"><h2 id="scTitle">Vitrin (Premium)</h2></div>
+        <div class="showcaseGrid" id="showcaseGrid"></div>
+      </section>
     </div>
 
     <!-- 50 İLANLIK ALAN -->
     <section class="listWrap" aria-labelledby="listTitle">
+      <div class="listHead"><h2 id="listTitle">İlanlar</h2></div>
       <div class="listGrid" id="listGrid"></div>
     </section>
 
@@ -234,6 +256,11 @@
       </div>
     </div>
   </div>
+
+  <!-- Görünmez anchor hedefleri (boş içerik, sadece #profile/#messages/#notifications çalışsın) -->
+  <div id="profile" class="anchor-target" aria-hidden="true"></div>
+  <div id="messages" class="anchor-target" aria-hidden="true"></div>
+  <div id="notifications" class="anchor-target" aria-hidden="true"></div>
 
   <!-- FOOTER / LEGAL -->
   <div id="backdrop" class="backdrop" style="display:none"></div>
@@ -417,8 +444,8 @@
     });
   }
 
-  // Mobilde kategori kartlarının renklerini otomatik döndür ve dokununca bir sonrakine geç
-  function startCardGlow(intervalMs=5000){
+  // Kategori kartları: renkleri otomatik döndür (3 sn) ve tıklayınca bir sonrakine geç
+  function startCardGlow(intervalMs=3000){
     const cards = Array.from(document.querySelectorAll('#catGrid .card'));
     if(!cards.length) return;
     let tick = 0;
@@ -435,7 +462,6 @@
     if(window.__catGlowInt){ clearInterval(window.__catGlowInt); }
     paint();
     window.__catGlowInt = setInterval(paint, intervalMs);
-    // dokununca/tıklayınca bir sonraki renge geç
     cards.forEach(card=>{ card.addEventListener('click', ()=>{ tick = (tick + 1) % COLORS.length; paint(); }, { passive:true }); });
   }
 
@@ -465,8 +491,12 @@
     }
   }
 
-  // === Listings: tüm örnek/sahte ve kalan (#11, #50) ilanlar kaldırıldı, liste boş bırakıldı
-const LISTINGS=[];
+  // === Listings: sahte/örnek ilanlar kaldırıldı ===
+  const LISTINGS=[];
+
+  // === Vitrin (Premium) ===
+  const SHOWCASE=[]; // buraya premium ilanlar gelecek (id, t, price, ago, img)
+
 
   function renderListings(){
     const grid=$('#listGrid'); if(!grid) return; grid.innerHTML='';
@@ -483,7 +513,21 @@ const LISTINGS=[];
     const lc=$('#listCount'); if(lc) lc.textContent='('+LISTINGS.length+')';
   }
 
-  // Rotate listings (simulate showcase refresh)
+  function renderShowcase(){
+    const grid=$('#showcaseGrid'); if(!grid) return; grid.innerHTML='';
+    SHOWCASE.forEach(function(x,idx){
+      const a=document.createElement('a'); a.href='/ilan/'+x.id; a.className='scItem'; a.style.order=String(9999-idx);
+      const bg = x.img ? "background-image:url('"+x.img+"')" : '';
+      a.innerHTML='<span class="badgePrem">⭐ Premium</span>'+
+        '<div class="thumb" style="'+bg+'"></div>'+
+        '<div class="meta">'+
+          '<div style="font-weight:800">'+x.t+'</div>'+
+          '<div class="mini" style="display:flex;gap:.5rem;margin-top:.2rem"><span>'+x.price+'</span> • <span>'+x.ago+'</span></div>'+
+        '</div>';
+      grid.appendChild(a);
+    });
+  }
+
   function startListingRotation(){
     clearInterval(window.__listInt);
     window.__listInt=setInterval(()=>{ if(LISTINGS.length){ LISTINGS.push(LISTINGS.shift()); renderListings(); } }, 30*60*1000);
@@ -526,8 +570,9 @@ const LISTINGS=[];
       initLangSelect();
       applyLang();
       renderCats();
-      startCardGlow();
+      startCardGlow(); // 3 sn
       renderSlogans();
+      renderShowcase();
       renderListings();
       startListingRotation();
       renderLegal();
@@ -567,9 +612,9 @@ const LISTINGS=[];
   function copyText(txt){ if(!txt) return; if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(()=>showToast('Kopyalandı')).catch(()=>showToast('Kopyalanamadı')); } else { const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); showToast('Kopyalandı'); }catch(_){ showToast('Kopyalanamadı'); } finally{ document.body.removeChild(ta); } } }
   $$('.btn.copy').forEach(b=> b.addEventListener('click', ()=> copyText(b.getAttribute('data-copy')) ));
 
-  // Logout (fallback: sadece yönlendir)
+  // Logout: auth ekranına yönlendir
   const btnLogout = document.getElementById('btnLogout');
-  if(btnLogout){ btnLogout.addEventListener('click', ()=>{ try{ /* Firebase mevcutsa signOut burada olabilir */ }catch(_){} location.href='/docs/index.html'; }); }
+  if(btnLogout){ btnLogout.addEventListener('click', ()=>{ try{ /* Firebase mevcutsa signOut burada olabilir */ }catch(_){} location.href='/docs/auth.html'; }); }
   </script>
 </body>
 </html>
