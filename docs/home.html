@@ -623,6 +623,7 @@
   }
 
 <!-- --- PROFIL AKIŞI --- -->
+<script>
 function __openProfile(){
   const bd  = document.getElementById('backdrop');
   const box = document.getElementById('authBox');
@@ -634,22 +635,8 @@ function __openProfile(){
   }
 }
 
-function __closeProfile(){
-  const bd  = document.getElementById('backdrop');
-  const box = document.getElementById('authBox');
-  if (box){ box.style.display='none'; box.classList.remove('center'); box.setAttribute('aria-hidden','true'); }
-  if (bd){ bd.style.display='none'; }
-}
-
-// #profile ile yüklenmiş VE giriş yoksa paneli otomatik aç
+// Sayfa #profile ile gelmiş VE girişsizsen panel otomatik açılsın
 window.addEventListener('load', function(){
-  if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
-    __openProfile();
-  }
-});
-
-// Hash değişirse (örn. tarayıcı geri/ileri) girişsizken #profile'da paneli aç
-window.addEventListener('hashchange', function(){
   if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
     __openProfile();
   }
@@ -659,28 +646,25 @@ window.addEventListener('hashchange', function(){
 const __btnProf = document.getElementById('btnProfile');
 if (__btnProf){
   __btnProf.addEventListener('click', function(e){
-    e.preventDefault();
     const loggedIn = !!localStorage.getItem('ue_uid');
-    const HOME = '/home.html';
 
-    if (loggedIn){
-      // Aynı sayfadaysak ve hash zaten #profile ise yeniden tetikle (scroll)
-      if (location.pathname === HOME) {
-        if (location.hash === '#profile') {
-          const anchor = document.getElementById('profile');
-          if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else {
-          location.hash = '#profile';
-        }
-      } else {
-        // Farklı sayfadaysan doğru sayfaya git
-        location.href = HOME + '#profile';
-      }
-      __closeProfile();
-    } else {
-      // Girişsiz: URL'ye hash'i yaz ve paneli aç
+    if (!loggedIn){
+      // Girişsiz: URL'yi #profile yap ve paneli aç
+      e.preventDefault();
       if (location.hash !== '#profile') location.hash = '#profile';
       __openProfile();
+      return;
+    }
+
+    // Girişli: normal link davranışı kalsın (preventDefault YAPMA)
+    // Ama hash zaten #profile ise, kaydırmayı biz tetikleyelim
+    if (location.pathname === '/home.html' && location.hash === '#profile'){
+      e.preventDefault();
+      const target = document.getElementById('profile');
+      if (target){ target.scrollIntoView({ behavior:'smooth', block:'start' }); }
+      // İstersen hashchange tetiklemek için şu iki satırı da kullanabilirsin:
+      // history.replaceState(null, '', '/home.html');
+      // location.hash = '#profile';
     }
   });
 }
