@@ -43,7 +43,16 @@
     .btn{padding:.6rem .9rem;border:1px solid var(--brd);border-radius:12px;background:#0b1220;color:var(--ink);font-weight:800;cursor:pointer;white-space:nowrap}
     .btn.primary{background:linear-gradient(180deg,var(--c1),#128473);border-color:#0e766e}
     .btn.ghost{background:transparent}
-    .btn.small{padding:.45rem .7rem;border-radius:10px;font-weight:800}
+    $1
+    .btn.premium{background:linear-gradient(180deg,var(--c6),#a16207);border-color:#a16207}
+    .btn.profile{background:linear-gradient(180deg,#16a34a,#065f46);border-color:#0e5135}
+    .btn.logout{background:linear-gradient(180deg,#ef4444,#7f1d1d);border-color:#7f1d1d}
+    .btn.premium{background:linear-gradient(180deg,var(--c6),#a16207);border-color:#a16207}
+    .pmField{display:flex;align-items:center;gap:.5rem;margin:.4rem 0}
+    .pmField code{background:#0a0f1c;border:1px solid var(--brd);padding:.35rem .5rem;border-radius:8px}
+    .btn.copy{padding:.35rem .55rem;border-radius:8px}
+    .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#0b1220;border:1px solid var(--brd);color:#e5e7eb;padding:.5rem .8rem;border-radius:10px;box-shadow:0 10px 30px #0008;z-index:1100}
+    .note{color:#cbd5e1;font-size:.9rem}
     .top .actions{display:flex;gap:.5rem;align-items:center;margin-right:.5rem}
 
     /* Bottom nav bar */
@@ -136,9 +145,10 @@
     <div class="top"><div class="logo"><img src="/assets/icons/logo.svg" alt="logo" /><span>Üreten Eller</span></div>
       <div class="spacer"></div>
       <div class="actions">
-  <a class="btn small" href="/docs/index.html#profile" id="btnProfile">Profil</a>
+  <a class="btn small premium" href="#" id="btnPremium">Premium</a>
+  <a class="btn small profile" href="/docs/index.html#profile" id="btnProfile">👤 Profil</a>
   <a class="btn small primary" href="/docs/ilanver.html" id="btnPost">İlan Ver</a>
-  <button class="btn small" id="btnLogout">Çıkış</button>
+  <button class="btn small logout" id="btnLogout">Çıkış</button>
 </div>
       <div class="lang" style="margin-left:.6rem"><select id="langSel" aria-label="Dil">
         <option value="tr">Türkçe</option>
@@ -150,6 +160,19 @@
 
     <div class="hero">
       <div class="heroLogo"><img src="/assets/img/logo.png" alt="Üreten Eller" /></div>
+
+    <!-- Premium Modal -->
+    <div class="auth" id="premiumModal" aria-hidden="true" style="display:none">
+      <button class="close" id="closePremium" aria-label="Kapat">✕</button>
+      <div class="tabs" style="margin-bottom:.2rem"><div class="tab" aria-selected="true" style="pointer-events:none">⭐ Premium Üyelik</div></div>
+      <div class="pmField"><b>Tutar:</b> <code>1999 TL</code> <button class="btn copy" data-copy="1999 TL">Kopyala</button></div>
+      <div class="pmField"><b>Alıcı:</b> <code>Nejla Karatal</code> <button class="btn copy" data-copy="Nejla Karatal">Kopyala</button></div>
+      <div class="pmField"><b>Papara / IBAN:</b> <code id="ibanCode">TR590082900009491868461105</code> <button class="btn copy" data-copy="TR590082900009491868461105">Kopyala</button></div>
+      <p class="note" style="margin-top:.6rem">Ödeme sonrası lütfen <b>dekontla birlikte</b> sağ alttaki <b>Canlı Destek</b> üzerinden bizimle iletişime geçiniz.</p>
+      <div class="row" style="margin-top:.6rem">
+        <button class="btn primary" id="openChatFromPremium">Canlı Desteği Aç</button>
+      </div>
+    </div>
       <h1 id="welcome">Üreten Ellere Hoş Geldiniz</h1>
       <div class="tag" id="tagline">Aracısız alışveriş</div>
       <div class="ticker" id="ticker"></div>
@@ -157,9 +180,7 @@
 
     <!-- 50 İLANLIK ALAN -->
     <section class="listWrap" aria-labelledby="listTitle">
-      <div class="listHead"><h2 id="listTitle" style="margin:0;font-size:clamp(18px,2.4vw,26px)">Son İlanlar</h2><span class="mini" id="listCount">(50)</span></div>
       <div class="listGrid" id="listGrid"></div>
-      <div class="mini" style="text-align:center;margin-top:.35rem">Her 30 dakikada bir vitrin yenilenir.<b>Not:</b> "Sahte/Örnek" olarak işaretlenen ilanlar, moderasyon için gösterilen örnek görsellerdir.</div>
     </section>
 
     <div class="grid" id="grid">
@@ -251,9 +272,9 @@
 
   <!-- Bottom fixed bar -->
   <nav class="bottomBar" role="navigation" aria-label="Alt menü">
-    <a class="bItem" href="/docs/index.html" aria-current="page"><span class="ico">🏠</span><span class="txt">Ana Sayfa</span></a>
-    <a class="bItem" href="/docs/index.html#messages"><span class="ico">💬</span><span class="txt">Mesajlar</span></a>
-    <a class="bItem" href="/docs/index.html#notifications"><span class="ico">🔔</span><span class="txt">Bildirimler</span></a>
+    <a class="bItem" href="/docs/index.html" aria-current="page"><span class="ico">🏠</span><span class="txt" id="navHomeTxt">Ana Sayfa</span></a>
+    <a class="bItem" href="/docs/index.html#messages"><span class="ico">💬</span><span class="txt" id="navMsgTxt">Mesajlar</span></a>
+    <a class="bItem" href="/docs/index.html#notifications"><span class="ico">🔔</span><span class="txt" id="navNotifTxt">Bildirimler</span></a>
   </nav>
 
   <!-- Live chat bubble + panel -->
@@ -263,6 +284,7 @@
     <div class="chatBody">Merhaba! Nasıl yardımcı olabilirim?</div>
     <div class="chatFoot"><input type="text" placeholder="Mesaj yaz..." /></div>
   </div>
+  <div id="toast" class="toast" hidden>Kopyalandı</div>
   <script>
   const HOME = "/docs/home.html";
   const $=(s)=>document.querySelector(s);
@@ -271,7 +293,7 @@
 
   // === Language packs (UI + categories + slogans + legal) ===
   const TEXT={
-    tr:{signup:"Ücretsiz Kaydol",loginBtn:"Zaten Üyeyim (Giriş)",welcome:"Üreten Ellere Hoş Geldiniz",tagline:"Aracısız alışveriş",tabLogin:"Giriş Yap",tabSignup:"Kayıt Ol",forgot:"Şifremi Unuttum",gLogin:"🔐 Google ile Giriş",gCont:"⚡ Google ile Devam",loginSubmit:"Giriş Yap",signupSubmit:"Kayıt Ol",
+    tr:{signup:"Ücretsiz Kaydol",loginBtn:"Zaten Üyeyim (Giriş)",welcome:"Üreten Ellere Hoş Geldiniz",tagline:"Aracısız alışveriş",tabLogin:"Giriş Yap",tabSignup:"Kayıt Ol",forgot:"Şifremi Unuttum",gLogin:"🔐 Google ile Giriş",gCont:"⚡ Google ile Devam",loginSubmit:"Giriş Yap",signupSubmit:"Kayıt Ol",navHome:"Ana Sayfa",navMessages:"Mesajlar",navNotifs:"Bildirimler",
       cats:{
         food:{t:"🍲 Yemekler",s:["Ev yemekleri","Börek-çörek","Çorba","Zeytinyağlı","Pilav-makarna","Et-tavuk","Kahvaltılık","Meze","Dondurulmuş","Çocuk öğünleri","Diyet/vegan/gf"]},
         cake:{t:"🎂 Pasta & Tatlı",s:["Yaş pasta","Kek-cupcake","Kurabiye","Şerbetli","Sütlü","Cheesecake","Diyet tatlı","Çikolata/şekerleme","Doğum günü setleri"]},
@@ -292,7 +314,7 @@
         "El emeğine değer!","Aracısız alışveriş","Yerel üreticiye destek","Ev yapımı lezzetler","Kişiye özel hediyeler","Glutensiz & vegan var","Sıcacık örgüler","Doğal sabun & kozmetik","Yöresel kışlıklar","Taze reçeller","Özenle el işi","Emekle gelen kalite","Her ilmekte sevgi","Evden eve güven","Doğum günü setleri","Şık takılar","Makrome ile şıklık","Kokularla huzur","Bebekler için güvenli","Geleneksel tarifler","Katkısız tatlar","Komşundan sofrana","Ustaların buluşması","Lezzet ve tasarım","Sevgiyle üretildi"
       ],
       legal:["İletişim / Impressum","Gizlilik Politikası","KVKK Aydınlatma","Çerez Politikası","Kullanım Şartları","Mesafeli Satış Sözleşmesi","Ön Bilgilendirme Formu","Teslimat & İade","Topluluk Kuralları","Yasaklı Ürünler","Tüm Yasal Metinler","Punycode Alan Adı",".com.tr"]},
-    en:{signup:"Sign up free",loginBtn:"I already have an account",welcome:"Welcome to Üreten Eller",tagline:"Direct, no middleman",tabLogin:"Log In",tabSignup:"Sign Up",forgot:"Forgot password",gLogin:"🔐 Continue with Google",gCont:"⚡ Continue with Google",loginSubmit:"Log In",signupSubmit:"Sign Up",
+    en:{signup:"Sign up free",loginBtn:"I already have an account",welcome:"Welcome to Üreten Eller",tagline:"Direct, no middleman",tabLogin:"Log In",tabSignup:"Sign Up",forgot:"Forgot password",gLogin:"🔐 Continue with Google",gCont:"⚡ Continue with Google",loginSubmit:"Log In",signupSubmit:"Sign Up",navHome:"Home",navMessages:"Messages",navNotifs:"Notifications",
       cats:{
         food:{t:"🍲 Meals",s:["Home meals","Börek & pastry","Soup","Olive oil dishes","Rice & pasta","Meat & chicken","Breakfast","Meze","Frozen","Kids meals","Diet/vegan/gf"]},
         cake:{t:"🎂 Cakes & Desserts",s:["Birthday cake","Cake & cupcake","Cookies","Syrupy","Milk desserts","Cheesecake","Diet dessert","Chocolate/candy","Birthday sets"]},
@@ -313,7 +335,7 @@
         "Valuing handicraft","Direct trade","Support local makers","Homemade goodness","Personalized gifts","Gluten‑free & vegan","Cozy knits","Natural soap & cosmetics","Traditional pantry","Fresh jams","Carefully handmade","Quality with effort","Love in every stitch","Home‑to‑home trust","Birthday sets","Elegant jewelry","Style with macramé","Peaceful scents","Safe for babies","Traditional recipes","Additive‑free taste","From neighbor to table","Masters united","Taste & design","Made with love"
       ],
       legal:["Contact / Impressum","Privacy Policy","KVKK Notice","Cookie Policy","Terms of Use","Distance Sales Agreement","Pre‑Information Form","Delivery & Returns","Community Rules","Prohibited Products","All Legal Texts","Punycode Domain",".com.tr"]},
-    de:{signup:"Kostenlos registrieren",loginBtn:"Ich habe schon ein Konto",welcome:"Willkommen bei Üreten Eller",tagline:"Direkt & ohne Vermittler",tabLogin:"Anmelden",tabSignup:"Registrieren",forgot:"Passwort vergessen",gLogin:"🔐 Mit Google fortfahren",gCont:"⚡ Mit Google fortfahren",loginSubmit:"Anmelden",signupSubmit:"Registrieren",
+    de:{signup:"Kostenlos registrieren",loginBtn:"Ich habe schon ein Konto",welcome:"Willkommen bei Üreten Eller",tagline:"Direkt & ohne Vermittler",tabLogin:"Anmelden",tabSignup:"Registrieren",forgot:"Passwort vergessen",gLogin:"🔐 Mit Google fortfahren",gCont:"⚡ Mit Google fortfahren",loginSubmit:"Anmelden",signupSubmit:"Registrieren",navHome:"Startseite",navMessages:"Nachrichten",navNotifs:"Benachrichtigungen",
       cats:{
         food:{t:"🍲 Gerichte",s:["Hausmannskost","Börek & Gebäck","Suppe","Olivenölgerichte","Reis & Pasta","Fleisch & Hähnchen","Frühstück","Meze","Tiefkühl","Kindermahlzeiten","Diät/vegan/gf"]},
         cake:{t:"🎂 Kuchen & Süßes",s:["Torten","Kuchen & Cupcake","Kekse","Sirupgebäck","Milchdesserts","Käsekuchen","Diät-Dessert","Schokolade/Bonbon","Geburtstags-Sets"]},
@@ -334,7 +356,7 @@
         "Wert fürs Handwerk","Direkter Handel","Lokale Macher unterstützen","Hausgemacht","Personalisierte Geschenke","Glutenfrei & vegan","Kuschelige Stricksachen","Naturseife & Kosmetik","Traditioneller Vorrat","Frische Marmeladen","Sorgfältig handgemacht","Qualität durch Mühe","Liebe in jeder Masche","Vertrauen von Haus zu Haus","Geburtstagssets","Eleganter Schmuck","Stil mit Makramee","Beruhigende Düfte","Sicher für Babys","Traditionelle Rezepte","Ohne Zusatzstoffe","Vom Nachbarn auf den Tisch","Meister vereint","Geschmack & Design","Mit Liebe gemacht"
       ],
       legal:["Kontakt / Impressum","Datenschutz","KVKK-Hinweis","Cookie-Richtlinie","Nutzungsbedingungen","Fernabsatzvertrag","Vorabinformation","Lieferung & Rückgabe","Community-Regeln","Verbotene Produkte","Alle Rechtstexte","Punycode-Domain",".com.tr"]},
-    ar:{signup:"سجّل مجانًا",loginBtn:"لدي حساب",welcome:"مرحبًا بكم في Üreten Eller",tagline:"بيع وشراء مباشر",tabLogin:"تسجيل الدخول",tabSignup:"إنشاء حساب",forgot:"نسيت كلمة المرور",gLogin:"🔐 المتابعة مع Google",gCont:"⚡ المتابعة مع Google",loginSubmit:"دخول",signupSubmit:"تسجيل",
+    ar:{signup:"سجّل مجانًا",loginBtn:"لدي حساب",welcome:"مرحبًا بكم في Üreten Eller",tagline:"بيع وشراء مباشر",tabLogin:"تسجيل الدخول",tabSignup:"إنشاء حساب",forgot:"نسيت كلمة المرور",gLogin:"🔐 المتابعة مع Google",gCont:"⚡ المتابعة مع Google",loginSubmit:"دخول",signupSubmit:"تسجيل",navHome:"الرئيسية",navMessages:"الرسائل",navNotifs:"الإشعارات",
       cats:{
         food:{t:"🍲 أطعمة",s:["أكلات منزلية","فطائر وبوريك","شوربة","أطباق بزيت الزيتون","أرز ومعكرونة","لحم ودجاج","فطور","مقبلات","مجمدات","وجبات للأطفال","حمية/نباتي/خالٍ من الغلوتين"]},
         cake:{t:"🎂 كيك وحلويات",s:["كيك طازج","كيك وكب كيك","بسكويت","حلويات شرقية","حلويات بالحليب","تشيزكيك","حلويات للحمية","شوكولاتة/حلويات","مجموعات عيد الميلاد"]},
@@ -374,6 +396,9 @@
     $('#gSignup').textContent=t.gCont;
     $('#loginSubmit').textContent=t.loginSubmit;
     $('#signupSubmit').textContent=t.signupSubmit;
+    const nh=$('#navHomeTxt'); if(nh) nh.textContent=t.navHome;
+    const nm=$('#navMsgTxt'); if(nm) nm.textContent=t.navMessages;
+    const nn=$('#navNotifTxt'); if(nn) nn.textContent=t.navNotifs;
   }
 
   function renderCats(){
@@ -452,7 +477,7 @@ const LISTINGS=[];
         '</div>';
       grid.appendChild(a);
     });
-    $('#listCount').textContent='('+LISTINGS.length+')';
+    const lc=$('#listCount'); if(lc) lc.textContent='('+LISTINGS.length+')';
   }
 
   // Rotate listings (simulate showcase refresh)
