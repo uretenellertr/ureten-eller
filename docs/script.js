@@ -1,4 +1,3 @@
-<script>
 /* /script.js — genel, güvenli yardımcılar
    - Hash (#anchor) değişince hedefe kaydırır
    - Aynı hash’e tekrar tıklanınca da yeniden kaydırmayı zorlar
@@ -62,3 +61,4 @@
   // Kısayol: veriyi-önden yüklemeye çalışan başka script yoksa sorun etmez
 })();
 </script>
+
