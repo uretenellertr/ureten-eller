@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="tr" dir="ltr">
 <head>
   <base href="/" />
@@ -613,76 +613,55 @@
   function copyText(txt){ if(!txt) return; if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(()=>showToast('Kopyalandı')).catch(()=>showToast('Kopyalanamadı')); } else { const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); showToast('Kopyalandı'); }catch(_){ showToast('Kopyalanamadı'); } finally{ document.body.removeChild(ta); } } }
   $$('.btn.copy').forEach(b=> b.addEventListener('click', ()=> copyText(b.getAttribute('data-copy')) ));
 
-       // Logout: auth ekranına yönlendir
+    // Logout: auth ekranına yönlendir
   const btnLogout = document.getElementById('btnLogout');
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
       try { /* Firebase signOut burada olabilir */ } catch (_) {}
-      location.href = '/auth.html';
+      location.href = '/docs/auth.html';
     });
   }
 
-  // --- PROFİL AKIŞI ---
+// --- PROFIL AKIŞI ---
 
-  function __openProfile(){
-    const bd  = document.getElementById('backdrop');
-    const box = document.getElementById('authBox');
-    if (bd)  bd.style.display = 'block';
-    if (box){
-      box.style.display = 'block';
-      box.classList.add('center');
-      box.setAttribute('aria-hidden','false');
-    }
+function __openProfile(){
+  const bd  = document.getElementById('backdrop');
+  const box = document.getElementById('authBox');
+  if (bd)  bd.style.display = 'block';
+  if (box){
+    box.style.display = 'block';
+    box.classList.add('center');
+    box.setAttribute('aria-hidden','false');
   }
-  function __closeProfile(){
-    const bd  = document.getElementById('backdrop');
-    const box = document.getElementById('authBox');
-    if (box){ box.style.display='none'; box.classList.remove('center'); box.setAttribute('aria-hidden','true'); }
-    if (bd){ bd.style.display='none'; }
+}
+
+// Sayfa #profile ile gelmiş VE girişsizsen panel otomatik açılsın
+window.addEventListener('load', function(){
+  if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
+    __openProfile();
   }
+});
 
-  // Sayfa #profile ile gelmiş VE girişsizsen modal aç
-  window.addEventListener('load', function(){
-    if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
-      __openProfile();
-    }
-  });
-
-  // Hash değişince: girişsizken #profile → modal aç, aksi halde kapat
-  window.addEventListener('hashchange', function(){
-    const loggedIn = !!localStorage.getItem('ue_uid');
-    if (location.hash === '#profile' && !loggedIn) {
-      __openProfile();
+// Profil butonu: girişliysen panel açma; girişsizsen panel aç
+const __btnProf = document.getElementById('btnProfile');
+if (__btnProf){
+  __btnProf.addEventListener('click', function(e){
+    e.preventDefault();
+    if (localStorage.getItem('ue_uid')) {
+      // Girişli: yalnızca URL #profile; panel kapalı kalsın
+      location.href = '/home.html#profile';
+      const box = document.getElementById('authBox');
+      const bd  = document.getElementById('backdrop');
+      if (box){ box.style.display='none'; box.setAttribute('aria-hidden','true'); box.classList.remove('center'); }
+      if (bd){ bd.style.display='none'; }
     } else {
-      __closeProfile();
+      // Girişsiz: URL + panel aç
+      location.hash = '#profile';
+      __openProfile();
     }
   });
-
-  // Profil butonu
-  const __btnProf = document.getElementById('btnProfile');
-  if (__btnProf){
-    __btnProf.addEventListener('click', function(e){
-      e.preventDefault();
-      const loggedIn = !!localStorage.getItem('ue_uid');
-
-      // Home'da değilsek: doğrudan /home.html#profile
-      if (location.pathname !== '/home.html') {
-        location.href = '/home.html#profile';
-        return;
-      }
-
-      // Home'dayız:
-      if (!loggedIn) {
-        // Girişsiz: hash zaten #profile olsa bile modalı ZORLA aç
-        if (location.hash !== '#profile') location.hash = '#profile';
-        __openProfile();
-      } else {
-        // Girişli: modal kapalı kalsın, sadece hash ayarla (yenilemesin)
-        if (location.hash !== '#profile') location.hash = '#profile';
-        __closeProfile();
-      }
-    });
-  }
+}
 </script>
-    </body>
-</html>
+  
+  </body>
+</html> 
