@@ -17,6 +17,10 @@
     html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 20% -10%,#10213f22,transparent),linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,'Noto Sans',sans-serif;max-width:100%;overflow-x:hidden}
     a{color:inherit}
 
+    /* Hero logo */
+    .heroLogo{display:flex;justify-content:center;align-items:center;margin-top:8px}
+    .heroLogo img{width:clamp(56px,10vw,96px);height:auto;display:block;filter:drop-shadow(0 6px 16px #0006)}
+
     /* Top */
     .wrap{max-width:1600px;margin:0 auto;padding:1rem}
     .top{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
@@ -68,7 +72,7 @@
     .auth{border:1px solid var(--brd);border-radius:16px;background:linear-gradient(180deg,#0c1426,#0b1220);padding:1rem;position:relative}
     .auth.center{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,95vw);max-height:85vh;overflow:auto;z-index:1001;box-shadow:0 20px 80px #0008}
     .backdrop{position:fixed;inset:0;background:#0009;backdrop-filter:saturate(0.8) blur(2px);z-index:1000}
-    .close{position:absolute;right:.6rem;top:.6rem;border:1px solid var(--brd);background:#0b1220;color:var(--ink);border-radius:10px;padding:.25rem .5rem;cursor:pointer;font-weight:800}
+    .close{position:absolute;right:.6rem;top:.6rem;border:1px solid var(--brd);background:#0b1220;color:#ink;border-radius:10px;padding:.25rem .5rem;cursor:pointer;font-weight:800}
     .tabs{display:flex;gap:.5rem;margin-bottom:.6rem}
     .tab{flex:1;text-align:center;padding:.55rem;border:1px solid var(--brd);border-radius:999px;background:#0b1220;cursor:pointer;font-weight:700;color:#fff}
     .tab[aria-selected="true"]{outline:2px solid var(--accent)}
@@ -92,15 +96,24 @@
     .lang select{background:#0a0f1c;border:1px solid var(--brd);color:var(--ink);border-radius:10px;padding:.45rem .6rem}
 
     @media(max-width:520px){
-      .cards{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+      .cards{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
       .listGrid{grid-template-columns:1fr}
+      /* Mobile: hover yokken vurguyu görünür tut */
+      .card{box-shadow:0 0 0 1px var(--glow, #22d3ee),0 0 18px var(--glow, #22d3ee)}
+      .card:hover{transform:none}
+      .card:active{transform:scale(.98)}
     }
+      .listGrid{grid-template-columns:1fr}
+      /* Mobile: renk vurgusu hover'a bağlı olmasın, sürekli görünsün */
+      .card{box-shadow:0 0 0 1px var(--glow, #22d3ee),0 0 18px var(--glow, #22d3ee)}
+      .card:hover{transform:none}
+      .card:active{transform:scale(.98)}
   </style>
+<link rel="preload" as="image" href="/assets/img/logo.png" />
 </head>
 <body>
   <div class="wrap">
-    <div class="top">
-      <div class="logo"><img src="//assets/icons/logo.svg" alt="logo" /><span>Üreten Eller</span></div>
+    <div class="top"><div class="logo"><img src="/assets/icons/logo.svg" alt="logo" /><span>Üreten Eller</span></div>
       <div class="spacer"></div>
       <div class="badge">🎉 <b>1000+ mutlu kullanıcı</b></div>
       <div class="lang" style="margin-left:.6rem"><select id="langSel" aria-label="Dil">
@@ -112,6 +125,7 @@
     </div>
 
     <div class="hero">
+      <div class="heroLogo"><img src="/assets/img/logo.png" alt="Üreten Eller" /></div>
       <div class="cta">
         <button class="btn primary" id="openSignup">Ücretsiz Kaydol</button>
         <button class="btn ghost" id="openLogin">Zaten Üyeyim (Giriş)</button>
@@ -216,7 +230,7 @@
   </footer>
 
   <script>
-  const HOME = "/docs/index.html";
+  const HOME = "/docs/home.html";
   const $=(s)=>document.querySelector(s);
   const $$=(s)=>Array.from(document.querySelectorAll(s));
   const COLORS=["#10b981","#f59e0b","#8b5cf6","#06b6d4","#ef4444","#eab308","#14b8a6","#f97316","#a855f7","#3b82f6"];
@@ -333,7 +347,7 @@
     const order=["food","cake","jar","winter","diet","jew","kid","knit","sew","mac","home","candle","soap","toys"];
     order.forEach(function(key,i){ const c=C[key]; if(!c) return; const col=COLORS[i%COLORS.length];
       const chips = c.s.map(function(s){ return '<span class=\'chip\'>'+s+'</span>'; }).join('');
-      const el=document.createElement('div'); el.className='card'; el.style.setProperty('--glow', col);
+      const el=document.createElement('div'); el.className='card'; el.style.setProperty('--glow', col); el.dataset.baseIndex=String(i%COLORS.length);
       el.innerHTML='<div class="halo" style="background:radial-gradient(420px 240px at 20% 0%,'+col+',transparent)"></div>'+
         '<div class="title">'+c.t+'</div>'+
         '<div class="chips">'+chips+'</div>';
@@ -341,12 +355,35 @@
     });
   }
 
+  // Mobilde kategori kartlarının renklerini otomatik döndür ve dokununca bir sonrakine geç
+  function startCardGlow(intervalMs=5000){
+    const cards = Array.from(document.querySelectorAll('#catGrid .card'));
+    if(!cards.length) return;
+    let tick = 0;
+    function paint(){
+      cards.forEach((card, i)=>{
+        const base = parseInt(card.dataset.baseIndex||i,10)||0;
+        const col = COLORS[(base + tick) % COLORS.length];
+        card.style.setProperty('--glow', col);
+        const halo = card.querySelector('.halo');
+        if(halo){ halo.style.background = `radial-gradient(420px 240px at 20% 0%, ${col}, transparent)`; }
+      });
+      tick = (tick + 1) % COLORS.length;
+    }
+    if(window.__catGlowInt){ clearInterval(window.__catGlowInt); }
+    paint();
+    window.__catGlowInt = setInterval(paint, intervalMs);
+    // dokununca/tıklayınca bir sonraki renge geç
+    cards.forEach(card=>{ card.addEventListener('click', ()=>{ tick = (tick + 1) % COLORS.length; paint(); }, { passive:true }); });
+  }
+
   // === Colorful, 25-slogan ticker that changes every 5s ===
   function renderSlogans(){
-    const t=TEXT[LANG]||TEXT.tr; const ticker=$('#ticker'); ticker.innerHTML='';
-    const arr=(t.slogans||TEXT.tr.slogans).slice(0,25); // ensure 25
-    // Create 5 visible slots
-    for(let i=0;i<5;i++){ const s=document.createElement('span'); s.className='tick'; ticker.appendChild(s); }
+    const t=TEXT[LANG]||TEXT.tr; const ticker=$('#ticker'); if(!ticker) return; ticker.innerHTML='';
+    const arr=(t.slogans||TEXT.tr.slogans).slice(0,25);
+    const isMobile = window.matchMedia('(max-width: 520px)').matches;
+    const SLOT = isMobile ? 2 : 5; // mobilde 2, masaüstünde 5
+    for(let i=0;i<SLOT;i++){ const s=document.createElement('span'); s.className='tick'; ticker.appendChild(s); }
     let start=0, hue=0;
     function paint(){
       const nodes=[...ticker.children];
@@ -357,32 +394,17 @@
         n.style.background=`linear-gradient(180deg,${c},#0b1220)`;
         n.style.borderColor='transparent';
       });
-      start=(start+5)%arr.length; hue=(hue+1)%COLORS.length;
+      start=(start+SLOT)%arr.length; hue=(hue+1)%COLORS.length;
     }
     paint(); clearInterval(window.__slogInt); window.__slogInt=setInterval(paint,5000);
+    if(!window.__slogResizeBound){
+      window.addEventListener('resize', ()=>{ clearTimeout(window.__slogRT); window.__slogRT=setTimeout(renderSlogans,200); });
+      window.__slogResizeBound=true;
+    }
   }
 
-  // === Listings: 50 items, rotate every 30 minutes ===
-  const FAKE_IMAGES=[
-  'https://images.unsplash.com/photo-1516257984-b1b4d707412e?q=80&w=800&auto=format&fit=crop', /* kazak */
-  'https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&w=800&auto=format&fit=crop', /* hırka */
-  'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?q=80&w=800&auto=format&fit=crop', /* kaşkol */
-  'https://images.unsplash.com/photo-1539533113208-f6df8cc8b543?q=80&w=800&auto=format&fit=crop', /* örgü detay */
-  'https://images.unsplash.com/photo-1542718610-b53f4d9ac508?q=80&w=800&auto=format&fit=crop'  /* kışlık */
-];
-
-const LISTINGS=Array.from({length:50}).map((_,i)=>{
-  const fake = i < 10; // ilk 10 ilanı sahte/örnek yap
-  const names=["Kazak","Hırka","Kaşkol","Triko Set","Örgü Atkı"];
-  return {
-    id:'x'+(i+1),
-    t: fake ? `${names[i%names.length]} – Örnek İlan #${i+1}` : `El işi ürün #${i+1}`,
-    price: (50+i*3)+' TL',
-    ago: (i%7+1)+' gün önce',
-    verified: !fake,
-    img: fake ? FAKE_IMAGES[i%FAKE_IMAGES.length] : null
-  };
-});
+  // === Listings: tüm örnek/sahte ve kalan (#11, #50) ilanlar kaldırıldı, liste boş bırakıldı
+const LISTINGS=[];
 
   function renderListings(){
     const grid=$('#listGrid'); if(!grid) return; grid.innerHTML='';
@@ -409,7 +431,7 @@ const LISTINGS=Array.from({length:50}).map((_,i)=>{
     const t=TEXT[LANG]||TEXT.tr; const names=t.legal||TEXT.tr.legal; const links=$$('.legal a'); links.forEach((a,i)=>{ if(names[i]) a.textContent=names[i]; });
   }
 
-  function initLangSelect(){ const sel=$('#langSel'); if(!sel) return; sel.value=LANG; sel.onchange=()=>{ LANG=sel.value; localStorage.setItem('ue_lang',LANG); setDir(); applyLang(); renderCats(); renderSlogans(); renderLegal(); }; }
+  function initLangSelect(){ const sel=$('#langSel'); if(!sel) return; sel.value=LANG; sel.onchange=()=>{ LANG=sel.value; localStorage.setItem('ue_lang',LANG); setDir(); applyLang(); renderCats(); startCardGlow(); renderSlogans(); renderLegal(); }; }
 
   // === Auth panel ===
   function bindAuthPanel(){
@@ -438,10 +460,124 @@ const LISTINGS=Array.from({length:50}).map((_,i)=>{
 
   function boot(){
     try{
-      setDir(); initLangSelect(); applyLang(); renderCats(); renderSlogans(); renderListings(); startListingRotation(); renderLegal(); bindAuthPanel(); $('#yr').textContent=new Date().getFullYear();
+      setDir(); initLangSelect(); applyLang(); renderCats(); startCardGlow(); renderSlogans(); renderListings(); startListingRotation(); renderLegal(); bindAuthPanel(); $('#yr').textContent=new Date().getFullYear();
     }catch(err){ console.error('Init error', err); }
   }
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot); } else { boot(); }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot);
+    // Ekran boyutu değişince mobil renk davranışını yeniden uygula
+    window.addEventListener('resize', ()=>{ clearTimeout(window.__catGlowRT); window.__catGlowRT=setTimeout(()=>{ startCardGlow(); },200); });
+  } else { boot(); }
   </script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+import { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, updateProfile, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ',
+  authDomain: 'ureteneller-ecaac.firebaseapp.com',
+  projectId: 'ureteneller-ecaac',
+  storageBucket: 'ureteneller-ecaac.firebasestorage.app',
+  messagingSenderId: '368042877151',
+  appId: '1:368042877151:web:ee0879fc4717928079c96a',
+  measurementId: 'G-BJHKN8V4RQ'
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence).catch(()=>{});
+
+function $(s){ return document.querySelector(s); }
+function rmListeners(el){ if(!el) return null; const n=el.cloneNode(true); el.replaceWith(n); return n; }
+
+let loginForm=rmListeners(document.getElementById('loginForm'));
+let signupForm=rmListeners(document.getElementById('signupForm'));
+let gLoginBtn=rmListeners(document.getElementById('gLogin'));
+let gSignupBtn=rmListeners(document.getElementById('gSignup'));
+let forgotBtn=rmListeners(document.getElementById('forgotBtn'));
+
+const HOME = '/docs/index.html';
+
+function uiBusy(form, busy){ const btns = form ? form.querySelectorAll('button, input, select') : []; btns.forEach(b=> b.disabled=busy); }
+
+const provider = new GoogleAuthProvider();
+
+if(gLoginBtn) gLoginBtn.addEventListener('click', async ()=>{
+  const out = $('#lmsg');
+  try{ await signInWithPopup(auth, provider); location.href = HOME; }
+  catch(err){ if(out) out.textContent = trAuthErr(err); }
+});
+
+if(gSignupBtn) gSignupBtn.addEventListener('click', async ()=>{
+  const out = $('#smsg');
+  try{ await signInWithPopup(auth, provider); location.href = HOME; }
+  catch(err){ if(out) out.textContent = trAuthErr(err); }
+});
+
+if(loginForm) loginForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = $('#lemail')?.value?.trim();
+  const pass = $('#lpass')?.value;
+  const out = $('#lmsg');
+  uiBusy(loginForm,true);
+  try{
+    const res = await signInWithEmailAndPassword(auth, email, pass);
+    const user = res.user;
+    if(!user.emailVerified){
+      await sendEmailVerification(user);
+      if(out) out.innerHTML = 'E‑posta doğrulaması gönderildi. Lütfen e‑postayı onaylayın ve tekrar giriş yapın.';
+      await signOut(auth);
+      return;
+    }
+    location.href = HOME;
+  }catch(err){ if(out) out.textContent = trAuthErr(err); }
+  finally{ uiBusy(loginForm,false); }
+});
+
+if(signupForm) signupForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = $('#semail')?.value?.trim();
+  const pass = $('#spass')?.value;
+  const pass2= $('#spass2')?.value;
+  const name = $('#sname')?.value?.trim();
+  const surname = $('#ssurname')?.value?.trim();
+  const username = $('#suser')?.value?.trim();
+  const out = $('#smsg');
+  if(pass!==pass2){ if(out) out.textContent='Şifreler eşleşmiyor.'; return; }
+  uiBusy(signupForm,true);
+  try{
+    const { user } = await createUserWithEmailAndPassword(auth, email, pass);
+    const displayName = (name && surname) ? (name+' '+surname) : (username || '');
+    if(displayName){ try{ await updateProfile(user, { displayName }); }catch(_){} }
+    await sendEmailVerification(user);
+    if(out) out.innerHTML = 'Kayıt oluşturuldu. Lütfen e‑postadaki doğrulama bağlantısını tıklayın, sonra giriş yapın.';
+  }catch(err){ if(out) out.textContent = trAuthErr(err); }
+  finally{ uiBusy(signupForm,false); }
+});
+
+if(forgotBtn) forgotBtn.addEventListener('click', async ()=>{
+  const email = $('#lemail')?.value?.trim() || $('#semail')?.value?.trim();
+  const out = $('#lmsg');
+  if(!email){ if(out) out.textContent='Lütfen e‑posta adresini yaz.'; return; }
+  try{ await sendPasswordResetEmail(auth, email); if(out) out.textContent='Şifre sıfırlama e‑postası gönderildi.'; }
+  catch(err){ if(out) out.textContent = trAuthErr(err); }
+});
+
+function trAuthErr(err){
+  const c = err?.code || '';
+  switch(c){
+    case 'auth/invalid-email': return 'Geçersiz e‑posta.';
+    case 'auth/missing-password': return 'Şifre eksik.';
+    case 'auth/weak-password': return 'Şifre zayıf (en az 6 karakter).';
+    case 'auth/email-already-in-use': return 'Bu e‑posta zaten kayıtlı.';
+    case 'auth/user-not-found':
+    case 'auth/wrong-password': return 'E‑posta veya şifre hatalı.';
+    case 'auth/popup-blocked': return 'Tarayıcı açılır pencereyi engelledi.';
+    case 'auth/popup-closed-by-user': return 'Google penceresi kapatıldı.';
+    default: return 'İşlem başarısız: '+c;
+  }
+}
+
+onAuthStateChanged(auth, (user)=>{ /* console.log('auth', user?.uid) */ });
+</script>
 </body>
 </html>
