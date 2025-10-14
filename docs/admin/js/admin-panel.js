@@ -1,9 +1,17 @@
-// docs/admin/js/admin-panel.js (güncel)
+// docs/admin/js/admin-panel.js
 
 import { db } from "./firebase-init.js";
 import {
   collection, query, where, getDocs, doc, updateDoc, getDoc
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+/* ========== YARDIMCI ========== */
+function tsToMs(tsLike) {
+  if (!tsLike) return 0;
+  if (typeof tsLike.toDate === "function") return tsLike.toDate().getTime();
+  if (tsLike instanceof Date) return tsLike.getTime?.() || 0;
+  return 0;
+}
 
 /* ========== DASHBOARD ========== */
 async function loadMetrics() {
@@ -13,10 +21,11 @@ async function loadMetrics() {
     getDocs(query(collection(db, "listings"), where("status", "==", "pending"))),
     getDocs(query(collection(db, "orders"),   where("state", "in", ["open", "shipping"]))),
   ]);
-  document.getElementById("mUsers").textContent    = `${qs[0].size}`;
-  document.getElementById("mListings").textContent = `${qs[1].size}`;
-  document.getElementById("mPending").textContent  = `${qs[2].size}`;
-  document.getElementById("mOrders").textContent   = `${qs[3].size}`;
+  const g = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = String(val); };
+  g("mUsers", qs[0].size);
+  g("mListings", qs[1].size);
+  g("mPending", qs[2].size);
+  g("mOrders", qs[3].size);
 }
 
 /* ========== KULLANICILAR ========== */
@@ -24,22 +33,14 @@ const usersBody = document.getElementById("usersBody");
 const qUser = document.getElementById("qUser");
 const btnReloadUsers = document.getElementById("btnReloadUsers");
 
-function tsToMs(tsLike) {
-  if (!tsLike) return 0;
-  // Firestore Timestamp -> Date -> ms
-  if (typeof tsLike.toDate === "function") return tsLike.toDate().getTime();
-  // JS Date
-  if (tsLike instanceof Date) return tsLike.getTime?.() || 0;
-  return 0;
-}
-
 async function loadUsers() {
+  if (!usersBody) return;
   usersBody.innerHTML = `<tr><td colspan="6">Yükleniyor…</td></tr>`;
 
-  const snap = await getDocs(collection(db, "users")); // orderBy yerine client-side sırala (createdAt/created_at yoksa kırılmasın)
+  // orderBy(createdAt) yerine client-side sıralama (oluşturulmamış alanlarda hata olmasın)
+  const snap = await getDocs(collection(db, "users"));
   const term = (qUser?.value || "").toLowerCase();
 
-  const rows = [];
   const items = [];
   snap.forEach(d => {
     const u = d.data();
@@ -58,32 +59,28 @@ async function loadUsers() {
     if (term && !(f.includes(term) || m.includes(term) || c.includes(term))) return;
 
     items.push({
-      id: d.id,
-      fullName, email, role, city, isPro, banned,
-      createdMs: tsToMs(created),
-      raw: u
+      id: d.id, fullName, email, role, city, isPro, banned,
+      createdMs: tsToMs(created), raw: u
     });
   });
 
   // yeni > eski
   items.sort((a,b)=> b.createdMs - a.createdMs);
 
-  for (const it of items) {
-    rows.push(`
-      <tr>
-        <td>${it.fullName}</td>
-        <td>${it.email}</td>
-        <td>${it.role}</td>
-        <td>${it.city}</td>
-        <td>${it.isPro ? "PRO" : "-"}</td>
-        <td>
-          <button class="btn-sm" data-act="make-admin" data-id="${it.id}">Admin</button>
-          <button class="btn-sm" data-act="toggle-pro" data-id="${it.id}">${it.isPro ? "PRO İptal" : "PRO Ver"}</button>
-          <button class="btn-sm" data-act="ban" data-id="${it.id}">${it.banned ? "Ban Kaldır" : "Banla"}</button>
-        </td>
-      </tr>
-    `);
-  }
+  const rows = items.map(it => `
+    <tr>
+      <td>${it.fullName}</td>
+      <td>${it.email}</td>
+      <td>${it.role}</td>
+      <td>${it.city}</td>
+      <td>${it.isPro ? "PRO" : "-"}</td>
+      <td>
+        <button class="btn-sm" data-act="make-admin" data-id="${it.id}">Admin</button>
+        <button class="btn-sm" data-act="toggle-pro" data-id="${it.id}">${it.isPro ? "PRO İptal" : "PRO Ver"}</button>
+        <button class="btn-sm" data-act="ban" data-id="${it.id}">${it.banned ? "Ban Kaldır" : "Banla"}</button>
+      </td>
+    </tr>
+  `);
 
   usersBody.innerHTML = rows.join("") || `<tr><td colspan="6">Kayıt yok.</td></tr>`;
 }
@@ -98,7 +95,7 @@ usersBody?.addEventListener("click", async (e) => {
   if (act === "make-admin") {
     await updateDoc(ref, { role: "admin" });
   } else if (act === "toggle-pro") {
-    // Her iki alanı da güncelle (snake + camel); mevcut buton yazısından durum çıkar
+    // buton yazısından mevcut durumu çıkar, her iki alanı da güncelle (snake + camel)
     const isProNow = btn.textContent.includes("İptal");
     const newVal = !isProNow;
     await updateDoc(ref, { isPro: newVal, is_pro: newVal });
@@ -119,10 +116,10 @@ const listingsBody = document.getElementById("listingsBody");
 const btnReloadListings = document.getElementById("btnReloadListings");
 
 async function loadListings() {
+  if (!listingsBody) return;
   listingsBody.innerHTML = `<tr><td colspan="6">Yükleniyor…</td></tr>`;
   const st = listingFilter?.value || "pending";
 
-  // orderBy( createdAt ) yerine client-side sırala (createdAt/created_at olmayabilir)
   const q = query(collection(db, "listings"), where("status", "==", st));
   const snap = await getDocs(q);
 
@@ -171,7 +168,6 @@ listingsBody?.addEventListener("click", async (e) => {
   if (act === "approve") await updateDoc(ref, { status: "approved" });
   if (act === "reject")  await updateDoc(ref, { status: "rejected" });
   if (act === "feature") {
-    // mevcut değeri okuyup toggle et
     const s = await getDoc(ref);
     const cur = s.exists() ? !!s.data().featured : false;
     await updateDoc(ref, { featured: !cur });
@@ -184,7 +180,22 @@ listingsBody?.addEventListener("click", async (e) => {
 btnReloadListings?.addEventListener("click", loadListings);
 listingFilter?.addEventListener("change", loadListings);
 
-/* ========== İLK YÜK ========== */
-loadMetrics();
-loadUsers();
-loadListings();
+/* ========== INIT: guard sinyali sonrası başlat ========== */
+async function initPanel() {
+  try {
+    await loadMetrics();
+    await loadUsers();
+    await loadListings();
+  } catch (e) {
+    console.error("initPanel error:", e);
+    alert(`Panel yüklenemedi: ${e?.code || ""} ${e?.message || e}`);
+  }
+}
+
+// Guard "admin-ready" olayı yayınladığında başlat
+window.addEventListener("admin-ready", initPanel);
+
+// Guard daha önce bitirdiyse (sayfa çok hızlı yüklendiyse) hemen başlat
+if (document.body.dataset.ready === "1") {
+  initPanel();
+}
