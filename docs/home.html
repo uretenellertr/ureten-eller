@@ -617,40 +617,41 @@
   const btnLogout = document.getElementById('btnLogout');
   if(btnLogout){ btnLogout.addEventListener('click', ()=>{ try{ /* Firebase mevcutsa signOut burada olabilir */ }catch(_){} location.href='/docs/auth.html'; }); }
   
-  // #profile ile gelinirse otomatik aç (sadece girişsizken)
-window.addEventListener('load', function(){
-  if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
-    __openProfile();
-  }
-});
+  <!-- Profil butonu: girişliysen sadece URL'i #profile yap; girişsizsen paneli aç -->
+<script>
+  const __btnProf = document.getElementById('btnProfile');
 
-// Giriş panelini açar
-function __openProfile(){
-  const bd = document.getElementById('backdrop');
-  const box = document.getElementById('authBox');
-  if (bd) bd.style.display = 'block';
-  if (box){
-    box.style.display = 'block';
-    box.classList.add('center');
-    box.setAttribute('aria-hidden','false');
+  function __openProfile(){
+    const bd = document.getElementById('backdrop');
+    const box = document.getElementById('authBox');
+    if (bd) bd.style.display = 'block';
+    if (box){
+      box.style.display = 'block';
+      box.classList.add('center');
+      box.setAttribute('aria-hidden','false');
+    }
   }
-}
 
-// Profil butonu: girişliysen profil paneli, değilse giriş paneli
-const __btnProf = document.getElementById('btnProfile');
-if (__btnProf){
-  __btnProf.addEventListener('click', function(e){
-    e.preventDefault();
-    if (localStorage.getItem('ue_uid')) {
-      location.hash = '#profile';
-      __openProfile();
-    } else {
-      location.hash = '#profile';
+  // Sayfa yüklenince #profile ile gelindiyse ve girişsizsen paneli aç
+  window.addEventListener('load', function(){
+    if (location.hash === '#profile' && !localStorage.getItem('ue_uid')) {
       __openProfile();
     }
   });
-}
 
+  if (__btnProf){
+    __btnProf.addEventListener('click', function(e){
+      e.preventDefault();
+      if (localStorage.getItem('ue_uid')) {
+        // Girişli: sadece URL değişsin, panel açılmasın
+        location.href = '/home.html#profile';
+      } else {
+        // Girişsiz: URL + panel
+        location.hash = '#profile';
+        __openProfile();
+      }
+    });
+  }
 </script>
 </body> 
 </html>
