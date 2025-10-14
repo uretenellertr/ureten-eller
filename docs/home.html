@@ -613,70 +613,90 @@
   function copyText(txt){ if(!txt) return; if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(()=>showToast('Kopyalandı')).catch(()=>showToast('Kopyalanamadı')); } else { const ta=document.createElement('textarea'); ta.value=txt; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); showToast('Kopyalandı'); }catch(_){ showToast('Kopyalanamadı'); } finally{ document.body.removeChild(ta); } } }
   $$('.btn.copy').forEach(b=> b.addEventListener('click', ()=> copyText(b.getAttribute('data-copy')) ));
 
-    // Logout: auth ekranına yönlendir
-  const btnLogout = document.getElementById('btnLogout');
-  if (btnLogout) {
-    btnLogout.addEventListener('click', () => {
-      try { /* Firebase signOut burada olabilir */ } catch (_) {}
-      location.href = '/docs/auth.html';
-    });
-  }
+    <!-- === PROFIL AKIŞI & LOGOUT (TEK BLOK) === -->
+>
+  // Logout: auth ekranına yönlendir
+  (function(){
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogout) {
+      btnLogout.addEventListener('click', () => {
+        try { /* Firebase signOut burada olabilir */ } catch (_) {}
+        location.href = '/docs/auth.html';
+      });
+    }
+  })();
 
-// ---- PROFIL AKIŞI ----
-function __openProfile(){
-  const bd  = document.getElementById('backdrop');
-  const box = document.getElementById('authBox');
-  if (bd)  bd.style.display = 'block';
-  if (box){
-    box.style.display = 'block';
-    box.classList.add('center');
-    box.setAttribute('aria-hidden','false');
-  }
-}
+  // ---- PROFIL AKIŞI ----
+  (function(){
+    const PATH_HOME = '/docs/home.html'; // bu sayfa
+    const btn  = document.getElementById('btnProfile');
+    const box  = document.getElementById('authBox');
+    const bd   = document.getElementById('backdrop');
+    const prof = document.getElementById('profile');
+    const isIn = () => !!localStorage.getItem('ue_uid');
 
-// #profile ile geldiyse:
-window.addEventListener('load', function(){
-  const loggedIn = !!localStorage.getItem('ue_uid');
+    if (prof) prof.style.scrollMarginTop = '80px'; // sabit header varsa hizalama
 
-  // Girişsiz: paneli otomatik aç
-  if (location.hash === '#profile' && !loggedIn) {
-    __openProfile();
-  }
-
-  // Girişli: aşağıya zıpladıysa hemen yukarı al
-  if (location.hash === '#profile' && loggedIn) {
-    // hash kalsın ama scroll'u en üste çek
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  }
-});
-
-// Profil butonu
-const __btnProf = document.getElementById('btnProfile');
-if (__btnProf){
-  __btnProf.addEventListener('click', function(e){
-    const loggedIn = !!localStorage.getItem('ue_uid');
-
-    if (!loggedIn){
-      // Girişsiz: URL'yi #profile yap ve paneli aç
-      e.preventDefault();
-      if (location.hash !== '#profile') history.replaceState(null, '', location.pathname + '#profile');
-      __openProfile();
-      return;
+    function openProfilePanel(){
+      if (bd)  bd.style.display = 'block';
+      if (box){
+        box.style.display = 'block';
+        box.classList.add('center');
+        box.setAttribute('aria-hidden','false');
+      }
+    }
+    function closeProfilePanel(){
+      if (box){
+        box.style.display='none';
+        box.classList.remove('center');
+        box.setAttribute('aria-hidden','true');
+      }
+      if (bd){ bd.style.display='none'; }
     }
 
-    // Girişli: aşağıya kaymasın — sadece URL'de #profile görünsün
-    e.preventDefault();
-    history.replaceState(null, '', location.pathname + '#profile'); // URL'yi güncelle
-    // panel kapalı kalsın, sayfa yerinde kalsın
-    const box = document.getElementById('authBox');
-    const bd  = document.getElementById('backdrop');
-    if (box){ box.style.display='none'; box.setAttribute('aria-hidden','true'); box.classList.remove('center'); }
-    if (bd){ bd.style.display='none'; }
-    // garanti olsun diye en üste sabitle
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  });
-}
+    // Sayfa #profile ile açılırsa
+    window.addEventListener('load', function(){
+      if (location.hash === '#profile'){
+        if (!isIn()){
+          // girişsiz: paneli otomatik aç, aşağı zıplama olmasın
+          openProfilePanel();
+          setTimeout(()=>{ window.scrollTo({top:0,left:0,behavior:'instant'}); }, 0);
+        } else {
+          // girişli: sayfayı üste sabitle, panel kapalı kalsın
+          closeProfilePanel();
+          setTimeout(()=>{ window.scrollTo({top:0,left:0,behavior:'instant'}); }, 0);
+        }
+      }
+    });
+
+    // Profil butonu tıklaması
+    if (btn){
+      btn.addEventListener('click', function(e){
+        const loggedIn = isIn();
+
+        if (!loggedIn){
+          // GİRİŞSİZ: kaydırma yok, panel aç. URL #profile olsun ama scroll tetikleme.
+          e.preventDefault();
+          if (location.hash !== '#profile'){
+            history.pushState(null, '', PATH_HOME + '#profile');
+          }
+          openProfilePanel();
+          return;
+        }
+
+        // GİRİŞLİ: hiçbir yere kaydırma, panel kapalı kalsın, URL #profile görünsün.
+        e.preventDefault();
+        closeProfilePanel();
+        if (location.pathname + location.hash !== PATH_HOME + '#profile'){
+          history.replaceState(null, '', PATH_HOME + '#profile');
+        }
+        // garanti: üste sabitle
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      });
+    }
+  })();
 </script>
+
 
 <!-- Anchor davranışını iyileştiren genel yardımcı -->
 <script src="/script.js?v=1"></script>
