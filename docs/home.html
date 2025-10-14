@@ -636,13 +636,14 @@ function __openProfile(){
   }
 }
 
-// Profil butonu: girişliysen profile.html, değilse giriş paneli
+// Profil butonu: girişliysen profil paneli, değilse giriş paneli
 const __btnProf = document.getElementById('btnProfile');
 if (__btnProf){
   __btnProf.addEventListener('click', function(e){
     e.preventDefault();
     if (localStorage.getItem('ue_uid')) {
-      location.href = '/profile.html';
+      location.hash = '#profile';
+      __openProfile();
     } else {
       location.hash = '#profile';
       __openProfile();
