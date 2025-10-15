@@ -615,74 +615,117 @@
   $$('.btn.copy').forEach(b=> b.addEventListener('click', ()=> copyText(b.getAttribute('data-copy')) ));
 
     <!-- === PROFIL AKIŞI & LOGOUT (TEK BLOK) === -->
-  // Logout: auth ekranına yönlendir
-  (function(){
-    const btnLogout = document.getElementById('btnLogout');
-    if (btnLogout) {
-      btnLogout.addEventListener('click', () => {
-        try { /* Firebase signOut burada olabilir */ } catch (_) {}
-        location.href = '/docs/auth.html';
-      });
+(function(){
+  // --- Yardımcılar ---
+  const $  = (s) => document.querySelector(s);
+  const byId = (id) => document.getElementById(id);
+  const isLoggedIn = () => !!localStorage.getItem('ue_uid');
+
+  // --- Elemanlar ---
+  const btnLogout  = byId('btnLogout');   // varsa logout
+  const btnProfile = byId('btnProfile');  // navbar/menüdeki Profil butonu (varsa)
+  const backdrop   = byId('backdrop');    // <div id="backdrop">
+  const authBox    = byId('authBox');     // <div id="authBox"> (login/signup modal)
+
+  // --- Modal kontrolü ---
+  function openProfilePanel(){
+    if (backdrop) backdrop.style.display = 'block';
+    if (authBox){
+      authBox.style.display = 'block';
+      authBox.classList.add('center');
+      authBox.setAttribute('aria-hidden','false');
     }
-  })();
+    // hash anchor’ın sayfayı aşağı itmesini engelle
+    requestAnimationFrame(()=> window.scrollTo(0,0));
+  }
 
-  // ---- PROFIL AKIŞI ----
-  (function(){
-    const btn  = document.getElementById('btnProfile');
-    const box  = document.getElementById('authBox');
-    const bd   = document.getElementById('backdrop');
-    const isIn = () => !!localStorage.getItem('ue_uid');
+  function closeProfilePanel(){
+    if (authBox){
+      authBox.style.display = 'none';
+      authBox.classList.remove('center');
+      authBox.setAttribute('aria-hidden','true');
+    }
+    if (backdrop) backdrop.style.display = 'none';
+  }
 
-    function openProfilePanel(){
-      if (bd)  bd.style.display = 'block';
-      if (box){
-        box.style.display = 'block';
-        box.classList.add('center');
-        box.setAttribute('aria-hidden','false');
+  // --- Logout (isteğe bağlı) ---
+  if (btnLogout){
+    btnLogout.addEventListener('click', () => {
+      try { /* Firebase signOut(auth) vb. burada olabilir */ } catch (_) {}
+      location.href = '/docs/auth.html';
+    });
+  }
+
+  // --- #profile ile açılırsa davranış ---
+  function handleHash(){
+    if (location.hash === '#profile'){
+      if (isLoggedIn()){
+        // Girişli: modal kapalı kalsın, konum en üstte olsun
+        closeProfilePanel();
+        requestAnimationFrame(()=> window.scrollTo(0,0));
+      }else{
+        // Girişsiz: modal aç
+        openProfilePanel();
       }
     }
-    function closeProfilePanel(){
-      if (box){
-        box.style.display='none';
-        box.classList.remove('center');
-        box.setAttribute('aria-hidden','true');
-      }
-      if (bd){ bd.style.display='none'; }
+  }
+
+  window.addEventListener('load', handleHash);
+  window.addEventListener('hashchange', handleHash);
+
+  // --- Sayfadaki tüm #profile linklerini ele al (tam sayfa yüklemeden modal aç) ---
+  document.addEventListener('click', function(e){
+    const a = e.target.closest('a[href$="#profile"]');
+    if (!a) return;
+
+    e.preventDefault();
+    // Her zaman kök dizin üzerinde kalsın (index.html), sadece hash güncellensin
+    if (location.pathname !== '/'){
+      history.replaceState(null,'','/#profile');
+    } else {
+      history.replaceState(null,'','#profile');
     }
 
-    // Sayfa #profile ile açılırsa
-    window.addEventListener('load', function(){
-      if (location.hash === '#profile'){
-        if (!isIn()){
-          openProfilePanel();
-          // olası otomatik kaymayı iptal et
-          setTimeout(()=>{ window.scrollTo({top:0,left:0,behavior:'instant'}); }, 0);
-        } else {
-          closeProfilePanel();
-          setTimeout(()=>{ window.scrollTo({top:0,left:0,behavior:'instant'}); }, 0);
-        }
+    if (isLoggedIn()){
+      closeProfilePanel();
+      requestAnimationFrame(()=> window.scrollTo(0,0));
+    }else{
+      openProfilePanel();
+    }
+  }, { capture:true });
+
+  // --- Profil butonu (id="btnProfile") varsa aynı mantık ---
+  if (btnProfile){
+    btnProfile.addEventListener('click', function(e){
+      e.preventDefault();
+      if (location.pathname !== '/'){
+        history.replaceState(null,'','/#profile');
+      } else {
+        history.replaceState(null,'','#profile');
+      }
+      if (isLoggedIn()){
+        closeProfilePanel();
+        requestAnimationFrame(()=> window.scrollTo(0,0));
+      }else{
+        openProfilePanel();
       }
     });
+  }
 
-    // Profil butonu
-    if (btn){
-      btn.addEventListener('click', function(e){
-        e.preventDefault();                 // tam yol isteği olmasın
-        history.replaceState(null,'','#profile'); // sadece hash değişsin
+  // --- Backdrop tıklayınca modalı kapat ---
+  if (backdrop){
+    backdrop.addEventListener('click', closeProfilePanel);
+  }
 
-        if (!isIn()){
-          openProfilePanel();               // girişsiz: panel aç
-        } else {
-          closeProfilePanel();              // girişli: panel kapalı kalsın
-          window.scrollTo({ top: 0, behavior: 'instant' }); // sayfa zıplamasın
-        }
-      });
+  // ESC ile kapat
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape' && authBox && authBox.classList.contains('center')){
+      closeProfilePanel();
     }
-  })();
+  });
+})();
 </script>
 
-<!-- Anchor davranışını iyileştiren genel yardımcı -->
-<script src="/script.js?v=1"></script>
 
   </body>
 </html> 
