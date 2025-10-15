@@ -7,6 +7,7 @@
   <title>Giriş • Üreten Eller</title>
   <meta name="description" content="Üreten Eller'e giriş yapın veya kayıt olun. Google ile giriş, e‑posta doğrulama, şifre sıfırlama." />
   <link rel="icon" href="/assets/icons/favicon-32x32.png" />
+  <link rel="stylesheet" href="/style.css?v=1" />
   <style>
     :root{
       --bg1:#0b1220; --bg2:#0a0f1c; --ink:#e5e7eb; --muted:#9ca3af; --accent:#22d3ee;
@@ -36,7 +37,6 @@
     /* Ticker */
     .ticker{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin:.8rem auto 0}
     .tick{font-weight:800;border:1px solid var(--brd);border-radius:999px;padding:.28rem .6rem;transition:transform .2s ease, filter .2s ease}
-    .tick:hover{transform:translateY(-1px);filter:brightness(1.1)}
 
     /* CTA */
     .cta{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:.35rem}
@@ -51,7 +51,7 @@
     /* Category cards */
     .cards{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));align-items:stretch}
     .card{position:relative;border:1px solid var(--brd);border-radius:16px;padding:.9rem;background:linear-gradient(145deg,var(--card),var(--card2));overflow:hidden;transition:box-shadow .25s,transform .15s}
-.card:hover{transform:translateY(-2px);box-shadow:0 0 0 1px var(--glow, #22d3ee),0 0 26px var(--glow, #22d3ee)}
+    .card:hover{transform:translateY(-2px);box-shadow:0 0 0 1px var(--glow, #22d3ee),0 0 26px var(--glow, #22d3ee)}
     .card .title{font-weight:900}
     .chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.5rem}
     .chip{font-size:.75rem;border:1px solid var(--brd);border-radius:999px;padding:.18rem .5rem;background:#0a162c}
@@ -98,18 +98,19 @@
     @media(max-width:520px){
       .cards{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
       .listGrid{grid-template-columns:1fr}
-      /* Mobile: hover yokken vurguyu görünür tut */
       .card{box-shadow:0 0 0 1px var(--glow, #22d3ee),0 0 18px var(--glow, #22d3ee)}
       .card:hover{transform:none}
       .card:active{transform:scale(.98)}
     }
-      .listGrid{grid-template-columns:1fr}
-      /* Mobile: renk vurgusu hover'a bağlı olmasın, sürekli görünsün */
-      .card{box-shadow:0 0 0 1px var(--glow, #22d3ee),0 0 18px var(--glow, #22d3ee)}
-      .card:hover{transform:none}
-      .card:active{transform:scale(.98)}
+    .listGrid{grid-template-columns:1fr}
+    .card{box-shadow:0 0 0 1px var(--glow, #22d3ee),0 0 18px var(--glow, #22d3ee)}
+    .card:hover{transform:none}
+    .card:active{transform:scale(.98)}
+
+    /* Anchor hedefini devre dışı bırak (scroll olmasın) */
+    #profile{position:fixed; top:-100vh; height:0; overflow:hidden}
   </style>
-<link rel="preload" as="image" href="/assets/img/logo.png" />
+  <link rel="preload" as="image" href="/assets/img/logo.png" />
 </head>
 <body>
   <div class="wrap">
@@ -135,7 +136,6 @@
       <div class="ticker" id="ticker"></div>
     </div>
 
-    <!-- 50 İLANLIK ALAN -->
     <section class="listWrap" aria-labelledby="listTitle">
       <div class="listHead"><h2 id="listTitle" style="margin:0;font-size:clamp(18px,2.4vw,26px)">Son İlanlar</h2><span class="mini" id="listCount">(50)</span></div>
       <div class="listGrid" id="listGrid"></div>
@@ -143,19 +143,16 @@
     </section>
 
     <div class="grid" id="grid">
-      <!-- LEFT: categories -->
       <div>
         <div class="cards" id="catGrid"></div>
       </div>
 
-      <!-- RIGHT: auth box -->
       <div class="auth" id="authBox" aria-hidden="true" style="display:none"><button class="close" id="closeAuth" aria-label="Kapat">✕</button>
         <div class="tabs" role="tablist">
           <button class="tab" id="tabLogin" role="tab" aria-selected="true">Giriş Yap</button>
           <button class="tab" id="tabSignup" role="tab" aria-selected="false">Kayıt Ol</button>
         </div>
 
-        <!-- LOGIN -->
         <form id="loginForm" novalidate>
           <div class="field"><label for="lemail">E‑posta</label><input id="lemail" type="email" required /></div>
           <div class="field"><label for="lpass">Şifre</label><div class="input"><input id="lpass" type="password" required /><button type="button" class="btn" style="padding:.35rem .6rem" data-toggle="lpass">Göster</button></div></div>
@@ -169,7 +166,6 @@
           <div id="lmsg" class="muted" style="margin-top:.4rem"></div>
         </form>
 
-        <!-- SIGNUP -->
         <form id="signupForm" style="display:none" novalidate>
           <div class="field"><label for="suser">Kullanıcı Adı</label><input id="suser" type="text" required /></div>
           <div class="field"><label for="sname">İsim</label><input id="sname" type="text" required /></div>
@@ -194,6 +190,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Anchor hedefi; scroll'u CSS iptal ediyor -->
+  <div id="profile" aria-hidden="true"></div>
 
   <!-- FOOTER / LEGAL -->
   <div id="backdrop" class="backdrop" style="display:none"></div>
@@ -235,7 +234,6 @@
   const $$=(s)=>Array.from(document.querySelectorAll(s));
   const COLORS=["#10b981","#f59e0b","#8b5cf6","#06b6d4","#ef4444","#eab308","#14b8a6","#f97316","#a855f7","#3b82f6"];
 
-  // === Language packs (UI + categories + slogans + legal) ===
   const TEXT={
     tr:{signup:"Ücretsiz Kaydol",loginBtn:"Zaten Üyeyim (Giriş)",welcome:"Üreten Ellere Hoş Geldiniz",tagline:"Aracısız alışveriş",tabLogin:"Giriş Yap",tabSignup:"Kayıt Ol",forgot:"Şifremi Unuttum",gLogin:"🔐 Google ile Giriş",gCont:"⚡ Google ile Devam",loginSubmit:"Giriş Yap",signupSubmit:"Kayıt Ol",
       cats:{
@@ -355,7 +353,6 @@
     });
   }
 
-  // Mobilde kategori kartlarının renklerini otomatik döndür ve dokununca bir sonrakine geç
   function startCardGlow(intervalMs=5000){
     const cards = Array.from(document.querySelectorAll('#catGrid .card'));
     if(!cards.length) return;
@@ -373,16 +370,14 @@
     if(window.__catGlowInt){ clearInterval(window.__catGlowInt); }
     paint();
     window.__catGlowInt = setInterval(paint, intervalMs);
-    // dokununca/tıklayınca bir sonraki renge geç
     cards.forEach(card=>{ card.addEventListener('click', ()=>{ tick = (tick + 1) % COLORS.length; paint(); }, { passive:true }); });
   }
 
-  // === Colorful, 25-slogan ticker that changes every 5s ===
   function renderSlogans(){
     const t=TEXT[LANG]||TEXT.tr; const ticker=$('#ticker'); if(!ticker) return; ticker.innerHTML='';
     const arr=(t.slogans||TEXT.tr.slogans).slice(0,25);
     const isMobile = window.matchMedia('(max-width: 520px)').matches;
-    const SLOT = isMobile ? 2 : 5; // mobilde 2, masaüstünde 5
+    const SLOT = isMobile ? 2 : 5;
     for(let i=0;i<SLOT;i++){ const s=document.createElement('span'); s.className='tick'; ticker.appendChild(s); }
     let start=0, hue=0;
     function paint(){
@@ -403,9 +398,7 @@
     }
   }
 
-  // === Listings: tüm örnek/sahte ve kalan (#11, #50) ilanlar kaldırıldı, liste boş bırakıldı
-const LISTINGS=[];
-
+  const LISTINGS=[];
   function renderListings(){
     const grid=$('#listGrid'); if(!grid) return; grid.innerHTML='';
     LISTINGS.forEach(function(x,idx){
@@ -421,7 +414,6 @@ const LISTINGS=[];
     $('#listCount').textContent='('+LISTINGS.length+')';
   }
 
-  // Rotate listings (simulate showcase refresh)
   function startListingRotation(){
     clearInterval(window.__listInt);
     window.__listInt=setInterval(()=>{ if(LISTINGS.length){ LISTINGS.push(LISTINGS.shift()); renderListings(); } }, 30*60*1000);
@@ -433,7 +425,6 @@ const LISTINGS=[];
 
   function initLangSelect(){ const sel=$('#langSel'); if(!sel) return; sel.value=LANG; sel.onchange=()=>{ LANG=sel.value; localStorage.setItem('ue_lang',LANG); setDir(); applyLang(); renderCats(); startCardGlow(); renderSlogans(); renderLegal(); }; }
 
-  // === Auth panel ===
   function bindAuthPanel(){
     const grid=$('#grid'); const box=$('#authBox'); const bd=$('#backdrop');
     const tabLogin=$('#tabLogin'); const tabSignup=$('#tabSignup');
@@ -447,9 +438,7 @@ const LISTINGS=[];
     tabSignup.onclick=()=>sel('signup');
     $('#closeAuth').onclick=close; if(bd){ bd.onclick=close; }
     document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && box.classList.contains('center')) close(); });
-    // password eye toggle
     document.addEventListener('click',(e)=>{ const b=e.target.closest('[data-toggle]'); if(!b) return; const id=b.getAttribute('data-toggle'); const el=document.getElementById(id); if(!el) return; const isPwd=el.type==='password'; el.type=isPwd?'text':'password'; b.textContent=isPwd?'Gizle':'Göster'; });
-    // prevent submit (demo)
     $('#loginForm').addEventListener('submit',e=>{ e.preventDefault(); $('#lmsg').textContent='(Demo) Giriş tetiklendi'; });
     $('#signupForm').addEventListener('submit',e=>{ e.preventDefault();
       const pass=$('#spass')?$('#spass').value.trim():''; const pass2=$('#spass2')?$('#spass2').value.trim():'';
@@ -464,120 +453,131 @@ const LISTINGS=[];
     }catch(err){ console.error('Init error', err); }
   }
   if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot);
-    // Ekran boyutu değişince mobil renk davranışını yeniden uygula
     window.addEventListener('resize', ()=>{ clearTimeout(window.__catGlowRT); window.__catGlowRT=setTimeout(()=>{ startCardGlow(); },200); });
   } else { boot(); }
   </script>
-<script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
-import { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, updateProfile, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ',
-  authDomain: 'ureteneller-ecaac.firebaseapp.com',
-  projectId: 'ureteneller-ecaac',
-  storageBucket: 'ureteneller-ecaac.firebasestorage.app',
-  messagingSenderId: '368042877151',
-  appId: '1:368042877151:web:ee0879fc4717928079c96a',
-  measurementId: 'G-BJHKN8V4RQ'
-};
+  <!-- PROFIL AKIŞI: hash #profile -> modal aç, scroll yapma -->
+  <script>
+    (function(){
+      function openProfile(){
+        const bd  = document.getElementById('backdrop');
+        const box = document.getElementById('authBox');
+        if (bd)  bd.style.display = 'block';
+        if (box){
+          box.style.display = 'block';
+          box.classList.add('center');
+          box.setAttribute('aria-hidden','false');
+        }
+      }
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-setPersistence(auth, browserLocalPersistence).catch(()=>{});
+      // Sayfa hash ile açılırsa
+      window.addEventListener('load', function(){
+        if (location.hash === '#profile'){
+          window.scrollTo(0,0);
+          openProfile();
+        }
+      });
 
-function $(s){ return document.querySelector(s); }
-function rmListeners(el){ if(!el) return null; const n=el.cloneNode(true); el.replaceWith(n); return n; }
+      // Sayfa içindeki her türlü #profile linkini yakala
+      document.addEventListener('click', function(e){
+        const a = e.target.closest('a[href*="#profile"]');
+        if(!a) return;
+        e.preventDefault();
+        // URL'de #profile görünsün ama scroll olmasın
+        const current = (location.pathname || '/').replace(/index\.html$/, '');
+history.replaceState(null, '', current + '#profile');
+        window.scrollTo(0,0);
+        openProfile();
+      }, { passive:false });
+    })();
+  </script>
 
-let loginForm=rmListeners(document.getElementById('loginForm'));
-let signupForm=rmListeners(document.getElementById('signupForm'));
-let gLoginBtn=rmListeners(document.getElementById('gLogin'));
-let gSignupBtn=rmListeners(document.getElementById('gSignup'));
-let forgotBtn=rmListeners(document.getElementById('forgotBtn'));
+  <!-- Firebase (opsiyonel gerçek giriş akışı) -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
+    import { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, updateProfile, signOut } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
 
-const HOME = '/home.html';
+    const firebaseConfig = {
+      apiKey: 'AIzaSyCd9GjP6CDA8i4XByhXDHyESy-g_DHVwvQ',
+      authDomain: 'ureteneller-ecaac.firebaseapp.com',
+      projectId: 'ureteneller-ecaac',
+      storageBucket: 'ureteneller-ecaac.firebasestorage.app',
+      messagingSenderId: '368042877151',
+      appId: '1:368042877151:web:ee0879fc4717928079c96a',
+      measurementId: 'G-BJHKN8V4RQ'
+    };
 
-function uiBusy(form, busy){ const btns = form ? form.querySelectorAll('button, input, select') : []; btns.forEach(b=> b.disabled=busy); }
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    setPersistence(auth, browserLocalPersistence).catch(()=>{});
 
-const provider = new GoogleAuthProvider();
+    const $=(s)=>document.querySelector(s);
+    const HOME = '/home.html';
 
-if(gLoginBtn) gLoginBtn.addEventListener('click', async ()=>{
-  const out = $('#lmsg');
-  try{ await signInWithPopup(auth, provider); location.href = HOME; }
-  catch(err){ if(out) out.textContent = trAuthErr(err); }
-});
+    const provider = new GoogleAuthProvider();
 
-if(gSignupBtn) gSignupBtn.addEventListener('click', async ()=>{
-  const out = $('#smsg');
-  try{ await signInWithPopup(auth, provider); location.href = HOME; }
-  catch(err){ if(out) out.textContent = trAuthErr(err); }
-});
+    const gLoginBtn=document.getElementById('gLogin');
+    if(gLoginBtn) gLoginBtn.addEventListener('click', async ()=>{
+      const out = document.getElementById('lmsg');
+      try{ await signInWithPopup(auth, provider); location.href = HOME; }
+      catch(err){ if(out) out.textContent = err?.code || 'Hata'; }
+    });
 
-if(loginForm) loginForm.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const email = $('#lemail')?.value?.trim();
-  const pass = $('#lpass')?.value;
-  const out = $('#lmsg');
-  uiBusy(loginForm,true);
-  try{
-    const res = await signInWithEmailAndPassword(auth, email, pass);
-    const user = res.user;
-    if(!user.emailVerified){
-      await sendEmailVerification(user);
-      if(out) out.innerHTML = 'E‑posta doğrulaması gönderildi. Lütfen e‑postayı onaylayın ve tekrar giriş yapın.';
-      await signOut(auth);
-      return;
-    }
-    location.href = HOME;
-  }catch(err){ if(out) out.textContent = trAuthErr(err); }
-  finally{ uiBusy(loginForm,false); }
-});
+    const gSignupBtn=document.getElementById('gSignup');
+    if(gSignupBtn) gSignupBtn.addEventListener('click', async ()=>{
+      const out = document.getElementById('smsg');
+      try{ await signInWithPopup(auth, provider); location.href = HOME; }
+      catch(err){ if(out) out.textContent = err?.code || 'Hata'; }
+    });
 
-if(signupForm) signupForm.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  const email = $('#semail')?.value?.trim();
-  const pass = $('#spass')?.value;
-  const pass2= $('#spass2')?.value;
-  const name = $('#sname')?.value?.trim();
-  const surname = $('#ssurname')?.value?.trim();
-  const username = $('#suser')?.value?.trim();
-  const out = $('#smsg');
-  if(pass!==pass2){ if(out) out.textContent='Şifreler eşleşmiyor.'; return; }
-  uiBusy(signupForm,true);
-  try{
-    const { user } = await createUserWithEmailAndPassword(auth, email, pass);
-    const displayName = (name && surname) ? (name+' '+surname) : (username || '');
-    if(displayName){ try{ await updateProfile(user, { displayName }); }catch(_){} }
-    await sendEmailVerification(user);
-    if(out) out.innerHTML = 'Kayıt oluşturuldu. Lütfen e‑postadaki doğrulama bağlantısını tıklayın, sonra giriş yapın.';
-  }catch(err){ if(out) out.textContent = trAuthErr(err); }
-  finally{ uiBusy(signupForm,false); }
-});
+    const loginForm=document.getElementById('loginForm');
+    if(loginForm) loginForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const email = document.getElementById('lemail')?.value?.trim();
+      const pass = document.getElementById('lpass')?.value;
+      const out = document.getElementById('lmsg');
+      try{
+        const res = await signInWithEmailAndPassword(auth, email, pass);
+        const user = res.user;
+        if(!user.emailVerified){
+          await sendEmailVerification(user);
+          if(out) out.innerHTML = 'E‑posta doğrulaması gönderildi. Lütfen e‑postayı onaylayın ve tekrar giriş yapın.';
+          await signOut(auth);
+          return;
+        }
+        location.href = HOME;
+      }catch(err){ if(out) out.textContent = err?.code || 'Hata'; }
+    });
 
-if(forgotBtn) forgotBtn.addEventListener('click', async ()=>{
-  const email = $('#lemail')?.value?.trim() || $('#semail')?.value?.trim();
-  const out = $('#lmsg');
-  if(!email){ if(out) out.textContent='Lütfen e‑posta adresini yaz.'; return; }
-  try{ await sendPasswordResetEmail(auth, email); if(out) out.textContent='Şifre sıfırlama e‑postası gönderildi.'; }
-  catch(err){ if(out) out.textContent = trAuthErr(err); }
-});
+    const signupForm=document.getElementById('signupForm');
+    if(signupForm) signupForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const email = document.getElementById('semail')?.value?.trim();
+      const pass  = document.getElementById('spass')?.value;
+      const pass2 = document.getElementById('spass2')?.value;
+      const name = document.getElementById('sname')?.value?.trim();
+      const surname = document.getElementById('ssurname')?.value?.trim();
+      const username = document.getElementById('suser')?.value?.trim();
+      const out = document.getElementById('smsg');
+      if(pass!==pass2){ if(out) out.textContent='Şifreler eşleşmiyor.'; return; }
+      try{
+        const { user } = await createUserWithEmailAndPassword(auth, email, pass);
+        const displayName = (name && surname) ? (name+' '+surname) : (username || '');
+        if(displayName){ try{ await updateProfile(user, { displayName }); }catch(_){} }
+        await sendEmailVerification(user);
+        if(out) out.innerHTML = 'Kayıt oluşturuldu. Lütfen e‑postadaki doğrulama bağlantısını tıklayın, sonra giriş yapın.';
+      }catch(err){ if(out) out.textContent = err?.code || 'Hata'; }
+    });
 
-function trAuthErr(err){
-  const c = err?.code || '';
-  switch(c){
-    case 'auth/invalid-email': return 'Geçersiz e‑posta.';
-    case 'auth/missing-password': return 'Şifre eksik.';
-    case 'auth/weak-password': return 'Şifre zayıf (en az 6 karakter).';
-    case 'auth/email-already-in-use': return 'Bu e‑posta zaten kayıtlı.';
-    case 'auth/user-not-found':
-    case 'auth/wrong-password': return 'E‑posta veya şifre hatalı.';
-    case 'auth/popup-blocked': return 'Tarayıcı açılır pencereyi engelledi.';
-    case 'auth/popup-closed-by-user': return 'Google penceresi kapatıldı.';
-    default: return 'İşlem başarısız: '+c;
-  }
-}
-
-onAuthStateChanged(auth, (user)=>{ /* console.log('auth', user?.uid) */ });
-</script>
+    const forgotBtn=document.getElementById('forgotBtn');
+    if(forgotBtn) forgotBtn.addEventListener('click', async ()=>{
+      const email = document.getElementById('lemail')?.value?.trim() || document.getElementById('semail')?.value?.trim();
+      const out = document.getElementById('lmsg');
+      if(!email){ if(out) out.textContent='Lütfen e‑posta adresini yaz.'; return; }
+      try{ await sendPasswordResetEmail(auth, email); if(out) out.textContent='Şifre sıfırlama e‑postası gönderildi.'; }
+      catch(err){ if(out) out.textContent = err?.code || 'Hata'; }
+    });
+  </script>
 </body>
 </html>
