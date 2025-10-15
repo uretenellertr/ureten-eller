@@ -1,0 +1,28 @@
+/* /style.css */
+
+/* Basit reset */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+
+/* Sayfa kaymasını tetikleyen görünmez anchor’ları sabitle:
+   Böylece /home.html#profile tıklandığında sayfa aşağı atlamaz. */
+.anchor-target {
+  position: fixed;   /* akıştan çıkar, sayfanın en üstüne sabitlenir */
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;  /* erişilebilirlik için DOM’da kalsın, görünmesin */
+}
+
+/* İsteğe bağlı: global scroll animasyonunu kapatmak isterseniz
+   (hash değişince yumuşak kayma olmasın) aşağıyı açın. */
+/* html { scroll-behavior: auto; } */
+
+/* Küçük yardımcılar */
+.hidden { display: none !important; }
+
+/* Backdrop ve modal için güvenli varsayılanlar (mevcut stillerle çakışmaz) */
+.backdrop { background: rgba(0,0,0,.55); }
+.auth.center { box-shadow: 0 20px 80px rgba(0,0,0,.5); }
